@@ -68,6 +68,8 @@ def generate_view_b(
     routing: RoutingDecision,
     ecg_id: int,
     fs: int = 100,
+    initial_sample_mask: Optional[np.ndarray] = None,
+    initial_lead_mask: Optional[np.ndarray] = None,
 ) -> tuple:
     """Generate View B: diagnostically corrected signal.
 
@@ -98,8 +100,16 @@ def generate_view_b(
     """
     n_leads, n_samples = signal_minimal.shape
     signal_corrected = signal_minimal.copy()
-    sample_mask = np.ones((n_leads, n_samples), dtype=bool)
-    lead_mask = np.ones(n_leads, dtype=bool)
+    sample_mask = (
+        np.asarray(initial_sample_mask, dtype=bool).copy()
+        if initial_sample_mask is not None
+        else np.ones((n_leads, n_samples), dtype=bool)
+    )
+    lead_mask = (
+        np.asarray(initial_lead_mask, dtype=bool).copy()
+        if initial_lead_mask is not None
+        else sample_mask.any(axis=1)
+    )
     corrections_log = []
 
     if not routing.requires_correction:
@@ -137,6 +147,8 @@ def generate_views(
     routing: RoutingDecision,
     ecg_id: int,
     fs: int = 100,
+    sample_mask: Optional[np.ndarray] = None,
+    lead_mask: Optional[np.ndarray] = None,
 ) -> SignalViews:
     """Generate all signal views for a record.
 
@@ -171,7 +183,9 @@ def generate_views(
         views.view_b_differs = False
     else:
         corrected, s_mask, l_mask, log = generate_view_b(
-            views.signal_minimal, routing, ecg_id, fs
+            views.signal_minimal, routing, ecg_id, fs,
+            initial_sample_mask=sample_mask,
+            initial_lead_mask=lead_mask,
         )
         views.signal_corrected = corrected
         views.sample_mask = s_mask

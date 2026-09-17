@@ -1,108 +1,66 @@
-"""
-AQUIRE-Med Preprocessing Pipeline — Main Entry Point
+"""Single source-of-truth CLI for local and Kaggle preprocessing."""
 
-Run this script to execute the full preprocessing pipeline.
-Works both on Kaggle (with datasets mounted at /kaggle/input/)
-and locally (with datasets in ./data/).
-
-Usage:
-    python run_pipeline.py                    # Full run
-    python run_pipeline.py --sample-size 100  # Quick test with 100 records
-    python run_pipeline.py --manifest-only    # Build manifest without processing signals
-"""
+from __future__ import annotations
 
 import argparse
+import json
 import logging
-import sys
 
-# Configure logging
-logging.basicConfig(
-    level=logging.INFO,
-    format="%(asctime)s [%(levelname)s] %(name)s: %(message)s",
-    datefmt="%H:%M:%S",
-)
-logger = logging.getLogger("aquire_pipeline")
+from aquire_preprocessing.config import CALIBRATION_FOLD, DEV_FOLDS, ENVIRONMENT, LOCKED_TEST_FOLD, PATHS
+from aquire_preprocessing.manifest import build_manifest
+from aquire_preprocessing.pipeline import process_batch
+from aquire_preprocessing.registry import verify_ptbxl_identity
+
+logging.basicConfig(level=logging.INFO, format="%(asctime)s [%(levelname)s] %(name)s: %(message)s")
 
 
-def main():
-    parser = argparse.ArgumentParser(
-        description="AQUIRE-Med Signal Preprocessing Pipeline"
-    )
+def main() -> None:
+    parser = argparse.ArgumentParser(description="AQUIRE-Med research preprocessing")
+    parser.add_argument("--sample-size", type=int)
+    parser.add_argument("--manifest-only", action="store_true")
+    parser.add_argument("--sampling-rate", type=int, choices=[100, 500], default=100)
+    parser.add_argument("--no-save", action="store_true")
     parser.add_argument(
-        "--sample-size",
-        type=int,
-        default=None,
-        help="Process only N records (for testing). Default: all records.",
+        "--role", choices=["development", "calibration", "final_locked_evaluation"],
+        default="development",
     )
-    parser.add_argument(
-        "--manifest-only",
-        action="store_true",
-        help="Only build the patient manifest (no signal processing).",
-    )
-    parser.add_argument(
-        "--sampling-rate",
-        type=int,
-        default=100,
-        choices=[100, 500],
-        help="Sampling rate to use (100 or 500 Hz). Default: 100.",
-    )
-    parser.add_argument(
-        "--no-save",
-        action="store_true",
-        help="Do not save outputs to disk.",
-    )
+    parser.add_argument("--allow-unverified-release", action="store_true", help="Development-only; outputs remain marked unverified")
     args = parser.parse_args()
 
-    # Import here to allow CLI help without loading heavy modules
-    from aquire_preprocessing.config import ENVIRONMENT, PATHS
-    from aquire_preprocessing.manifest import build_manifest
-    from aquire_preprocessing.pipeline import process_batch
-
-    print(f"\n{'='*60}")
-    print(f"AQUIRE-Med Preprocessing Pipeline")
-    print(f"{'='*60}")
-    print(f"Environment:    {ENVIRONMENT}")
-    print(f"PTB-XL root:    {PATHS.ptbxl_root}")
-    print(f"PTB-XL+ root:   {PATHS.ptbxlp_root}")
-    print(f"Output root:    {PATHS.output_root}")
-    print(f"Sampling rate:  {args.sampling_rate} Hz")
-    print(f"Sample size:    {args.sample_size or 'ALL'}")
-    print(f"{'='*60}\n")
-
-    # Step 1: Build manifest
-    logger.info("Step 1: Building patient manifest...")
+    print(json.dumps({
+        "environment": ENVIRONMENT,
+        "ptbxl_root": str(PATHS.ptbxl_root),
+        "ptbxl_plus_root": str(PATHS.ptbxlp_root),
+        "output_root": str(PATHS.output_root),
+        "sampling_rate": args.sampling_rate,
+    }, indent=2))
+    identity = verify_ptbxl_identity(PATHS.ptbxl_root, strict=not args.allow_unverified_release)
+    print("Dataset identity:", json.dumps(identity, indent=2))
     manifest = build_manifest(
-        join_features=True,
+        join_features=False,
         save=not args.no_save,
+        verify_release=not args.allow_unverified_release,
     )
-
     if args.manifest_only:
-        logger.info("Manifest-only mode. Done.")
         return
-
-    # Step 2: Process signals
-    logger.info("Step 2: Processing ECG signals...")
-    contracts, summary = process_batch(
-        manifest=manifest,
+    if args.role == "development":
+        selected = manifest[manifest.strat_fold.isin(DEV_FOLDS)]
+        purpose = "preprocessing_tuning"
+    elif args.role == "calibration":
+        selected = manifest[manifest.strat_fold.eq(CALIBRATION_FOLD)]
+        purpose = "calibration_evaluation"
+    else:
+        selected = manifest[manifest.strat_fold.eq(LOCKED_TEST_FOLD)]
+        purpose = "final_locked_evaluation"
+    _, summary = process_batch(
+        selected,
         sampling_rate=args.sampling_rate,
         max_records=args.sample_size,
         save_output=not args.no_save,
+        collect_records=False,
+        purpose=purpose,
     )
-
-    # Step 3: Summary
-    if contracts:
-        import numpy as np
-        mi_labels = [c["mi_label"] for c in contracts]
-        folds = [c["strat_fold"] for c in contracts]
-        print(f"\nMI label distribution:")
-        print(f"  MI=1: {sum(mi_labels)} ({sum(mi_labels)/len(mi_labels)*100:.1f}%)")
-        print(f"  MI=0: {len(mi_labels)-sum(mi_labels)} ({(len(mi_labels)-sum(mi_labels))/len(mi_labels)*100:.1f}%)")
-        print(f"\nFold distribution:")
-        for fold in sorted(set(folds)):
-            n = folds.count(fold)
-            print(f"  Fold {fold}: {n} records")
-
-    logger.info("Pipeline complete.")
+    print("Pipeline summary:", json.dumps(summary, indent=2))
 
 
 if __name__ == "__main__":

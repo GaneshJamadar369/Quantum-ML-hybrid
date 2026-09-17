@@ -1,0 +1,20 @@
+Metadata-Version: 2.2
+Name: aquire-med
+Version: 0.2.0
+Summary: Research-grade PTB-XL preprocessing and classical baselines for MI-pattern detection
+Requires-Python: <3.13,>=3.11
+Requires-Dist: numpy==2.5.3
+Requires-Dist: pandas==2.2.3
+Requires-Dist: scipy==1.18.1
+Requires-Dist: wfdb==4.3.0
+Requires-Dist: scikit-learn==1.9.1
+Requires-Dist: h5py==3.13.0
+Provides-Extra: research
+Requires-Dist: torch==2.6.0; extra == "research"
+Requires-Dist: neurokit2==0.2.10; extra == "research"
+Requires-Dist: xgboost==3.0.0; extra == "research"
+Requires-Dist: pyarrow==19.0.1; extra == "research"
+Requires-Dist: matplotlib==3.10.1; extra == "research"
+Provides-Extra: test
+Requires-Dist: pytest==8.3.5; extra == "test"
+Requires-Dist: pytest-cov==6.0.0; extra == "test"

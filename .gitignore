@@ -1,0 +1,15 @@
+__pycache__/
+*.py[cod]
+.pytest_cache/
+.coverage
+.mypy_cache/
+.ruff_cache/
+.venv/
+data/
+artifacts/
+*.h5
+*.hdf5
+*.npy
+*.npz
+*.parquet
+

@@ -1,0 +1,17 @@
+numpy==2.5.3
+pandas==2.2.3
+scipy==1.18.1
+wfdb==4.3.0
+scikit-learn==1.9.1
+h5py==3.13.0
+
+[research]
+torch==2.6.0
+neurokit2==0.2.10
+xgboost==3.0.0
+pyarrow==19.0.1
+matplotlib==3.10.1
+
+[test]
+pytest==8.3.5
+pytest-cov==6.0.0

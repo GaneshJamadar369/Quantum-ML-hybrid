@@ -10,6 +10,7 @@ Implements plan phase 10:
 """
 
 import json
+import hashlib
 import logging
 from dataclasses import dataclass, field
 from pathlib import Path
@@ -40,6 +41,7 @@ class NormalizationParams:
     folds_used: list = field(default_factory=list)
     pipeline_version: str = ""
     is_fitted: bool = False
+    training_patient_checksum: str = ""
 
     def to_json(self, path: Path) -> None:
         """Serialize normalization parameters to JSON."""
@@ -50,6 +52,7 @@ class NormalizationParams:
             "folds_used": self.folds_used,
             "pipeline_version": self.pipeline_version,
             "is_fitted": self.is_fitted,
+            "training_patient_checksum": self.training_patient_checksum,
             "lead_order": CANONICAL_LEAD_ORDER,
         }
         path.parent.mkdir(parents=True, exist_ok=True)
@@ -69,6 +72,7 @@ class NormalizationParams:
             folds_used=data["folds_used"],
             pipeline_version=data["pipeline_version"],
             is_fitted=data["is_fitted"],
+            training_patient_checksum=data.get("training_patient_checksum", ""),
         )
         logger.info(
             "Loaded normalization params from %s (fitted on %d records)",
@@ -98,6 +102,9 @@ class LeadRobustScaler:
         signals: np.ndarray,
         folds: Optional[np.ndarray] = None,
         allowed_folds: Optional[list] = None,
+        sample_masks: Optional[np.ndarray] = None,
+        lead_masks: Optional[np.ndarray] = None,
+        patient_ids: Optional[np.ndarray] = None,
     ) -> "LeadRobustScaler":
         """Fit normalization statistics from training signals.
 
@@ -121,12 +128,18 @@ class LeadRobustScaler:
         if folds is not None:
             mask = np.isin(folds, allowed_folds)
             train_signals = signals[mask]
+            train_sample_masks = sample_masks[mask] if sample_masks is not None else None
+            train_lead_masks = lead_masks[mask] if lead_masks is not None else None
+            train_patient_ids = patient_ids[mask] if patient_ids is not None else None
             logger.info(
                 "Fitting normalizer on %d/%d records (folds %s)",
                 mask.sum(), len(signals), allowed_folds,
             )
         else:
             train_signals = signals
+            train_sample_masks = sample_masks
+            train_lead_masks = lead_masks
+            train_patient_ids = patient_ids
             logger.info(
                 "Fitting normalizer on %d records (no fold filtering)",
                 len(signals),
@@ -138,7 +151,15 @@ class LeadRobustScaler:
         # Compute per-lead statistics across all training records
         for i, lead_name in enumerate(CANONICAL_LEAD_ORDER):
             # Gather all samples for this lead across all training records
-            lead_data = train_signals[:, i, :].flatten()
+            lead_data = train_signals[:, i, :].reshape(-1)
+            valid = np.isfinite(lead_data)
+            if train_sample_masks is not None:
+                valid &= np.asarray(train_sample_masks[:, i, :], dtype=bool).reshape(-1)
+            if train_lead_masks is not None:
+                valid &= np.repeat(np.asarray(train_lead_masks[:, i], dtype=bool), train_signals.shape[2])
+            lead_data = lead_data[valid]
+            if lead_data.size == 0:
+                raise ValueError(f"No valid training samples for lead {lead_name}")
 
             median_val = float(np.median(lead_data))
             q75 = float(np.percentile(lead_data, 75))
@@ -160,6 +181,11 @@ class LeadRobustScaler:
         self.params.folds_used = sorted(allowed_folds)
         self.params.pipeline_version = PIPELINE_VERSION
         self.params.is_fitted = True
+        if train_patient_ids is not None:
+            ids = np.sort(np.unique(np.asarray(train_patient_ids).astype(str)))
+            self.params.training_patient_checksum = hashlib.sha256(
+                "\n".join(ids).encode()
+            ).hexdigest()
 
         logger.info("Normalization fitted. Per-lead stats:")
         for lead in CANONICAL_LEAD_ORDER:
@@ -253,3 +279,66 @@ class LeadRobustScaler:
         """Load normalization parameters from JSON."""
         self.params = NormalizationParams.from_json(path)
         return self
+
+
+def fit_fold_local_scalers_from_hdf5(
+    hdf5_path: Path,
+    output_dir: Path,
+    samples_per_record: int = 100,
+) -> Dict[int, LeadRobustScaler]:
+    """Fit bounded-memory normalizers for each held-out development fold.
+
+    Samples are taken at deterministic, evenly spaced positions from every
+    eligible training record. Masks and failed leads are excluded. The saved
+    patient checksum proves exactly which patient set fitted each scaler.
+    """
+    try:
+        import h5py
+    except ImportError as exc:
+        raise RuntimeError("h5py is required for HDF5 normalization") from exc
+    from .manifest import guard_fold_access
+
+    output_dir = Path(output_dir)
+    output_dir.mkdir(parents=True, exist_ok=True)
+    scalers: Dict[int, LeadRobustScaler] = {}
+    with h5py.File(Path(hdf5_path), "r") as h5:
+        folds = h5["strat_fold"][:].astype(int)
+        guard_fold_access(folds, purpose="feature_selection")
+        if not set(np.unique(folds)).issubset(set(DEV_FOLDS)):
+            raise ValueError("Fold-local development scalers accept folds 1–8 only")
+        patients = h5["patient_id"][:]
+        n_samples = int(h5["accepted_signal"].shape[2])
+        positions = np.unique(np.linspace(0, n_samples - 1, min(samples_per_record, n_samples), dtype=int))
+        for held_out in sorted(np.unique(folds)):
+            train_rows = np.where(folds != held_out)[0]
+            allowed = sorted(int(v) for v in np.unique(folds[train_rows]))
+            scaler = LeadRobustScaler()
+            for lead_index, lead_name in enumerate(CANONICAL_LEAD_ORDER):
+                pieces = []
+                for start in range(0, len(train_rows), 256):
+                    rows = train_rows[start:start + 256]
+                    # h5py requires increasing indices; train_rows is sorted.
+                    values = h5["accepted_signal"][rows, lead_index, :][:, positions]
+                    sample_valid = h5["sample_mask"][rows, lead_index, :][:, positions]
+                    lead_valid = h5["lead_mask"][rows, lead_index][:, None]
+                    valid = sample_valid & lead_valid & np.isfinite(values)
+                    if valid.any():
+                        pieces.append(values[valid].astype(np.float32))
+                if not pieces:
+                    raise ValueError(f"No valid samples for lead {lead_name}, holdout {held_out}")
+                data = np.concatenate(pieces)
+                median = float(np.median(data))
+                iqr = float(np.percentile(data, 75) - np.percentile(data, 25))
+                scaler.params.lead_medians[lead_name] = median
+                scaler.params.lead_iqrs[lead_name] = iqr if iqr >= 1e-8 else 1.0
+            patient_values = np.sort(np.unique(patients[train_rows].astype(str)))
+            scaler.params.n_records_fitted = int(len(train_rows))
+            scaler.params.folds_used = allowed
+            scaler.params.pipeline_version = PIPELINE_VERSION
+            scaler.params.training_patient_checksum = hashlib.sha256(
+                "\n".join(patient_values).encode()
+            ).hexdigest()
+            scaler.params.is_fitted = True
+            scaler.save(output_dir / f"normalizer_holdout_fold_{int(held_out)}.json")
+            scalers[int(held_out)] = scaler
+    return scalers

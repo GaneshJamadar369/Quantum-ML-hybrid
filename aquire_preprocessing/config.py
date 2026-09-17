@@ -24,22 +24,24 @@ def _detect_environment() -> str:
 ENVIRONMENT = _detect_environment()
 
 # PTB-XL v1.0.3 paths
-_PTBXL_KAGGLE = (
-    "/kaggle/input/ptb-xl-dataset/"
-    "ptb-xl-a-large-publicly-available-electrocardiography-dataset-1.0.1"
+_PTBXL_KAGGLE = os.environ.get(
+    "AQUIRE_PTBXL_ROOT",
+    "/kaggle/input/ptb-xl-1-0-3/ptb-xl-a-large-publicly-available-"
+    "electrocardiography-dataset-1.0.3",
 )
 _PTBXL_LOCAL = "./data/ptb-xl-1.0.3"
 
 # PTB-XL+ v1.0.1 paths
-_PTBXLP_KAGGLE = (
-    "/kaggle/input/ptb-xl/"
-    "ptb-xl-a-comprehensive-electrocardiographic-feature-dataset-1.0.1"
+_PTBXLP_KAGGLE = os.environ.get(
+    "AQUIRE_PTBXLP_ROOT",
+    "/kaggle/input/ptb-xl-plus-1-0-1/"
+    "ptb-xl-a-comprehensive-electrocardiographic-feature-dataset-1.0.1",
 )
 _PTBXLP_LOCAL = "./data/ptb-xl-plus-1.0.1"
 
 # Output paths
-_OUTPUT_KAGGLE = "/kaggle/working/processed"
-_OUTPUT_LOCAL = "./data/processed"
+_OUTPUT_KAGGLE = os.environ.get("AQUIRE_OUTPUT_ROOT", "/kaggle/working/processed")
+_OUTPUT_LOCAL = os.environ.get("AQUIRE_OUTPUT_ROOT", "./data/processed")
 
 
 @dataclass(frozen=True)
@@ -161,7 +163,7 @@ TARGET_SHAPE_500HZ = (NUM_LEADS, SAMPLES_500HZ)   # (12, 5000)
 # 3. Pipeline version for reproducibility
 # ---------------------------------------------------------------------------
 
-PIPELINE_VERSION: str = "aquire-preproc-v0.1.0"
+PIPELINE_VERSION: str = "aquire-preproc-v0.2.0"
 DATASET_VERSION_PTBXL: str = "1.0.3"
 DATASET_VERSION_PTBXLP: str = "1.0.1"
 
@@ -204,6 +206,9 @@ class QCThresholds:
     # QRS consistency
     qrs_rr_cv_max: float = 0.25                    # coefficient of variation of RR intervals
 
+    # Structural repair is deliberately narrow. Larger mismatches fail.
+    max_length_adjustment_ms: float = 20.0
+
 
 QC = QCThresholds()
 
@@ -219,7 +224,7 @@ class MorphologyTolerances:
     the minimal (View A) signal is retained.
     """
 
-    max_rpeak_shift_samples: int = 1               # 10 ms at 100 Hz
+    max_rpeak_shift_ms: float = 10.0
     max_qrs_width_change_ms: float = 10.0          # milliseconds
     max_qrs_amplitude_change_mv: float = 0.10      # millivolts
     max_st_level_shift_mv: float = 0.05            # millivolts (critical for MI)
@@ -245,20 +250,15 @@ LOCKED_TEST_FOLD: int = 10
 # 7. MI superclass SCP code mapping
 # ---------------------------------------------------------------------------
 
-# SCP diagnostic codes belonging to the MI superclass
-# Source: PTB-XL scp_statements.csv where diagnostic_class == "MI"
-MI_SCP_CODES: List[str] = [
-    "IMI", "AMI", "ASMI", "ILMI", "IPMI",
-    "INJAL", "INJAS", "INJIN", "INJLA",
-    "PMI", "LMI",
+# Used only as a release-integrity assertion. Runtime labels are derived from
+# scp_statements.csv where diagnostic_class == "MI".
+EXPECTED_MI_SCP_CODES: List[str] = [
+    "AMI", "ALMI", "ASMI", "ILMI", "IMI", "INJAL", "INJAS",
+    "INJIL", "INJIN", "INJLA", "IPLMI", "IPMI", "LMI", "PMI",
 ]
 
-# Hard-negative superclass codes (conditions that mimic MI on ECG)
-HARD_NEGATIVE_SCP_CODES: List[str] = [
-    "STTC",   # ST/T change (non-specific)
-    "NST_",   # Non-specific ST changes
-    "ISCA",   # Ischemic ST-T in anterior leads
-    "ISCI",   # Ischemic ST-T in inferior leads
-    "LVH",    # Left ventricular hypertrophy (ST changes)
-    "LBBB",   # Left bundle branch block
-]
+# Compatibility alias. Label construction must still derive and validate this
+# set dynamically from the mounted release.
+MI_SCP_CODES = EXPECTED_MI_SCP_CODES
+
+HARD_NEGATIVE_DIAGNOSTIC_CLASSES = ["STTC", "CD", "HYP"]

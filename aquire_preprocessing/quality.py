@@ -33,6 +33,7 @@ class LeadQuality:
     missing_fraction: float = 0.0
     baseline_wander_ratio: float = 0.0
     powerline_snr_db: float = 0.0
+    powerline_supported: bool = False
     hf_noise_ratio: float = 0.0
     amplitude_range_mv: float = 0.0
     is_plausible_amplitude: bool = True
@@ -48,6 +49,7 @@ class CrossLeadPhysics:
     goldberger_avl_residual_mv: float = 0.0  # |aVL - (I - II/2)|
     goldberger_avf_residual_mv: float = 0.0  # |aVF - (II - I/2)|
     all_passed: bool = True
+    status: str = "PASS"  # PASS | WARN | INDETERMINATE
     issues: List[str] = field(default_factory=list)
 
 
@@ -124,16 +126,14 @@ def _check_clipping(lead_signal: np.ndarray) -> Tuple[bool, List[str]]:
 
 def _check_missing(
     lead_signal: np.ndarray,
-    original_signal: Optional[np.ndarray] = None,
+    sample_mask: Optional[np.ndarray] = None,
 ) -> Tuple[float, List[str]]:
     """Compute fraction of missing (NaN/zero after NaN replacement) samples."""
     issues = []
-    # If we have the original signal (pre NaN replacement), use it
-    if original_signal is not None:
-        missing_frac = np.sum(~np.isfinite(original_signal)) / len(original_signal)
+    if sample_mask is not None:
+        missing_frac = float(np.mean(~np.asarray(sample_mask, dtype=bool)))
     else:
-        # Approximate: consecutive zeros might indicate replaced NaNs
-        missing_frac = 0.0
+        missing_frac = float(np.mean(~np.isfinite(lead_signal)))
 
     if missing_frac > QC.missing_fraction_max:
         issues.append(f"High missing fraction: {missing_frac:.1%}")
@@ -258,37 +258,52 @@ def assess_lead_quality(
     lead_signal: np.ndarray,
     lead_name: str,
     fs: int = 100,
+    sample_mask: Optional[np.ndarray] = None,
 ) -> LeadQuality:
     """Compute the complete quality fingerprint for a single lead."""
     lq = LeadQuality(lead_name=lead_name)
 
+    if sample_mask is None:
+        sample_mask = np.isfinite(lead_signal)
+    sample_mask = np.asarray(sample_mask, dtype=bool) & np.isfinite(lead_signal)
+    valid_signal = np.asarray(lead_signal, dtype=float).copy()
+    if not sample_mask.all() and sample_mask.any():
+        indices = np.arange(len(valid_signal))
+        valid_signal[~sample_mask] = np.interp(indices[~sample_mask], indices[sample_mask], valid_signal[sample_mask])
+    elif not sample_mask.any():
+        valid_signal[:] = 0.0
+
     # 1. Flatline
-    lq.is_flat, flat_issues = _check_flatline(lead_signal, fs)
+    lq.is_flat, flat_issues = _check_flatline(valid_signal, fs)
     lq.issues.extend(flat_issues)
 
     # 2. Clipping
-    lq.is_clipped, clip_issues = _check_clipping(lead_signal)
+    lq.is_clipped, clip_issues = _check_clipping(valid_signal[sample_mask] if sample_mask.any() else valid_signal)
     lq.issues.extend(clip_issues)
 
     # 3. Missing
-    lq.missing_fraction, miss_issues = _check_missing(lead_signal)
+    lq.missing_fraction, miss_issues = _check_missing(lead_signal, sample_mask)
     lq.issues.extend(miss_issues)
 
     # 4. Baseline wander
-    lq.baseline_wander_ratio, bw_issues = _check_baseline_wander(lead_signal, fs)
+    lq.baseline_wander_ratio, bw_issues = _check_baseline_wander(valid_signal, fs)
     lq.issues.extend(bw_issues)
 
     # 5. Powerline interference
-    lq.powerline_snr_db, pl_issues = _check_powerline(lead_signal, fs)
+    lq.powerline_supported = fs > 120
+    if lq.powerline_supported:
+        lq.powerline_snr_db, pl_issues = _check_powerline(valid_signal, fs)
+    else:
+        lq.powerline_snr_db, pl_issues = 0.0, []
     lq.issues.extend(pl_issues)
 
     # 6. High-frequency noise
-    lq.hf_noise_ratio, hf_issues = _check_hf_noise(lead_signal, fs)
+    lq.hf_noise_ratio, hf_issues = _check_hf_noise(valid_signal, fs)
     lq.issues.extend(hf_issues)
 
     # 7. Amplitude plausibility
     lq.amplitude_range_mv, lq.is_plausible_amplitude, amp_issues = (
-        _check_amplitude(lead_signal)
+        _check_amplitude(valid_signal[sample_mask] if sample_mask.any() else valid_signal)
     )
     lq.issues.extend(amp_issues)
 
@@ -316,6 +331,7 @@ def assess_lead_quality(
 def check_cross_lead_physics(
     signal: np.ndarray,
     lead_order: List[str] = None,
+    sample_mask: Optional[np.ndarray] = None,
 ) -> CrossLeadPhysics:
     """Verify Einthoven's law and Goldberger equations.
 
@@ -347,12 +363,27 @@ def check_cross_lead_physics(
         physics.issues.append(f"Missing lead for physics check: {e}")
         return physics
 
+    if sample_mask is None:
+        sample_mask = np.isfinite(signal)
+    required = [lead_idx[name] for name in ["I", "II", "III", "aVR", "aVL", "aVF"]]
+    valid = np.logical_and.reduce([np.asarray(sample_mask[i], dtype=bool) for i in required])
+    valid &= np.logical_and.reduce([np.isfinite(signal[i]) for i in required])
+    if valid.sum() < max(10, int(0.5 * signal.shape[1])):
+        physics.all_passed = False
+        physics.status = "INDETERMINATE"
+        physics.issues.append("Insufficient shared valid limb-lead samples")
+        return physics
+
+    lead_I, lead_II, lead_III = lead_I[valid], lead_II[valid], lead_III[valid]
+    lead_aVR, lead_aVL, lead_aVF = lead_aVR[valid], lead_aVL[valid], lead_aVF[valid]
+
     # Einthoven: II ≈ I + III
     einthoven_residual = np.mean(np.abs(lead_II - (lead_I + lead_III)))
     physics.einthoven_residual_mv = float(einthoven_residual)
 
     if einthoven_residual > QC.einthoven_residual_max_mv:
         physics.all_passed = False
+        physics.status = "WARN"
         physics.issues.append(
             f"Einthoven violation: |II-(I+III)| = {einthoven_residual:.4f} mV "
             f"(threshold: {QC.einthoven_residual_max_mv} mV)"
@@ -365,6 +396,7 @@ def check_cross_lead_physics(
 
     if avr_residual > QC.goldberger_residual_max_mv:
         physics.all_passed = False
+        physics.status = "WARN"
         physics.issues.append(
             f"Goldberger aVR violation: residual = {avr_residual:.4f} mV"
         )
@@ -376,6 +408,7 @@ def check_cross_lead_physics(
 
     if avl_residual > QC.goldberger_residual_max_mv:
         physics.all_passed = False
+        physics.status = "WARN"
         physics.issues.append(
             f"Goldberger aVL violation: residual = {avl_residual:.4f} mV"
         )
@@ -387,6 +420,7 @@ def check_cross_lead_physics(
 
     if avf_residual > QC.goldberger_residual_max_mv:
         physics.all_passed = False
+        physics.status = "WARN"
         physics.issues.append(
             f"Goldberger aVF violation: residual = {avf_residual:.4f} mV"
         )
@@ -403,6 +437,8 @@ def assess_quality(
     ecg_id: int,
     fs: int = 100,
     lead_order: List[str] = None,
+    sample_mask: Optional[np.ndarray] = None,
+    lead_mask: Optional[np.ndarray] = None,
 ) -> QCResult:
     """Run the complete quality assessment on a 12-lead ECG.
 
@@ -426,15 +462,21 @@ def assess_quality(
         lead_order = CANONICAL_LEAD_ORDER
 
     qc = QCResult(ecg_id=ecg_id)
-    lead_mask = np.ones(NUM_LEADS, dtype=bool)
-    sample_mask = np.ones_like(signal, dtype=bool)
+    if sample_mask is None:
+        sample_mask = np.isfinite(signal)
+    else:
+        sample_mask = np.asarray(sample_mask, dtype=bool) & np.isfinite(signal)
+    if lead_mask is None:
+        lead_mask = sample_mask.any(axis=1)
+    else:
+        lead_mask = np.asarray(lead_mask, dtype=bool).copy()
 
     # --- Per-lead quality ---
     n_failed = 0
     n_warned = 0
 
     for i, lead_name in enumerate(lead_order):
-        lq = assess_lead_quality(signal[i], lead_name, fs)
+        lq = assess_lead_quality(signal[i], lead_name, fs, sample_mask=sample_mask[i])
         qc.per_lead[lead_name] = lq
 
         if lq.status == "FAIL":
@@ -449,7 +491,7 @@ def assess_quality(
     qc.sample_mask = sample_mask
 
     # --- Cross-lead physics ---
-    qc.cross_lead = check_cross_lead_physics(signal, lead_order)
+    qc.cross_lead = check_cross_lead_physics(signal, lead_order, sample_mask=sample_mask)
     if not qc.cross_lead.all_passed:
         qc.summary_issues.extend(qc.cross_lead.issues)
 

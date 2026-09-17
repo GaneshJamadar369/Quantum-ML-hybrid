@@ -379,7 +379,8 @@ print(f"""
   │  qc_status:          {qc_result.qc_status:<35} │
   │  einthoven_residual: {cl.einthoven_residual_mv:<35.6f} │
   │  mi_label:           {MI_LABEL:<35} │
-  │  label_confidence:   {0.85:<35} │
+  │  annotation_likelihood_max: {0.85:<27} │
+  │  annotation_likelihood_known: {True!s:<25} │
   │  hard_negative:      {False!s:<35} │
   │  strat_fold:         {STRAT_FOLD:<35} │
   │  source_checksum:    {source_checksum:<35} │
@@ -406,7 +407,7 @@ print(f"""
 ║  Step 9: Output Contract ............... ✅ EMITTED                ║
 ║                                                                    ║
 ║  All 9 pipeline stages completed successfully.                     ║
-║  Ready for Kaggle execution on 21,837 PTB-XL records.              ║
+║  Ready for verified PTB-XL v1.0.3 (21,799 records).                ║
 ║                                                                    ║
 ╚══════════════════════════════════════════════════════════════════════╝
 """)

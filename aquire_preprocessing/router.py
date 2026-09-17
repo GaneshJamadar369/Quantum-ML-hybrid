@@ -75,6 +75,7 @@ def route_record(qc_result: QCResult) -> RoutingDecision:
         # FAIL lead → mask it
         if lq.status == "FAIL":
             actions.append(ProcessingAction.LEAD_MASK.value)
+            any_correction_needed = True
             decision.processing_route.append(
                 f"{lead_name}: LEAD_MASK ({'; '.join(lq.issues)})"
             )
@@ -92,7 +93,7 @@ def route_record(qc_result: QCResult) -> RoutingDecision:
                 any_correction_needed = True
 
             # Powerline interference
-            if lq.powerline_snr_db > QC.powerline_snr_db_min:
+            if lq.powerline_supported and lq.powerline_snr_db > QC.powerline_snr_db_min:
                 actions.append(ProcessingAction.POWERLINE_REMOVAL.value)
                 decision.processing_route.append(
                     f"{lead_name}: POWERLINE_REMOVAL "

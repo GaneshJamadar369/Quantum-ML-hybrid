@@ -201,7 +201,8 @@ def repair_short_gaps(
     repaired_signal : np.ndarray
         Signal with short gaps filled.
     updated_mask : np.ndarray
-        Updated mask (repaired samples set to True).
+        Original validity mask. Interpolated values remain marked False so
+        downstream code can distinguish measurements from replacements.
     """
     if max_gap_ms is None:
         max_gap_ms = QC.max_interpolatable_gap_ms
@@ -236,8 +237,6 @@ def repair_short_gaps(
 
             interp_vals = np.linspace(left_val, right_val, gap_len + 2)[1:-1]
             repaired[start:end] = interp_vals
-            mask[start:end] = True
-
             logger.debug(
                 "Repaired gap at samples %d-%d (%d samples)",
                 start, end, gap_len,

@@ -1,16 +1,13 @@
 {
-    "id": "swayamjeetbhagat4/aquire-preprocessing",
-    "title": "AQUIRE-Med Preprocessing Pipeline",
-    "code_file": "run_pipeline.py",
-    "language": "python",
-    "kernel_type": "script",
-    "is_private": true,
-    "enable_gpu": true,
-    "enable_internet": false,
-    "dataset_sources": [
-        "khyeh0719/ptb-xl-dataset",
-        "bjoernjostein/ptb-xl"
-    ],
-    "competition_sources": [],
-    "kernel_sources": []
+  "id": "swayamjeetbhagat4/aquire-preprocessing",
+  "title": "AQUIRE-Med Preprocessing Pipeline",
+  "code_file": "run_pipeline.py",
+  "language": "python",
+  "kernel_type": "script",
+  "is_private": true,
+  "enable_gpu": false,
+  "enable_internet": false,
+  "dataset_sources": [],
+  "competition_sources": [],
+  "kernel_sources": []
 }

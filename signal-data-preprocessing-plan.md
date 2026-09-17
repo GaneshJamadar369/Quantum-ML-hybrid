@@ -412,7 +412,11 @@ Each ECG produces a versioned object equivalent to:
     },
     "processing_route": [],
     "mi_label": "0 | 1",
-    "label_confidence": float,
+    "annotation_likelihood_max": "float | NaN",
+    "annotation_likelihood_known": bool,
+    "label_quality_group": str,
+    "second_opinion": bool,
+    "validated_by_human": bool,
     "hard_negative": bool,
     "strat_fold": int,
     "source_checksum": str,
@@ -479,4 +483,3 @@ The preprocessing layer introduces the following project-level ideas:
 - [Signal quality indices and data fusion for clinical ECG acceptability](https://pubmed.ncbi.nlm.nih.gov/22902749/)
 - [AQUIRE-Med master implementation plan](plan.md)
 - [AQUIRE-Med architecture](output/aquire-med-system-architecture.svg)
-

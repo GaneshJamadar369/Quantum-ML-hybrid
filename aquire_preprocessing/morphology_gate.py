@@ -1,386 +1,314 @@
-"""
-Morphology-preservation utility gate.
+"""Beat-matched, morphology-preservation gate for offline corrections."""
 
-Implements plan phase 9:
-- Compare corrected signal (View B) against minimal reference (View A)
-- Measure R-peak shift, QRS width change, ST-level deviation, T-wave polarity
-- Compute U_P = artifact_reduction − λ_m·distortion − λ_f·failure − λ_t·time
-- Reject correction if U_P < 0 → fall back to View A
-"""
+from __future__ import annotations
 
-import logging
 import time
 from dataclasses import dataclass, field
-from typing import List, Optional, Tuple
+from typing import Dict, List, Optional, Tuple
 
 import numpy as np
-from scipy.signal import find_peaks
+from scipy.signal import find_peaks, welch
 
-from .config import MORPHOLOGY, NUM_LEADS, CANONICAL_LEAD_ORDER
+from .config import CANONICAL_LEAD_ORDER, MORPHOLOGY, NUM_LEADS
+from .contracts import GateState
 
-logger = logging.getLogger(__name__)
-
-
-# ---------------------------------------------------------------------------
-# Morphology measurement results
-# ---------------------------------------------------------------------------
 
 @dataclass
 class MorphologyMetrics:
-    """Per-lead morphology comparison between View A and View B."""
     lead_name: str
     rpeak_shift_samples: float = 0.0
     qrs_width_change_ms: float = 0.0
     qrs_amplitude_change_mv: float = 0.0
     st_level_shift_mv: float = 0.0
     twave_polarity_preserved: bool = True
+    waveform_correlation_min: float = 1.0
+    beat_count_a: int = 0
+    beat_count_b: int = 0
+    matched_beats: int = 0
+    state: str = GateState.PASS.value
     passed: bool = True
     violations: List[str] = field(default_factory=list)
 
 
 @dataclass
 class GateResult:
-    """Result of the morphology-preservation gate for a record."""
     ecg_id: int
+    state: str = GateState.PASS.value
     gate_passed: bool = True
     utility_score: float = 0.0
     artifact_reduction: float = 0.0
     morphology_distortion: float = 0.0
-    per_lead_metrics: dict = field(default_factory=dict)  # lead → MorphologyMetrics
+    per_lead_metrics: Dict[str, MorphologyMetrics] = field(default_factory=dict)
     processing_time_ms: float = 0.0
     reason: str = ""
 
 
-# ---------------------------------------------------------------------------
-# R-peak detection (simple amplitude-based for QC purposes)
-# ---------------------------------------------------------------------------
+def _robust_scale(x: np.ndarray) -> float:
+    med = np.median(x)
+    mad = np.median(np.abs(x - med))
+    return max(1.4826 * mad, float(np.std(x)) * 0.25, 1e-6)
 
-def _detect_r_peaks(
-    lead_signal: np.ndarray,
-    fs: int = 100,
-) -> np.ndarray:
-    """Detect R-peak locations in a single lead.
 
-    Uses scipy's find_peaks with physiological constraints.
-    """
-    # Minimum distance between peaks: ~200 ms (300 BPM max)
-    min_distance = int(0.2 * fs)
-
-    # Height threshold: use adaptive threshold based on signal
-    signal_std = np.std(lead_signal)
-    height_threshold = 0.5 * signal_std  # half a standard deviation
-
-    peaks, _ = find_peaks(
-        lead_signal,
-        distance=min_distance,
-        height=height_threshold,
+def _detect_r_peaks(lead_signal: np.ndarray, fs: int = 100) -> np.ndarray:
+    """Polarity-aware detector used for QC, not a diagnostic delineator."""
+    x = np.asarray(lead_signal, dtype=float)
+    if x.size < max(20, fs) or not np.all(np.isfinite(x)):
+        return np.array([], dtype=int)
+    centered = x - np.median(x)
+    envelope = np.abs(centered)
+    prominence = max(0.8 * _robust_scale(centered), 0.02)
+    peaks, props = find_peaks(
+        envelope,
+        distance=max(1, int(0.25 * fs)),
+        prominence=prominence,
     )
-
-    return peaks
-
-
-def _measure_qrs_width(
-    lead_signal: np.ndarray,
-    peak_idx: int,
-    fs: int = 100,
-) -> float:
-    """Estimate QRS width around a detected R-peak.
-
-    Returns width in milliseconds.
-    """
-    # Search window: ±100 ms around the peak
-    window_samples = int(0.1 * fs)
-    start = max(0, peak_idx - window_samples)
-    end = min(len(lead_signal), peak_idx + window_samples)
-
-    segment = lead_signal[start:end]
-    peak_in_segment = peak_idx - start
-
-    # Find QRS onset and offset as the nearest local minima
-    # Left of peak
-    left_segment = segment[:peak_in_segment]
-    if len(left_segment) > 0:
-        left_min_idx = np.argmin(np.abs(left_segment - np.mean(left_segment)))
-        qrs_onset = start + left_min_idx
-    else:
-        qrs_onset = start
-
-    # Right of peak
-    right_segment = segment[peak_in_segment:]
-    if len(right_segment) > 0:
-        right_min_idx = np.argmin(np.abs(right_segment - np.mean(right_segment)))
-        qrs_offset = start + peak_in_segment + right_min_idx
-    else:
-        qrs_offset = end
-
-    width_samples = qrs_offset - qrs_onset
-    width_ms = width_samples / fs * 1000.0
-
-    return width_ms
+    if len(peaks) > 1:
+        # Reject small T-wave candidates relative to the robust peak amplitude.
+        peak_amp = envelope[peaks]
+        threshold = max(np.percentile(peak_amp, 25) * 0.6, prominence)
+        peaks = peaks[peak_amp >= threshold]
+    return peaks.astype(int)
 
 
-def _measure_st_level(
-    lead_signal: np.ndarray,
-    peak_idx: int,
-    fs: int = 100,
-) -> float:
-    """Measure ST-segment level relative to baseline.
-
-    Samples the signal at J-point + 60 ms after the R-peak.
-    """
-    # J-point approximation: ~80 ms after R-peak
-    j_point = peak_idx + int(0.08 * fs)
-    # ST measurement point: J + 60 ms
-    st_point = j_point + int(0.06 * fs)
-
-    if st_point >= len(lead_signal):
-        return 0.0
-
-    # ST level = average of a small window around the ST point
-    window = int(0.02 * fs)  # 20 ms window
-    st_start = max(0, st_point - window)
-    st_end = min(len(lead_signal), st_point + window)
-
-    return float(np.mean(lead_signal[st_start:st_end]))
-
-
-def _measure_twave_polarity(
-    lead_signal: np.ndarray,
-    peak_idx: int,
-    fs: int = 100,
-) -> float:
-    """Determine T-wave polarity (positive value = upright).
-
-    Looks at the signal ~200-350 ms after the R-peak.
-    """
-    t_start = peak_idx + int(0.20 * fs)
-    t_end = peak_idx + int(0.35 * fs)
-
-    if t_end >= len(lead_signal):
-        return 0.0
-
-    t_segment = lead_signal[t_start:t_end]
-    return float(np.mean(t_segment))
+def _multilead_r_peaks(signal: np.ndarray, lead_mask: np.ndarray, fs: int) -> np.ndarray:
+    """Use lead II when reliable, otherwise temporal consensus across leads."""
+    lead_ii = CANONICAL_LEAD_ORDER.index("II")
+    if lead_mask[lead_ii]:
+        preferred = _detect_r_peaks(signal[lead_ii], fs)
+        if len(preferred) >= 3:
+            return preferred
+    detected = [
+        _detect_r_peaks(signal[index], fs)
+        for index in range(NUM_LEADS) if lead_mask[index]
+    ]
+    events = sorted((int(peak), lead) for lead, peaks in enumerate(detected) for peak in peaks)
+    tolerance = max(1, int(round(0.08 * fs)))
+    clusters: List[List[Tuple[int, int]]] = []
+    for peak, lead in events:
+        if not clusters or peak - int(np.median([p for p, _ in clusters[-1]])) > tolerance:
+            clusters.append([(peak, lead)])
+        else:
+            clusters[-1].append((peak, lead))
+    consensus = [
+        int(round(np.median([peak for peak, _ in cluster])))
+        for cluster in clusters if len({lead for _, lead in cluster}) >= 2
+    ]
+    return np.asarray(consensus, dtype=int)
 
 
-# ---------------------------------------------------------------------------
-# Per-lead morphology comparison
-# ---------------------------------------------------------------------------
+def _match_peaks(a: np.ndarray, b: np.ndarray, fs: int) -> List[Tuple[int, int]]:
+    tolerance = max(1, int(round(0.10 * fs)))
+    available = set(range(len(b)))
+    pairs: List[Tuple[int, int]] = []
+    for peak_a in a:
+        if not available:
+            break
+        index = min(available, key=lambda j: abs(int(b[j]) - int(peak_a)))
+        if abs(int(b[index]) - int(peak_a)) <= tolerance:
+            pairs.append((int(peak_a), int(b[index])))
+            available.remove(index)
+    return pairs
+
+
+def _qrs_bounds(signal: np.ndarray, peak: int, fs: int) -> Tuple[int, int]:
+    """Estimate QRS limits from local derivative energy around a peak."""
+    radius = max(2, int(round(0.12 * fs)))
+    start, stop = max(0, peak - radius), min(len(signal), peak + radius + 1)
+    segment = np.asarray(signal[start:stop], dtype=float)
+    if segment.size < 5:
+        return start, stop - 1
+    derivative = np.abs(np.gradient(segment))
+    local_peak = peak - start
+    threshold = max(np.percentile(derivative, 35), derivative.max() * 0.08)
+    left = local_peak
+    while left > 1 and derivative[left] > threshold:
+        left -= 1
+    right = local_peak
+    while right < len(derivative) - 2 and derivative[right] > threshold:
+        right += 1
+    return start + left, start + right
+
+
+def _measure_qrs_width(signal: np.ndarray, peak_idx: int, fs: int = 100) -> float:
+    onset, offset = _qrs_bounds(signal, peak_idx, fs)
+    return (offset - onset) * 1000.0 / fs
+
+
+def _baseline_level(signal: np.ndarray, onset: int, fs: int) -> float:
+    start = max(0, onset - int(round(0.20 * fs)))
+    stop = max(start + 1, onset - int(round(0.08 * fs)))
+    return float(np.median(signal[start:stop]))
+
+
+def _measure_st_level(signal: np.ndarray, peak_idx: int, fs: int = 100) -> float:
+    onset, offset = _qrs_bounds(signal, peak_idx, fs)
+    point = offset + int(round(0.06 * fs))
+    half_window = max(1, int(round(0.01 * fs)))
+    if point + half_window >= len(signal):
+        return float("nan")
+    baseline = _baseline_level(signal, onset, fs)
+    return float(np.mean(signal[point - half_window:point + half_window + 1]) - baseline)
+
+
+def _measure_twave_polarity(signal: np.ndarray, peak_idx: int, fs: int = 100) -> float:
+    onset, offset = _qrs_bounds(signal, peak_idx, fs)
+    start = offset + int(round(0.10 * fs))
+    stop = min(len(signal), offset + int(round(0.40 * fs)))
+    if stop <= start:
+        return float("nan")
+    return float(np.mean(signal[start:stop]) - _baseline_level(signal, onset, fs))
+
+
+def _beat_correlation(a: np.ndarray, b: np.ndarray, pa: int, pb: int, fs: int) -> float:
+    pre, post = int(round(0.20 * fs)), int(round(0.40 * fs))
+    if pa - pre < 0 or pb - pre < 0 or pa + post >= len(a) or pb + post >= len(b):
+        return 1.0
+    wa, wb = a[pa - pre:pa + post], b[pb - pre:pb + post]
+    if np.std(wa) < 1e-8 or np.std(wb) < 1e-8:
+        return 1.0 if np.allclose(wa, wb, atol=1e-6) else 0.0
+    return float(np.corrcoef(wa, wb)[0, 1])
+
 
 def compare_lead_morphology(
     minimal: np.ndarray,
     corrected: np.ndarray,
     lead_name: str,
     fs: int = 100,
+    peaks_minimal: Optional[np.ndarray] = None,
+    peaks_corrected: Optional[np.ndarray] = None,
 ) -> MorphologyMetrics:
-    """Compare morphological features between View A and View B for one lead.
-
-    Parameters
-    ----------
-    minimal : np.ndarray
-        View A (minimal) single-lead signal.
-    corrected : np.ndarray
-        View B (corrected) single-lead signal.
-    lead_name : str
-        Lead name for reporting.
-    fs : int
-        Sampling rate.
-
-    Returns
-    -------
-    MorphologyMetrics
-        Comparison results with pass/fail status.
-    """
     metrics = MorphologyMetrics(lead_name=lead_name)
+    peaks_a = _detect_r_peaks(minimal, fs) if peaks_minimal is None else np.asarray(peaks_minimal, dtype=int)
+    peaks_b = _detect_r_peaks(corrected, fs) if peaks_corrected is None else np.asarray(peaks_corrected, dtype=int)
+    metrics.beat_count_a, metrics.beat_count_b = len(peaks_a), len(peaks_b)
+    pairs = _match_peaks(peaks_a, peaks_b, fs)
+    metrics.matched_beats = len(pairs)
+    if not pairs:
+        metrics.state = GateState.INDETERMINATE.value
+        metrics.passed = False
+        metrics.violations.append("No matched QRS complexes")
+        return metrics
 
-    # --- 1. R-peak location shift ---
-    peaks_a = _detect_r_peaks(minimal, fs)
-    peaks_b = _detect_r_peaks(corrected, fs)
+    shifts, widths, amplitudes, st_shifts, correlations, polarity = [], [], [], [], [], []
+    for pa, pb in pairs:
+        shifts.append(abs(pb - pa))
+        widths.append(abs(_measure_qrs_width(minimal, pa, fs) - _measure_qrs_width(corrected, pb, fs)))
+        oa, xa = _qrs_bounds(minimal, pa, fs)
+        ob, xb = _qrs_bounds(corrected, pb, fs)
+        amp_a = float(np.max(np.abs(minimal[oa:xa + 1] - _baseline_level(minimal, oa, fs))))
+        amp_b = float(np.max(np.abs(corrected[ob:xb + 1] - _baseline_level(corrected, ob, fs))))
+        amplitudes.append(abs(amp_b - amp_a))
+        st_a, st_b = _measure_st_level(minimal, pa, fs), _measure_st_level(corrected, pb, fs)
+        if np.isfinite(st_a) and np.isfinite(st_b):
+            st_shifts.append(abs(st_b - st_a))
+        t_a, t_b = _measure_twave_polarity(minimal, pa, fs), _measure_twave_polarity(corrected, pb, fs)
+        if np.isfinite(t_a) and np.isfinite(t_b) and abs(t_a) > 0.01 and abs(t_b) > 0.01:
+            polarity.append(np.sign(t_a) == np.sign(t_b))
+        correlations.append(_beat_correlation(minimal, corrected, pa, pb, fs))
 
-    if len(peaks_a) > 0 and len(peaks_b) > 0:
-        # Match nearest peaks
-        n_match = min(len(peaks_a), len(peaks_b))
-        shifts = []
-        for i in range(n_match):
-            # Find closest peak in B for each peak in A
-            diffs = np.abs(peaks_b - peaks_a[i])
-            min_shift = np.min(diffs)
-            shifts.append(min_shift)
+    metrics.rpeak_shift_samples = float(max(shifts, default=0))
+    metrics.qrs_width_change_ms = float(max(widths, default=0.0))
+    metrics.qrs_amplitude_change_mv = float(max(amplitudes, default=0.0))
+    metrics.st_level_shift_mv = float(max(st_shifts, default=0.0))
+    metrics.twave_polarity_preserved = all(polarity) if polarity else True
+    metrics.waveform_correlation_min = float(min(correlations, default=1.0))
 
-        max_shift = max(shifts) if shifts else 0
-        metrics.rpeak_shift_samples = float(max_shift)
-
-        if max_shift > MORPHOLOGY.max_rpeak_shift_samples:
-            metrics.passed = False
-            metrics.violations.append(
-                f"R-peak shifted by {max_shift} samples "
-                f"(max: {MORPHOLOGY.max_rpeak_shift_samples})"
-            )
-
-        # --- 2. QRS width change ---
-        if len(peaks_a) > 0 and len(peaks_b) > 0:
-            width_a = _measure_qrs_width(minimal, peaks_a[0], fs)
-            width_b = _measure_qrs_width(corrected, peaks_b[0], fs)
-            width_change = abs(width_b - width_a)
-            metrics.qrs_width_change_ms = width_change
-
-            if width_change > MORPHOLOGY.max_qrs_width_change_ms:
-                metrics.passed = False
-                metrics.violations.append(
-                    f"QRS width changed by {width_change:.1f} ms "
-                    f"(max: {MORPHOLOGY.max_qrs_width_change_ms} ms)"
-                )
-
-        # --- 3. QRS amplitude change ---
-        amp_a = float(np.max(minimal[peaks_a[0] - 2:peaks_a[0] + 3])
-                       if peaks_a[0] >= 2 else np.max(minimal))
-        amp_b = float(np.max(corrected[peaks_b[0] - 2:peaks_b[0] + 3])
-                       if peaks_b[0] >= 2 else np.max(corrected))
-        amp_change = abs(amp_b - amp_a)
-        metrics.qrs_amplitude_change_mv = amp_change
-
-        if amp_change > MORPHOLOGY.max_qrs_amplitude_change_mv:
-            metrics.passed = False
-            metrics.violations.append(
-                f"QRS amplitude changed by {amp_change:.3f} mV "
-                f"(max: {MORPHOLOGY.max_qrs_amplitude_change_mv} mV)"
-            )
-
-        # --- 4. ST-level shift ---
-        st_a = _measure_st_level(minimal, peaks_a[0], fs)
-        st_b = _measure_st_level(corrected, peaks_b[0], fs)
-        st_shift = abs(st_b - st_a)
-        metrics.st_level_shift_mv = st_shift
-
-        if st_shift > MORPHOLOGY.max_st_level_shift_mv:
-            metrics.passed = False
-            metrics.violations.append(
-                f"ST-level shifted by {st_shift:.4f} mV "
-                f"(max: {MORPHOLOGY.max_st_level_shift_mv} mV)"
-            )
-
-        # --- 5. T-wave polarity ---
-        twave_a = _measure_twave_polarity(minimal, peaks_a[0], fs)
-        twave_b = _measure_twave_polarity(corrected, peaks_b[0], fs)
-
-        if MORPHOLOGY.twave_polarity_must_match:
-            polarity_preserved = (twave_a * twave_b) >= 0  # same sign
-            metrics.twave_polarity_preserved = polarity_preserved
-
-            if not polarity_preserved:
-                metrics.passed = False
-                metrics.violations.append(
-                    f"T-wave polarity inverted "
-                    f"(A: {twave_a:.4f}, B: {twave_b:.4f})"
-                )
-
-    else:
-        # Cannot detect peaks: skip morphology checks but flag it
-        metrics.violations.append(
-            f"Could not detect R-peaks (A: {len(peaks_a)}, B: {len(peaks_b)})"
-        )
-
+    max_shift_samples = max(1, int(round(MORPHOLOGY.max_rpeak_shift_ms * fs / 1000.0)))
+    checks = [
+        (metrics.rpeak_shift_samples > max_shift_samples, f"R-peak shift {metrics.rpeak_shift_samples:.0f} samples"),
+        (metrics.qrs_width_change_ms > MORPHOLOGY.max_qrs_width_change_ms, f"QRS width change {metrics.qrs_width_change_ms:.1f} ms"),
+        (metrics.qrs_amplitude_change_mv > MORPHOLOGY.max_qrs_amplitude_change_mv, f"QRS amplitude change {metrics.qrs_amplitude_change_mv:.3f} mV"),
+        (metrics.st_level_shift_mv > MORPHOLOGY.max_st_level_shift_mv, f"ST shift {metrics.st_level_shift_mv:.3f} mV"),
+        (not metrics.twave_polarity_preserved, "T-wave polarity changed"),
+        (metrics.waveform_correlation_min < 0.95, f"beat correlation {metrics.waveform_correlation_min:.3f}"),
+        (abs(len(peaks_a) - len(peaks_b)) > 1, "beat count changed"),
+    ]
+    for failed, message in checks:
+        if failed:
+            metrics.violations.append(message)
+    metrics.passed = not metrics.violations
+    metrics.state = GateState.PASS.value if metrics.passed else GateState.FAIL.value
     return metrics
 
 
-# ---------------------------------------------------------------------------
-# Full morphology gate
-# ---------------------------------------------------------------------------
+def _band_power(signal: np.ndarray, fs: int, low: float, high: float) -> float:
+    values = []
+    for lead in signal:
+        freq, psd = welch(lead, fs=fs, nperseg=min(len(lead), max(128, fs * 2)))
+        mask = (freq >= low) & (freq <= high)
+        values.append(float(np.trapezoid(psd[mask], freq[mask])) if mask.any() else 0.0)
+    return float(np.mean(values))
+
+
+def _artifact_reduction(a: np.ndarray, b: np.ndarray, fs: int) -> float:
+    baseline_before = _band_power(a, fs, 0.01, 0.5)
+    baseline_after = _band_power(b, fs, 0.01, 0.5)
+    reductions = [baseline_before - baseline_after]
+    if fs > 120:
+        for mains in (50.0, 60.0):
+            if mains + 1 < fs / 2:
+                reductions.append(_band_power(a, fs, mains - 1, mains + 1) - _band_power(b, fs, mains - 1, mains + 1))
+    return float(sum(reductions))
+
 
 def evaluate_gate(
     signal_minimal: np.ndarray,
     signal_corrected: np.ndarray,
     ecg_id: int,
     fs: int = 100,
+    lead_mask: Optional[np.ndarray] = None,
 ) -> GateResult:
-    """Evaluate the morphology-preservation gate for a complete 12-lead ECG.
-
-    If the gate fails (U_P < 0), the correction should be rejected
-    and the system falls back to View A (minimal).
-
-    Parameters
-    ----------
-    signal_minimal : np.ndarray
-        View A, float32[12, samples].
-    signal_corrected : np.ndarray
-        View B, float32[12, samples].
-    ecg_id : int
-        Record identifier.
-    fs : int
-        Sampling rate.
-
-    Returns
-    -------
-    GateResult
-        Contains the utility score and per-lead metrics.
-    """
-    start_time = time.time()
-    gate = GateResult(ecg_id=ecg_id)
-
-    # If signals are identical, gate trivially passes
+    start = time.perf_counter()
+    gate = GateResult(ecg_id=int(ecg_id))
     if np.allclose(signal_minimal, signal_corrected, atol=1e-7):
-        gate.gate_passed = True
-        gate.utility_score = 0.0
         gate.reason = "No correction applied (View B == View A)"
-        gate.processing_time_ms = (time.time() - start_time) * 1000
+        gate.processing_time_ms = (time.perf_counter() - start) * 1000
         return gate
 
-    # --- Per-lead morphology comparison ---
-    total_distortion = 0.0
-    n_violations = 0
-
-    for i, lead_name in enumerate(CANONICAL_LEAD_ORDER):
+    if lead_mask is None:
+        lead_mask = np.ones(NUM_LEADS, dtype=bool)
+    reference_a = _multilead_r_peaks(signal_minimal, np.asarray(lead_mask, bool), fs)
+    reference_b = _multilead_r_peaks(signal_corrected, np.asarray(lead_mask, bool), fs)
+    distortion, failures, indeterminate = 0.0, 0, 0
+    for index, lead_name in enumerate(CANONICAL_LEAD_ORDER):
+        if not lead_mask[index]:
+            continue
         metrics = compare_lead_morphology(
-            signal_minimal[i],
-            signal_corrected[i],
-            lead_name,
-            fs,
+            signal_minimal[index], signal_corrected[index], lead_name, fs,
+            peaks_minimal=reference_a, peaks_corrected=reference_b,
         )
         gate.per_lead_metrics[lead_name] = metrics
+        if metrics.state == GateState.INDETERMINATE.value:
+            indeterminate += 1
+        elif not metrics.passed:
+            failures += 1
+        distortion += (
+            metrics.st_level_shift_mv
+            + metrics.qrs_amplitude_change_mv
+            + metrics.qrs_width_change_ms / 100.0
+            + metrics.rpeak_shift_samples / max(fs, 1)
+            + max(0.0, 0.95 - metrics.waveform_correlation_min)
+        )
 
-        if not metrics.passed:
-            n_violations += 1
-            total_distortion += (
-                metrics.st_level_shift_mv
-                + metrics.rpeak_shift_samples * 0.1
-                + metrics.qrs_width_change_ms * 0.01
-                + metrics.qrs_amplitude_change_mv
-            )
-
-    gate.morphology_distortion = total_distortion
-
-    # --- Artifact reduction estimate ---
-    # Compare noise levels before and after correction
-    diff = signal_corrected - signal_minimal
-    gate.artifact_reduction = float(np.std(diff))
-
-    # --- Processing time ---
-    elapsed_ms = (time.time() - start_time) * 1000
-    gate.processing_time_ms = elapsed_ms
-
-    # --- Compute utility score ---
-    # U_P = artifact_reduction − λ_m·distortion − λ_f·failure_rate − λ_t·time
-    failure_rate = n_violations / max(NUM_LEADS, 1)
+    gate.artifact_reduction = _artifact_reduction(signal_minimal, signal_corrected, fs)
+    gate.morphology_distortion = float(distortion)
+    evaluated = max(1, len(gate.per_lead_metrics))
     gate.utility_score = (
         gate.artifact_reduction
-        - MORPHOLOGY.lambda_m * total_distortion
-        - MORPHOLOGY.lambda_f * failure_rate
-        - MORPHOLOGY.lambda_t * (elapsed_ms / 1000.0)
+        - MORPHOLOGY.lambda_m * distortion
+        - MORPHOLOGY.lambda_f * ((failures + indeterminate) / evaluated)
     )
-
-    # --- Gate decision ---
-    if gate.utility_score < 0 or n_violations > 0:
+    if indeterminate:
+        gate.state = GateState.INDETERMINATE.value
         gate.gate_passed = False
-        gate.reason = (
-            f"REJECTED: U_P={gate.utility_score:.4f}, "
-            f"{n_violations} lead(s) with morphology violations"
-        )
-        logger.warning(
-            "ecg_id %d: Morphology gate REJECTED correction — %s",
-            ecg_id, gate.reason,
-        )
+        gate.reason = f"INDETERMINATE: {indeterminate} lead(s) could not be validated"
+    elif failures or gate.artifact_reduction < -1e-9:
+        gate.state = GateState.FAIL.value
+        gate.gate_passed = False
+        gate.reason = f"REJECTED: {failures} morphology violation(s); utility={gate.utility_score:.6g}"
     else:
+        gate.state = GateState.PASS.value
         gate.gate_passed = True
-        gate.reason = f"ACCEPTED: U_P={gate.utility_score:.4f}"
-
+        gate.reason = f"ACCEPTED: morphology preserved; utility={gate.utility_score:.6g}"
+    gate.processing_time_ms = (time.perf_counter() - start) * 1000
     return gate

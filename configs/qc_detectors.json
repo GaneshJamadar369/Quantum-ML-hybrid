@@ -1,0 +1,20 @@
+[
+  {
+    "name": "baseline_wander",
+    "score": "baseline_wander_ratio",
+    "annotations": ["baseline_drift"],
+    "minimum_sensitivity": 0.90
+  },
+  {
+    "name": "high_frequency_noise",
+    "score": "hf_noise_ratio",
+    "annotations": ["static_noise", "burst_noise"],
+    "minimum_sensitivity": 0.90
+  },
+  {
+    "name": "electrode_amplitude_problem",
+    "score": "amplitude_invalid_score",
+    "annotations": ["electrodes_problems"],
+    "minimum_sensitivity": 0.90
+  }
+]

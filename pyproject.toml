@@ -1,0 +1,34 @@
+[build-system]
+requires = ["setuptools==75.8.2", "wheel==0.45.1"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "aquire-med"
+version = "0.2.0"
+description = "Research-grade PTB-XL preprocessing and classical baselines for MI-pattern detection"
+requires-python = ">=3.11,<3.13"
+dependencies = [
+  "numpy==2.5.3",
+  "pandas==2.2.3",
+  "scipy==1.18.1",
+  "wfdb==4.3.0",
+  "scikit-learn==1.9.1",
+  "h5py==3.13.0",
+]
+
+[project.optional-dependencies]
+research = [
+  "torch==2.6.0",
+  "neurokit2==0.2.10",
+  "xgboost==3.0.0",
+  "pyarrow==19.0.1",
+  "matplotlib==3.10.1",
+]
+test = ["pytest==8.3.5", "pytest-cov==6.0.0"]
+
+[tool.pytest.ini_options]
+testpaths = ["tests"]
+addopts = "-ra"
+
+[tool.setuptools.packages.find]
+include = ["aquire_preprocessing*"]
