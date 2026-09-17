@@ -9,7 +9,7 @@ import sys
 import time
 
 
-CODE_COMMIT = "1e8aef0b90559ff97fa9d9d49e93773959d3ffba"
+CODE_COMMIT = "f5600339218d17b420821ed8025f633168039ddb"
 REPOSITORY = "https://github.com/GaneshJamadar369/Quantum-ML-hybrid.git"
 
 
