@@ -5,6 +5,7 @@ __pycache__/
 .mypy_cache/
 .ruff_cache/
 .venv/
+*.egg-info/
 data/
 artifacts/
 *.h5
@@ -12,4 +13,3 @@ artifacts/
 *.npy
 *.npz
 *.parquet
-

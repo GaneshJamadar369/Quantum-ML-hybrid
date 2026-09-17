@@ -49,7 +49,7 @@ def extract_deployable_features(
     values.update({
         key: np.nan for key in [
             "pr_interval_ms", "qrs_duration_ms", "qt_interval_ms",
-            "qtc_bazett_ms", "qtc_fridericia_ms",
+            "qtc_bazett_ms", "qtc_fridericia_ms", "qtc_framingham_ms",
         ]
     })
 
@@ -134,6 +134,7 @@ def extract_deployable_features(
                     rr_seconds = rr / 1000.0
                     values["qtc_bazett_ms"] = float(qt / np.sqrt(rr_seconds))
                     values["qtc_fridericia_ms"] = float(qt / np.cbrt(rr_seconds))
+                    values["qtc_framingham_ms"] = float(qt + 154.0 * (1.0 - rr_seconds))
     except ImportError:
         failures.append("neurokit2_not_installed")
     except Exception as exc:

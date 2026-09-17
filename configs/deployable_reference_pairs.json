@@ -1,0 +1,15 @@
+{
+  "rr_median_ms": "ref_ecgdeli__RR_Mean_Global",
+  "pr_interval_ms": "ref_ecgdeli__PR_Int_Global",
+  "qrs_duration_ms": "ref_ecgdeli__QRS_Dur_Global",
+  "qt_interval_ms": "ref_ecgdeli__QT_Int_Global",
+  "qtc_framingham_ms": "ref_ecgdeli__QT_IntFramingham_Global",
+  "i__r_amp_mv": "ref_ecgdeli__R_Amp_I",
+  "ii__r_amp_mv": "ref_ecgdeli__R_Amp_II",
+  "v1__r_amp_mv": "ref_ecgdeli__R_Amp_V1",
+  "v2__r_amp_mv": "ref_ecgdeli__R_Amp_V2",
+  "v3__r_amp_mv": "ref_ecgdeli__R_Amp_V3",
+  "v4__r_amp_mv": "ref_ecgdeli__R_Amp_V4",
+  "v5__r_amp_mv": "ref_ecgdeli__R_Amp_V5",
+  "v6__r_amp_mv": "ref_ecgdeli__R_Amp_V6"
+}

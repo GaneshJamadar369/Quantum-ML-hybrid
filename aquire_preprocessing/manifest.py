@@ -262,7 +262,7 @@ def detect_exact_duplicates(hashes: Dict[int, str]) -> List[Tuple[int, int]]:
 
 
 def build_manifest(
-    join_features: bool = True,
+    join_features: bool = False,
     save: bool = True,
     verify_release: bool = True,
 ) -> pd.DataFrame:

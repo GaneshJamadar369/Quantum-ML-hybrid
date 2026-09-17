@@ -12,6 +12,8 @@ source .venv/bin/activate
 pip install -e '.[research,test]'
 ```
 
+On Apple Silicon, XGBoost also requires `brew install libomp`.
+
 Set the dataset roots explicitly:
 
 ```bash
