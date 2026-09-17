@@ -462,12 +462,12 @@ def _feature_evidence(feature: str, series: pd.Series, labels: np.ndarray) -> di
         p_value = float(test.pvalue)
         delta = float(2.0 * test.statistic / (len(positive) * len(negative)) - 1.0)
         rng = np.random.default_rng(zlib.crc32(feature.encode("utf-8")))
-        positive_pool = rng.choice(positive, min(len(positive), 1500), replace=False)
-        negative_pool = rng.choice(negative, min(len(negative), 1500), replace=False)
+        positive_sample_size = min(len(positive), 1500)
+        negative_sample_size = min(len(negative), 1500)
         bootstrapped = []
         for _ in range(100):
-            pos = rng.choice(positive_pool, len(positive_pool), replace=True)
-            neg = rng.choice(negative_pool, len(negative_pool), replace=True)
+            pos = rng.choice(positive, positive_sample_size, replace=True)
+            neg = rng.choice(negative, negative_sample_size, replace=True)
             statistic = mannwhitneyu(pos, neg, alternative="two-sided").statistic
             bootstrapped.append(2.0 * statistic / (len(pos) * len(neg)) - 1.0)
         delta_ci_low, delta_ci_high = np.percentile(bootstrapped, [2.5, 97.5])
@@ -894,7 +894,7 @@ def run_feature_evidence_gate(
         "fold_9_accessed": False,
         "fold_10_accessed": False,
         "ready_for_automatic_feature_deletion": False,
-        "next_required_action": "clinical review followed by fold-local group ablation",
+        "next_required_action": "clinical review, repair invalid measurements, then freeze the approved feature manifest",
     }
     _atomic_json(summary, output_dir / "feature_evidence_summary.json")
     return summary
