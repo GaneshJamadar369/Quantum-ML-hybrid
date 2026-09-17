@@ -46,6 +46,12 @@ def extract_deployable_features(
     lead_mask = sample_mask.any(axis=1) if lead_mask is None else np.asarray(lead_mask, bool)
     values: Dict[str, float] = {}
     failures: List[str] = []
+    values.update({
+        key: np.nan for key in [
+            "pr_interval_ms", "qrs_duration_ms", "qt_interval_ms",
+            "qtc_bazett_ms", "qtc_fridericia_ms",
+        ]
+    })
 
     preferred = CANONICAL_LEAD_ORDER.index("II")
     candidates = [preferred] + [i for i in range(len(CANONICAL_LEAD_ORDER)) if i != preferred]
@@ -122,6 +128,12 @@ def extract_deployable_features(
                     b = np.asarray(waves.get(right, []), dtype=float)
                     valid = np.isfinite(a) & np.isfinite(b) & (b > a)
                     values[feature] = float(np.median((b[valid] - a[valid]) * 1000.0 / fs)) if valid.any() else np.nan
+                qt = values["qt_interval_ms"]
+                rr = values.get("rr_median_ms", np.nan)
+                if np.isfinite(qt) and np.isfinite(rr) and rr > 0:
+                    rr_seconds = rr / 1000.0
+                    values["qtc_bazett_ms"] = float(qt / np.sqrt(rr_seconds))
+                    values["qtc_fridericia_ms"] = float(qt / np.cbrt(rr_seconds))
     except ImportError:
         failures.append("neurokit2_not_installed")
     except Exception as exc:
