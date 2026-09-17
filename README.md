@@ -27,7 +27,7 @@ export AQUIRE_OUTPUT_ROOT=/path/to/aquire-artifacts
 1. Run `python run_gates.py --visual-audit` to verify the release, file checksums, all waveform pairs, phenotype, patient folds, cohorts and PTB-XL+ alignment.
 2. Run `python run_pipeline.py --role development` to process folds 1–8. The normal path cannot read Fold 10.
 3. Calibrate QC detectors from development-fold annotations with `python run_qc_calibration.py --metrics ... --spec configs/qc_detectors.json`.
-4. Fit fold-local waveform normalizers from the development HDF5 artifact.
+4. Fit fold-local waveform normalizers with `python run_normalization.py --hdf5 "$AQUIRE_OUTPUT_ROOT/primary_development_100hz.h5"`.
 5. Review the G0–G5 artifacts and change every pending gate in [PLAN.md](PLAN.md) only after its acceptance evidence exists.
 6. Run `python run_classical_baselines.py --features ... --metadata ... --output ...` only after G0–G5 pass.
 
