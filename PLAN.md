@@ -23,6 +23,9 @@ This file is the operational source of truth. A checked **implementation** item 
 - [x] Development-only augmentation boundary is enforced.
 - [x] Classical tabular OOF baselines and a 1D ResNet architecture are implemented.
 - [x] AUPRC-first champion rule with Brier score and inference-cost tie breakers is implemented.
+- [x] Pre/post-extraction feature evidence gate and clinical-composite generator are implemented.
+- [x] Feature-level effect sizes, FDR, mutual information, redundancy and fold stability are implemented.
+- [x] Patient-bootstrap OOF ablation for clinical feature groups is implemented.
 
 ## G0–G5 evidence gates
 
@@ -32,6 +35,16 @@ This file is the operational source of truth. A checked **implementation** item 
 - [ ] **G3 — PTB-XL+ deployability.** Generate `ptbxl_plus_audit.json`, coverage tables and `deployable_vs_reference.csv`; approve the allowlist and commercial benchmark-only boundary.
 - [ ] **G4 — QC and morphology.** Generate QC operating curves, threshold report, morphology table and visual audit; review false positives. Threshold choice must not use model accuracy.
 - [ ] **G5 — reproducibility and leakage.** Generate fold-local normalizers, package/Kaggle parity report and passing real-data test report. Fold 10 access tests must pass.
+
+## G5F — feature evidence gate (required before Phase 6)
+
+- [ ] Generate the development-cohort and raw-waveform statistical audits.
+- [ ] Review extractor failures and local-versus-ECGDeli measurement agreement.
+- [ ] Review every feature's coverage, effect size, FDR, mutual information and fold stability.
+- [ ] Resolve every `REPAIR_OR_EXCLUDE`, `EXCLUDE_NONINFORMATIVE` and `REVIEW_UNSTABLE` recommendation.
+- [ ] Review rho ≥ 0.95 redundancy clusters using reliability and clinical interpretability.
+- [ ] Accept clinical composites only if patient-bootstrap OOF ablation supports them.
+- [ ] Freeze and sign the final approved feature manifest.
 
 ## Phase 6 — blocked until G0–G5 pass
 
