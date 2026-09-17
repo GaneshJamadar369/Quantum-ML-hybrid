@@ -1,0 +1,18 @@
+{
+  "id": "swayamjeetbhagat4/aquire-preprocessing",
+  "title": "AQUIRE-Med Preprocessing Pipeline",
+  "code_file": "kaggle_cloud_runner.py",
+  "language": "python",
+  "kernel_type": "script",
+  "is_private": "true",
+  "enable_gpu": "false",
+  "enable_tpu": "false",
+  "enable_internet": "true",
+  "dataset_sources": [
+    "garethwmch/ptb-xl-1-0-3",
+    "antonymgitau/ptb-xl-a-comprehensive-ecg-feature-dataset"
+  ],
+  "competition_sources": [],
+  "kernel_sources": [],
+  "model_sources": []
+}

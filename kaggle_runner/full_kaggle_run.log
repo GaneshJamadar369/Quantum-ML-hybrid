@@ -1,0 +1,386 @@
+
+===========================================================================
+  AQUIRE-Med Cloud Preprocessing & Verification Pipeline
+===========================================================================
+Python: 3.12.13 (main, Mar  4 2026, 09:23:07) [GCC 11.4.0]
+CWD:    /kaggle/working
+
+===========================================================================
+  STEP 1: Discovering Datasets in /kaggle/input
+===========================================================================
+Listing /kaggle/input:
+  - /kaggle/input/datasets
+
+✓ Found PTB-XL Root:  /kaggle/input/datasets/garethwmch/ptb-xl-1-0-3/ptb-xl-a-large-publicly-available-electrocardiography-dataset-1.0.3
+✓ Found PTB-XL+ Root: /kaggle/input/datasets/antonymgitau/ptb-xl-a-comprehensive-ecg-feature-dataset/ptb-xl-a-comprehensive-electrocardiographic-feature-dataset-1.0.1
+✓ Output Directory:   /kaggle/working/aquire-artifacts
+
+===========================================================================
+  STEP 2: Syncing Code from GitHub
+===========================================================================
+
+>>> Running: git clone https://github.com/GaneshJamadar369/Quantum-ML-hybrid.git /kaggle/working/Quantum-ML-hybrid
+Cloning into '/kaggle/working/Quantum-ML-hybrid'...
+
+[Exit code: 0 | Duration: 1.0s]
+
+===========================================================================
+  STEP 3: Installing Requirements & Package
+===========================================================================
+
+>>> Running: /usr/bin/python3 -m pip install -q wfdb h5py scipy scikit-learn xgboost matplotlib
+   ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━ 163.9/163.9 kB 3.0 MB/s eta 0:00:00
+
+[Exit code: 0 | Duration: 8.0s]
+
+>>> Running: /usr/bin/python3 -m pip install -q -e /kaggle/working/Quantum-ML-hybrid
+     ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━ 89.9/89.9 kB 2.6 MB/s eta 0:00:00
+     ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━ 62.4/62.4 kB 2.9 MB/s eta 0:00:00
+   ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━ 4.9/4.9 MB 44.4 MB/s eta 0:00:00
+   ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━ 16.7/16.7 MB 74.5 MB/s eta 0:00:00
+   ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━ 12.7/12.7 MB 84.7 MB/s eta 0:00:00
+   ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━ 9.2/9.2 MB 91.1 MB/s eta 0:00:00
+   ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━ 35.3/35.3 MB 49.2 MB/s eta 0:00:00
+   ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━ 163.8/163.8 kB 6.5 MB/s eta 0:00:00
+ERROR: pip's dependency resolver does not currently take into account all the packages that are installed. This behaviour is the source of the following dependency conflicts.
+bigframes 2.39.0 requires google-cloud-bigquery-storage<3.0.0,>=2.30.0, which is not installed.
+ydata-profiling 4.18.4 requires numpy<2.4,>=1.22, but you have numpy 2.5.3 which is incompatible.
+ydata-profiling 4.18.4 requires scipy<1.17,>=1.8, but you have scipy 1.18.1 which is incompatible.
+google-colab 1.0.0 requires jupyter-server==2.14.0, but you have jupyter-server 2.12.5 which is incompatible.
+google-colab 1.0.0 requires pandas==2.2.2, but you have pandas 2.2.3 which is incompatible.
+dopamine-rl 4.1.2 requires gym<=0.25.2, but you have gym 0.26.2 which is incompatible.
+moviepy 1.0.3 requires decorator<5.0,>=4.0.2, but you have decorator 5.3.1 which is incompatible.
+numba 0.60.0 requires numpy<2.1,>=1.22, but you have numpy 2.5.3 which is incompatible.
+sklearn-compat 0.1.5 requires scikit-learn<1.9,>=1.2, but you have scikit-learn 1.9.1 which is incompatible.
+
+[Exit code: 0 | Duration: 45.1s]
+
+===========================================================================
+  STEP 4: Running G0-G3 Gates & Visual Audit
+===========================================================================
+
+>>> Running: /usr/bin/python3 run_gates.py --visual-audit
+ecg_id 381 routed to FAIL: ['3 leads failed quality checks']
+ecg_id 655 routed to FAIL: ['3 leads failed quality checks']
+
+[Exit code: 0 | Duration: 123.3s]
+
+===========================================================================
+  STEP 5: Running Preprocessing Pipeline (Folds 1-8)
+===========================================================================
+
+>>> Running: /usr/bin/python3 run_pipeline.py --role development
+{
+  "environment": "kaggle",
+  "ptbxl_root": "/kaggle/input/datasets/garethwmch/ptb-xl-1-0-3/ptb-xl-a-large-publicly-available-electrocardiography-dataset-1.0.3",
+  "ptbxl_plus_root": "/kaggle/input/datasets/antonymgitau/ptb-xl-a-comprehensive-ecg-feature-dataset/ptb-xl-a-comprehensive-electrocardiographic-feature-dataset-1.0.1",
+  "output_root": "/kaggle/working/aquire-artifacts",
+  "sampling_rate": 100
+}
+Dataset identity: {
+  "declared_version": "1.0.3",
+  "record_count": 21799,
+  "unique_ecg_ids": 21799,
+  "unique_patients": 18869,
+  "folds": [
+    1,
+    2,
+    3,
+    4,
+    5,
+    6,
+    7,
+    8,
+    9,
+    10
+  ],
+  "database_sha256": "7600de9c1b27d181d850b3c6038a35d7c3ddb6bb33b702e3a20252a6859d216b",
+  "statements_sha256": "ad05b0b1fcae83bb1230755ad9cfc7c96f303feddc08a4a9ad5bdc9ca63bac8f",
+  "checksum_manifest": "/kaggle/input/datasets/garethwmch/ptb-xl-1-0-3/ptb-xl-a-large-publicly-available-electrocardiography-dataset-1.0.3/SHA256SUMS.txt",
+  "checksum_manifest_verified": true,
+  "verified": true,
+  "errors": []
+}
+2026-09-17 09:35:18,271 [WARNING] aquire_preprocessing.router: ecg_id 381 routed to FAIL: ['3 leads failed quality checks']
+2026-09-17 09:35:43,565 [WARNING] aquire_preprocessing.router: ecg_id 655 routed to FAIL: ['3 leads failed quality checks']
+2026-09-17 09:36:01,062 [WARNING] aquire_preprocessing.router: ecg_id 801 routed to FAIL: ['4 leads failed quality checks']
+2026-09-17 09:36:20,604 [WARNING] aquire_preprocessing.router: ecg_id 956 routed to FAIL: ['3 leads failed quality checks']
+2026-09-17 09:36:42,775 [WARNING] aquire_preprocessing.router: ecg_id 1143 routed to FAIL: ['4 leads failed quality checks']
+2026-09-17 09:37:03,862 [WARNING] aquire_preprocessing.router: ecg_id 1339 routed to FAIL: ['4 leads failed quality checks']
+2026-09-17 09:37:51,102 [WARNING] aquire_preprocessing.router: ecg_id 1772 routed to FAIL: ['3 leads failed quality checks']
+2026-09-17 09:38:04,390 [WARNING] aquire_preprocessing.router: ecg_id 1890 routed to FAIL: ['6 leads failed quality checks']
+2026-09-17 09:38:16,980 [WARNING] aquire_preprocessing.router: ecg_id 2009 routed to FAIL: ['3 leads failed quality checks']
+2026-09-17 09:39:22,476 [WARNING] aquire_preprocessing.router: ecg_id 2597 routed to FAIL: ['3 leads failed quality checks']
+2026-09-17 09:39:31,224 [WARNING] aquire_preprocessing.router: ecg_id 2687 routed to FAIL: ['6 leads failed quality checks']
+2026-09-17 09:39:46,666 [WARNING] aquire_preprocessing.router: ecg_id 2826 routed to FAIL: ['3 leads failed quality checks']
+2026-09-17 09:40:01,314 [WARNING] aquire_preprocessing.router: ecg_id 2991 routed to FAIL: ['3 leads failed quality checks']
+2026-09-17 09:40:13,498 [WARNING] aquire_preprocessing.router: ecg_id 3090 routed to FAIL: ['5 leads failed quality checks']
+2026-09-17 09:40:15,063 [WARNING] aquire_preprocessing.router: ecg_id 3098 routed to FAIL: ['5 leads failed quality checks']
+2026-09-17 09:40:22,848 [WARNING] aquire_preprocessing.router: ecg_id 3167 routed to FAIL: ['5 leads failed quality checks']
+2026-09-17 09:40:33,756 [WARNING] aquire_preprocessing.router: ecg_id 3252 routed to FAIL: ['3 leads failed quality checks']
+2026-09-17 09:40:43,320 [WARNING] aquire_preprocessing.router: ecg_id 3334 routed to FAIL: ['3 leads failed quality checks']
+2026-09-17 09:40:44,615 [WARNING] aquire_preprocessing.router: ecg_id 3348 routed to FAIL: ['5 leads failed quality checks']
+2026-09-17 09:40:52,547 [WARNING] aquire_preprocessing.router: ecg_id 3429 routed to FAIL: ['3 leads failed quality checks']
+2026-09-17 09:40:57,175 [WARNING] aquire_preprocessing.router: ecg_id 3462 routed to FAIL: ['3 leads failed quality checks']
+2026-09-17 09:41:30,947 [WARNING] aquire_preprocessing.router: ecg_id 3825 routed to FAIL: ['3 leads failed quality checks']
+2026-09-17 09:41:47,152 [WARNING] aquire_preprocessing.router: ecg_id 3985 routed to FAIL: ['3 leads failed quality checks']
+2026-09-17 09:43:07,177 [WARNING] aquire_preprocessing.router: ecg_id 4720 routed to FAIL: ['3 leads failed quality checks']
+2026-09-17 09:43:09,645 [WARNING] aquire_preprocessing.router: ecg_id 4738 routed to FAIL: ['5 leads failed quality checks']
+2026-09-17 09:44:28,226 [WARNING] aquire_preprocessing.router: ecg_id 5697 routed to FAIL: ['3 leads failed quality checks']
+2026-09-17 09:44:29,105 [WARNING] aquire_preprocessing.router: ecg_id 5710 routed to FAIL: ['3 leads failed quality checks']
+2026-09-17 09:44:30,039 [WARNING] aquire_preprocessing.router: ecg_id 5724 routed to FAIL: ['4 leads failed quality checks']
+2026-09-17 09:44:45,715 [WARNING] aquire_preprocessing.router: ecg_id 5875 routed to FAIL: ['3 leads failed quality checks']
+2026-09-17 09:44:50,480 [WARNING] aquire_preprocessing.router: ecg_id 5939 routed to FAIL: ['3 leads failed quality checks']
+2026-09-17 09:45:38,059 [WARNING] aquire_preprocessing.router: ecg_id 6393 routed to FAIL: ['3 leads failed quality checks']
+2026-09-17 09:45:55,746 [WARNING] aquire_preprocessing.router: ecg_id 6545 routed to FAIL: ['4 leads failed quality checks']
+2026-09-17 09:46:33,243 [WARNING] aquire_preprocessing.router: ecg_id 6915 routed to FAIL: ['6 leads failed quality checks']
+2026-09-17 09:47:26,166 [WARNING] aquire_preprocessing.router: ecg_id 7568 routed to FAIL: ['3 leads failed quality checks']
+2026-09-17 09:47:33,210 [WARNING] aquire_preprocessing.router: ecg_id 7662 routed to FAIL: ['3 leads failed quality checks']
+2026-09-17 09:48:27,735 [WARNING] aquire_preprocessing.router: ecg_id 8227 routed to FAIL: ['3 leads failed quality checks']
+2026-09-17 09:48:31,526 [WARNING] aquire_preprocessing.router: ecg_id 8286 routed to FAIL: ['3 leads failed quality checks']
+2026-09-17 09:48:54,604 [WARNING] aquire_preprocessing.router: ecg_id 8485 routed to FAIL: ['3 leads failed quality checks']
+2026-09-17 09:49:02,827 [WARNING] aquire_preprocessing.router: ecg_id 8547 routed to FAIL: ['4 leads failed quality checks']
+2026-09-17 09:49:58,105 [WARNING] aquire_preprocessing.router: ecg_id 9118 routed to FAIL: ['4 leads failed quality checks']
+2026-09-17 09:50:56,646 [WARNING] aquire_preprocessing.router: ecg_id 9836 routed to FAIL: ['3 leads failed quality checks']
+2026-09-17 09:51:45,799 [WARNING] aquire_preprocessing.router: ecg_id 10338 routed to FAIL: ['3 leads failed quality checks']
+2026-09-17 09:52:01,625 [WARNING] aquire_preprocessing.router: ecg_id 10492 routed to FAIL: ['3 leads failed quality checks']
+2026-09-17 09:52:59,161 [WARNING] aquire_preprocessing.router: ecg_id 11082 routed to FAIL: ['5 leads failed quality checks']
+2026-09-17 09:53:58,638 [WARNING] aquire_preprocessing.router: ecg_id 11813 routed to FAIL: ['5 leads failed quality checks']
+2026-09-17 09:54:15,236 [WARNING] aquire_preprocessing.router: ecg_id 12010 routed to FAIL: ['6 leads failed quality checks']
+2026-09-17 09:55:28,197 [WARNING] aquire_preprocessing.router: ecg_id 12722 routed to FAIL: ['3 leads failed quality checks']
+2026-09-17 09:55:29,042 [WARNING] aquire_preprocessing.router: ecg_id 12728 routed to FAIL: ['3 leads failed quality checks']
+2026-09-17 09:56:26,940 [WARNING] aquire_preprocessing.router: ecg_id 13415 routed to FAIL: ['4 leads failed quality checks']
+2026-09-17 09:56:48,720 [WARNING] aquire_preprocessing.router: ecg_id 13716 routed to FAIL: ['4 leads failed quality checks']
+2026-09-17 09:56:55,307 [WARNING] aquire_preprocessing.router: ecg_id 13784 routed to FAIL: ['4 leads failed quality checks']
+2026-09-17 09:56:58,846 [WARNING] aquire_preprocessing.router: ecg_id 13824 routed to FAIL: ['3 leads failed quality checks']
+2026-09-17 09:58:15,579 [WARNING] aquire_preprocessing.router: ecg_id 14579 routed to FAIL: ['3 leads failed quality checks']
+2026-09-17 09:58:18,539 [WARNING] aquire_preprocessing.router: ecg_id 14619 routed to FAIL: ['4 leads failed quality checks']
+2026-09-17 09:58:23,328 [WARNING] aquire_preprocessing.router: ecg_id 14668 routed to FAIL: ['3 leads failed quality checks']
+2026-09-17 09:58:50,034 [WARNING] aquire_preprocessing.router: ecg_id 14936 routed to FAIL: ['3 leads failed quality checks']
+2026-09-17 09:59:19,719 [WARNING] aquire_preprocessing.router: ecg_id 15287 routed to FAIL: ['3 leads failed quality checks']
+2026-09-17 09:59:51,772 [WARNING] aquire_preprocessing.router: ecg_id 15719 routed to FAIL: ['3 leads failed quality checks']
+2026-09-17 09:59:58,051 [WARNING] aquire_preprocessing.router: ecg_id 15804 routed to FAIL: ['3 leads failed quality checks']
+2026-09-17 10:00:19,248 [WARNING] aquire_preprocessing.router: ecg_id 16030 routed to FAIL: ['3 leads failed quality checks']
+2026-09-17 10:00:35,910 [WARNING] aquire_preprocessing.router: ecg_id 16203 routed to FAIL: ['3 leads failed quality checks']
+2026-09-17 10:00:46,123 [WARNING] aquire_preprocessing.router: ecg_id 16314 routed to FAIL: ['3 leads failed quality checks']
+2026-09-17 10:01:20,724 [WARNING] aquire_preprocessing.router: ecg_id 16635 routed to FAIL: ['6 leads failed quality checks']
+2026-09-17 10:01:21,503 [WARNING] aquire_preprocessing.router: ecg_id 16641 routed to FAIL: ['4 leads failed quality checks']
+2026-09-17 10:01:40,307 [WARNING] aquire_preprocessing.router: ecg_id 16837 routed to FAIL: ['3 leads failed quality checks']
+2026-09-17 10:01:56,551 [WARNING] aquire_preprocessing.router: ecg_id 17009 routed to FAIL: ['3 leads failed quality checks']
+2026-09-17 10:03:10,139 [WARNING] aquire_preprocessing.router: ecg_id 17896 routed to FAIL: ['3 leads failed quality checks']
+2026-09-17 10:03:43,636 [WARNING] aquire_preprocessing.router: ecg_id 18230 routed to FAIL: ['4 leads failed quality checks']
+2026-09-17 10:04:54,473 [WARNING] aquire_preprocessing.router: ecg_id 19122 routed to FAIL: ['4 leads failed quality checks']
+2026-09-17 10:05:04,567 [WARNING] aquire_preprocessing.router: ecg_id 19261 routed to FAIL: ['5 leads failed quality checks']
+Pipeline summary: {
+  "total_requested": 17418,
+  "total_completed": 17418,
+  "structural_failures": 0,
+  "primary": 17348,
+  "quarantine": 70,
+  "gate_rejections": 1793,
+  "seconds": 2011.5167110839998,
+  "records_per_second": 8.659137606971953,
+  "purpose": "preprocessing_tuning"
+}
+
+[Exit code: 0 | Duration: 2072.3s]
+
+===========================================================================
+  STEP 6: Running QC Calibration
+===========================================================================
+
+>>> Running: /usr/bin/python3 run_qc_calibration.py --metrics /kaggle/working/aquire-artifacts/qc_metrics_development.csv --spec configs/qc_detectors.json
+/kaggle/working/Quantum-ML-hybrid/run_qc_calibration.py:20: DtypeWarning: Columns (22) have mixed types. Specify dtype option on import or set low_memory=False.
+  frame = pd.read_csv(args.metrics)
+
+[Exit code: 0 | Duration: 33.0s]
+
+===========================================================================
+  STEP 7: Fitting Waveform Normalization
+===========================================================================
+
+>>> Running: /usr/bin/python3 run_normalization.py --hdf5 /kaggle/working/aquire-artifacts/primary_development_100hz.h5
+
+[Exit code: 0 | Duration: 997.7s]
+
+===========================================================================
+  STEP 8: Running Parity Check
+===========================================================================
+
+>>> Running: /usr/bin/python3 run_parity_check.py
+
+[Exit code: 0 | Duration: 163.5s]
+
+===========================================================================
+  STEP 9: Preparing Artifacts for Download
+===========================================================================
+✓ Copied /kaggle/working/Quantum-ML-hybrid/artifacts to /kaggle/working/artifacts
+
+Listing /kaggle/working:
+  - Quantum-ML-hybrid/run_reference_baselines.py (0.00 MB)
+  - Quantum-ML-hybrid/run_feature_validation.py (0.00 MB)
+  - Quantum-ML-hybrid/signal-data-preprocessing-plan.md (0.02 MB)
+  - Quantum-ML-hybrid/requirements.lock (0.00 MB)
+  - Quantum-ML-hybrid/demo_pipeline_walkthrough.py (0.02 MB)
+  - Quantum-ML-hybrid/run_classical_baselines.py (0.00 MB)
+  - Quantum-ML-hybrid/run_pipeline.py (0.00 MB)
+  - Quantum-ML-hybrid/pyproject.toml (0.00 MB)
+  - Quantum-ML-hybrid/kernel-metadata.json (0.00 MB)
+  - Quantum-ML-hybrid/.gitignore (0.00 MB)
+  - Quantum-ML-hybrid/run_parity_check.py (0.00 MB)
+  - Quantum-ML-hybrid/kaggle_notebook_pipeline.py (0.00 MB)
+  - Quantum-ML-hybrid/PLAN.md (0.00 MB)
+  - Quantum-ML-hybrid/run_normalization.py (0.00 MB)
+  - Quantum-ML-hybrid/run_gates.py (0.00 MB)
+  - Quantum-ML-hybrid/README.md (0.00 MB)
+  - Quantum-ML-hybrid/run_qc_calibration.py (0.00 MB)
+  - aquire-artifacts/deployable_features_development.csv (22.53 MB)
+  - aquire-artifacts/qc_metrics_development.csv (28.18 MB)
+  - aquire-artifacts/primary_development_100hz.h5 (976.92 MB)
+  - aquire-artifacts/processing_metadata_development.csv (3.47 MB)
+  - aquire-artifacts/morphology_metrics_development.csv (3.04 MB)
+  - aquire-artifacts/quarantine_development_100hz.h5 (3.74 MB)
+  - Quantum-ML-hybrid/tests/test_structural.py (0.00 MB)
+  - Quantum-ML-hybrid/tests/test_storage_and_baselines.py (0.00 MB)
+  - Quantum-ML-hybrid/tests/__init__.py (0.00 MB)
+  - Quantum-ML-hybrid/tests/test_leakage.py (0.01 MB)
+  - Quantum-ML-hybrid/tests/test_morphology.py (0.01 MB)
+  - Quantum-ML-hybrid/tests/test_quality.py (0.01 MB)
+  - Quantum-ML-hybrid/tests/test_resampling.py (0.00 MB)
+  - Quantum-ML-hybrid/tests/test_research_hardening.py (0.01 MB)
+  - Quantum-ML-hybrid/.git/HEAD (0.00 MB)
+  - Quantum-ML-hybrid/.git/index (0.00 MB)
+  - Quantum-ML-hybrid/.git/config (0.00 MB)
+  - Quantum-ML-hybrid/.git/description (0.00 MB)
+  - Quantum-ML-hybrid/.git/packed-refs (0.00 MB)
+  - Quantum-ML-hybrid/configs/deployable_reference_pairs.json (0.00 MB)
+  - Quantum-ML-hybrid/configs/qc_detectors.json (0.00 MB)
+  - Quantum-ML-hybrid/docs/feature_deployability.md (0.00 MB)
+  - Quantum-ML-hybrid/docs/scientific_task_contract.md (0.00 MB)
+  - Quantum-ML-hybrid/aquire_med.egg-info/dependency_links.txt (0.00 MB)
+  - Quantum-ML-hybrid/aquire_med.egg-info/requires.txt (0.00 MB)
+  - Quantum-ML-hybrid/aquire_med.egg-info/PKG-INFO (0.00 MB)
+  - Quantum-ML-hybrid/aquire_med.egg-info/SOURCES.txt (0.00 MB)
+  - Quantum-ML-hybrid/aquire_med.egg-info/top_level.txt (0.00 MB)
+  - Quantum-ML-hybrid/__pycache__/kaggle_notebook_pipeline.cpython-312.pyc (0.00 MB)
+  - Quantum-ML-hybrid/__pycache__/run_pipeline.cpython-312.pyc (0.00 MB)
+  - Quantum-ML-hybrid/aquire_preprocessing/views.py (0.01 MB)
+  - Quantum-ML-hybrid/aquire_preprocessing/baselines.py (0.01 MB)
+  - Quantum-ML-hybrid/aquire_preprocessing/pipeline.py (0.02 MB)
+  - Quantum-ML-hybrid/aquire_preprocessing/feature_validation.py (0.00 MB)
+  - Quantum-ML-hybrid/aquire_preprocessing/__init__.py (0.00 MB)
+  - Quantum-ML-hybrid/aquire_preprocessing/quality.py (0.02 MB)
+  - Quantum-ML-hybrid/aquire_preprocessing/morphology_gate.py (0.01 MB)
+  - Quantum-ML-hybrid/aquire_preprocessing/config.py (0.01 MB)
+  - Quantum-ML-hybrid/aquire_preprocessing/structural.py (0.01 MB)
+  - Quantum-ML-hybrid/aquire_preprocessing/qc_calibration.py (0.00 MB)
+  - Quantum-ML-hybrid/aquire_preprocessing/dataset.py (0.00 MB)
+  - Quantum-ML-hybrid/aquire_preprocessing/reports.py (0.00 MB)
+  - Quantum-ML-hybrid/aquire_preprocessing/features.py (0.01 MB)
+  - Quantum-ML-hybrid/aquire_preprocessing/resampling.py (0.00 MB)
+  - Quantum-ML-hybrid/aquire_preprocessing/router.py (0.01 MB)
+  - Quantum-ML-hybrid/aquire_preprocessing/storage.py (0.00 MB)
+  - Quantum-ML-hybrid/aquire_preprocessing/filters.py (0.01 MB)
+  - Quantum-ML-hybrid/aquire_preprocessing/normalization.py (0.01 MB)
+  - Quantum-ML-hybrid/aquire_preprocessing/visual_audit.py (0.00 MB)
+  - Quantum-ML-hybrid/aquire_preprocessing/manifest.py (0.01 MB)
+  - Quantum-ML-hybrid/aquire_preprocessing/registry.py (0.00 MB)
+  - Quantum-ML-hybrid/aquire_preprocessing/augmentation.py (0.01 MB)
+  - Quantum-ML-hybrid/aquire_preprocessing/contracts.py (0.00 MB)
+  - Quantum-ML-hybrid/.git/info/exclude (0.00 MB)
+  - Quantum-ML-hybrid/.git/hooks/pre-applypatch.sample (0.00 MB)
+  - Quantum-ML-hybrid/.git/hooks/pre-rebase.sample (0.00 MB)
+  - Quantum-ML-hybrid/.git/hooks/commit-msg.sample (0.00 MB)
+  - Quantum-ML-hybrid/.git/hooks/pre-push.sample (0.00 MB)
+  - Quantum-ML-hybrid/.git/hooks/pre-merge-commit.sample (0.00 MB)
+  - Quantum-ML-hybrid/.git/hooks/pre-commit.sample (0.00 MB)
+  - Quantum-ML-hybrid/.git/hooks/applypatch-msg.sample (0.00 MB)
+  - Quantum-ML-hybrid/.git/hooks/post-update.sample (0.00 MB)
+  - Quantum-ML-hybrid/.git/hooks/fsmonitor-watchman.sample (0.00 MB)
+  - Quantum-ML-hybrid/.git/hooks/prepare-commit-msg.sample (0.00 MB)
+  - Quantum-ML-hybrid/.git/hooks/pre-receive.sample (0.00 MB)
+  - Quantum-ML-hybrid/.git/hooks/update.sample (0.00 MB)
+  - Quantum-ML-hybrid/.git/hooks/push-to-checkout.sample (0.00 MB)
+  - Quantum-ML-hybrid/.git/logs/HEAD (0.00 MB)
+  - Quantum-ML-hybrid/.git/refs/heads/main (0.00 MB)
+  - Quantum-ML-hybrid/.git/refs/remotes/origin/HEAD (0.00 MB)
+  - Quantum-ML-hybrid/.git/objects/pack/pack-6221a8244ce0ab8214e6fa1097f41e99b5c2fc70.idx (0.00 MB)
+  - Quantum-ML-hybrid/.git/objects/pack/pack-6221a8244ce0ab8214e6fa1097f41e99b5c2fc70.pack (0.20 MB)
+  - Quantum-ML-hybrid/.git/logs/refs/heads/main (0.00 MB)
+  - Quantum-ML-hybrid/.git/logs/refs/remotes/origin/HEAD (0.00 MB)
+  - Quantum-ML-hybrid/artifacts/g5/package_kaggle_parity.json (0.00 MB)
+  - Quantum-ML-hybrid/artifacts/g4_qc/electrode_amplitude_problem_operating_points.csv (0.00 MB)
+  - Quantum-ML-hybrid/artifacts/g4_qc/high_frequency_noise_operating_points.csv (0.02 MB)
+  - Quantum-ML-hybrid/artifacts/g4_qc/baseline_wander_operating_points.csv (0.02 MB)
+  - Quantum-ML-hybrid/artifacts/g4_qc/qc_threshold_validation.json (0.00 MB)
+  - Quantum-ML-hybrid/artifacts/gates/visual_audit.csv (0.00 MB)
+  - Quantum-ML-hybrid/artifacts/gates/visual_audit.png (1.36 MB)
+  - Quantum-ML-hybrid/artifacts/gates/cohort_report.json (0.00 MB)
+  - Quantum-ML-hybrid/artifacts/gates/ptbxl_plus_audit.json (0.03 MB)
+  - Quantum-ML-hybrid/artifacts/gates/ptbxl_plus_coverage.csv (0.91 MB)
+  - Quantum-ML-hybrid/artifacts/gates/uncertain_mi_manifest.csv (0.21 MB)
+  - Quantum-ML-hybrid/artifacts/gates/file_registry.json (0.00 MB)
+  - Quantum-ML-hybrid/artifacts/gates/dataset_identity.json (0.00 MB)
+  - Quantum-ML-hybrid/artifacts/g5/normalizers/normalizer_holdout_fold_5.json (0.00 MB)
+  - Quantum-ML-hybrid/artifacts/g5/normalizers/normalizer_holdout_fold_6.json (0.00 MB)
+  - Quantum-ML-hybrid/artifacts/g5/normalizers/normalizer_holdout_fold_2.json (0.00 MB)
+  - Quantum-ML-hybrid/artifacts/g5/normalizers/normalizer_holdout_fold_3.json (0.00 MB)
+  - Quantum-ML-hybrid/artifacts/g5/normalizers/normalizer_holdout_fold_8.json (0.00 MB)
+  - Quantum-ML-hybrid/artifacts/g5/normalizers/normalizer_holdout_fold_7.json (0.00 MB)
+  - Quantum-ML-hybrid/artifacts/g5/normalizers/normalizer_holdout_fold_4.json (0.00 MB)
+  - Quantum-ML-hybrid/artifacts/g5/normalizers/normalizer_holdout_fold_1.json (0.00 MB)
+  - Quantum-ML-hybrid/aquire_preprocessing/__pycache__/filters.cpython-312.pyc (0.01 MB)
+  - Quantum-ML-hybrid/aquire_preprocessing/__pycache__/pipeline.cpython-312.pyc (0.02 MB)
+  - Quantum-ML-hybrid/aquire_preprocessing/__pycache__/router.cpython-312.pyc (0.01 MB)
+  - Quantum-ML-hybrid/aquire_preprocessing/__pycache__/structural.cpython-312.pyc (0.01 MB)
+  - Quantum-ML-hybrid/aquire_preprocessing/__pycache__/quality.cpython-312.pyc (0.02 MB)
+  - Quantum-ML-hybrid/aquire_preprocessing/__pycache__/feature_validation.cpython-312.pyc (0.00 MB)
+  - Quantum-ML-hybrid/aquire_preprocessing/__pycache__/views.cpython-312.pyc (0.01 MB)
+  - Quantum-ML-hybrid/aquire_preprocessing/__pycache__/storage.cpython-312.pyc (0.01 MB)
+  - Quantum-ML-hybrid/aquire_preprocessing/__pycache__/registry.cpython-312.pyc (0.01 MB)
+  - Quantum-ML-hybrid/aquire_preprocessing/__pycache__/normalization.cpython-312.pyc (0.02 MB)
+  - Quantum-ML-hybrid/aquire_preprocessing/__pycache__/qc_calibration.cpython-312.pyc (0.01 MB)
+  - Quantum-ML-hybrid/aquire_preprocessing/__pycache__/resampling.cpython-312.pyc (0.00 MB)
+  - Quantum-ML-hybrid/aquire_preprocessing/__pycache__/features.cpython-312.pyc (0.02 MB)
+  - Quantum-ML-hybrid/aquire_preprocessing/__pycache__/reports.cpython-312.pyc (0.00 MB)
+  - Quantum-ML-hybrid/aquire_preprocessing/__pycache__/config.cpython-312.pyc (0.01 MB)
+  - Quantum-ML-hybrid/aquire_preprocessing/__pycache__/morphology_gate.cpython-312.pyc (0.02 MB)
+  - Quantum-ML-hybrid/aquire_preprocessing/__pycache__/visual_audit.cpython-312.pyc (0.01 MB)
+  - Quantum-ML-hybrid/aquire_preprocessing/__pycache__/contracts.cpython-312.pyc (0.00 MB)
+  - Quantum-ML-hybrid/aquire_preprocessing/__pycache__/__init__.cpython-312.pyc (0.00 MB)
+  - Quantum-ML-hybrid/aquire_preprocessing/__pycache__/manifest.cpython-312.pyc (0.02 MB)
+  - aquire-artifacts/manifests/waveform_reference_report.json (0.00 MB)
+  - aquire-artifacts/manifests/fold_report.json (0.00 MB)
+  - aquire-artifacts/manifests/patient_manifest.csv (9.04 MB)
+  - artifacts/g5/package_kaggle_parity.json (0.00 MB)
+  - artifacts/g4_qc/electrode_amplitude_problem_operating_points.csv (0.00 MB)
+  - artifacts/g4_qc/high_frequency_noise_operating_points.csv (0.02 MB)
+  - artifacts/g4_qc/baseline_wander_operating_points.csv (0.02 MB)
+  - artifacts/g4_qc/qc_threshold_validation.json (0.00 MB)
+  - artifacts/gates/visual_audit.csv (0.00 MB)
+  - artifacts/gates/visual_audit.png (1.36 MB)
+  - artifacts/gates/cohort_report.json (0.00 MB)
+  - artifacts/gates/ptbxl_plus_audit.json (0.03 MB)
+  - artifacts/gates/ptbxl_plus_coverage.csv (0.91 MB)
+  - artifacts/gates/uncertain_mi_manifest.csv (0.21 MB)
+  - artifacts/gates/file_registry.json (0.00 MB)
+  - artifacts/gates/dataset_identity.json (0.00 MB)
+  - artifacts/g5/normalizers/normalizer_holdout_fold_5.json (0.00 MB)
+  - artifacts/g5/normalizers/normalizer_holdout_fold_6.json (0.00 MB)
+  - artifacts/g5/normalizers/normalizer_holdout_fold_2.json (0.00 MB)
+  - artifacts/g5/normalizers/normalizer_holdout_fold_3.json (0.00 MB)
+  - artifacts/g5/normalizers/normalizer_holdout_fold_8.json (0.00 MB)
+  - artifacts/g5/normalizers/normalizer_holdout_fold_7.json (0.00 MB)
+  - artifacts/g5/normalizers/normalizer_holdout_fold_4.json (0.00 MB)
+  - artifacts/g5/normalizers/normalizer_holdout_fold_1.json (0.00 MB)
+
+===========================================================================
+  PIPELINE COMPLETED SUCCESSFULLY!
+===========================================================================
+/usr/local/lib/python3.12/dist-packages/mistune.py:435: SyntaxWarning: invalid escape sequence '\|'
+  cells[i][c] = re.sub('\\\\\|', '|', cell)
+/usr/local/lib/python3.12/dist-packages/nbconvert/filters/filter_links.py:36: SyntaxWarning: invalid escape sequence '\_'
+  text = re.sub(r'_', '\_', text) # Escape underscores in display text
+[NbConvertApp] Converting notebook __script__.ipynb to html
+[NbConvertApp] Writing 300017 bytes to __results__.html
+

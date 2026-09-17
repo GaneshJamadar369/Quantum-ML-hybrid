@@ -1,0 +1,386 @@
+[{"stream_name":"stdout","time":1.129629762,"data":"\n"}
+,{"stream_name":"stdout","time":1.129713254,"data":"===========================================================================\n"}
+,{"stream_name":"stdout","time":1.129727627,"data":"  AQUIRE-Med Cloud Preprocessing \u0026 Verification Pipeline\n"}
+,{"stream_name":"stdout","time":1.129732174,"data":"===========================================================================\n"}
+,{"stream_name":"stdout","time":1.129735552,"data":"Python: 3.12.13 (main, Mar  4 2026, 09:23:07) [GCC 11.4.0]\n"}
+,{"stream_name":"stdout","time":1.129738654,"data":"CWD:    /kaggle/working\n"}
+,{"stream_name":"stdout","time":1.129741602,"data":"\n"}
+,{"stream_name":"stdout","time":1.129744636,"data":"===========================================================================\n"}
+,{"stream_name":"stdout","time":1.1297478380000001,"data":"  STEP 1: Discovering Datasets in /kaggle/input\n"}
+,{"stream_name":"stdout","time":1.129751642,"data":"===========================================================================\n"}
+,{"stream_name":"stdout","time":1.129772466,"data":"Listing /kaggle/input:\n"}
+,{"stream_name":"stdout","time":1.129949666,"data":"  - /kaggle/input/datasets\n"}
+,{"stream_name":"stdout","time":415.382205154,"data":"\n"}
+,{"stream_name":"stdout","time":415.382263452,"data":"✓ Found PTB-XL Root:  /kaggle/input/datasets/garethwmch/ptb-xl-1-0-3/ptb-xl-a-large-publicly-available-electrocardiography-dataset-1.0.3\n"}
+,{"stream_name":"stdout","time":579.883147541,"data":"✓ Found PTB-XL+ Root: /kaggle/input/datasets/antonymgitau/ptb-xl-a-comprehensive-ecg-feature-dataset/ptb-xl-a-comprehensive-electrocardiographic-feature-dataset-1.0.1\n"}
+,{"stream_name":"stdout","time":579.883922163,"data":"✓ Output Directory:   /kaggle/working/aquire-artifacts\n"}
+,{"stream_name":"stdout","time":579.883981797,"data":"\n"}
+,{"stream_name":"stdout","time":579.883989696,"data":"===========================================================================\n"}
+,{"stream_name":"stdout","time":579.884000628,"data":"  STEP 2: Syncing Code from GitHub\n"}
+,{"stream_name":"stdout","time":579.884006849,"data":"===========================================================================\n"}
+,{"stream_name":"stdout","time":579.884013258,"data":"\n"}
+,{"stream_name":"stdout","time":579.884019001,"data":"\u003e\u003e\u003e Running: git clone https://github.com/GaneshJamadar369/Quantum-ML-hybrid.git /kaggle/working/Quantum-ML-hybrid\n"}
+,{"stream_name":"stdout","time":579.959769997,"data":"Cloning into '/kaggle/working/Quantum-ML-hybrid'...\n"}
+,{"stream_name":"stdout","time":580.930664857,"data":"\n"}
+,{"stream_name":"stdout","time":580.930704882,"data":"[Exit code: 0 | Duration: 1.0s]\n"}
+,{"stream_name":"stdout","time":580.930711915,"data":"\n"}
+,{"stream_name":"stdout","time":580.930716909,"data":"===========================================================================\n"}
+,{"stream_name":"stdout","time":580.930721724,"data":"  STEP 3: Installing Requirements \u0026 Package\n"}
+,{"stream_name":"stdout","time":580.930727296,"data":"===========================================================================\n"}
+,{"stream_name":"stdout","time":580.930732545,"data":"\n"}
+,{"stream_name":"stdout","time":580.930737425,"data":"\u003e\u003e\u003e Running: /usr/bin/python3 -m pip install -q wfdb h5py scipy scikit-learn xgboost matplotlib\n"}
+,{"stream_name":"stdout","time":586.412282847,"data":"   ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━ 163.9/163.9 kB 3.0 MB/s eta 0:00:00\n"}
+,{"stream_name":"stdout","time":588.974498337,"data":"\n"}
+,{"stream_name":"stdout","time":588.974603278,"data":"[Exit code: 0 | Duration: 8.0s]\n"}
+,{"stream_name":"stdout","time":588.974612606,"data":"\n"}
+,{"stream_name":"stdout","time":588.974618236,"data":"\u003e\u003e\u003e Running: /usr/bin/python3 -m pip install -q -e /kaggle/working/Quantum-ML-hybrid\n"}
+,{"stream_name":"stdout","time":598.389576131,"data":"     ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━ 89.9/89.9 kB 2.6 MB/s eta 0:00:00\n"}
+,{"stream_name":"stdout","time":598.84933011,"data":"     ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━ 62.4/62.4 kB 2.9 MB/s eta 0:00:00\n"}
+,{"stream_name":"stdout","time":599.850936489,"data":"   ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━ 4.9/4.9 MB 44.4 MB/s eta 0:00:00\n"}
+,{"stream_name":"stdout","time":600.042471521,"data":"   ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━ 16.7/16.7 MB 74.5 MB/s eta 0:00:00\n"}
+,{"stream_name":"stdout","time":600.196866009,"data":"   ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━ 12.7/12.7 MB 84.7 MB/s eta 0:00:00\n"}
+,{"stream_name":"stdout","time":600.318795959,"data":"   ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━ 9.2/9.2 MB 91.1 MB/s eta 0:00:00\n"}
+,{"stream_name":"stdout","time":600.679519949,"data":"   ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━ 35.3/35.3 MB 49.2 MB/s eta 0:00:00\n"}
+,{"stream_name":"stdout","time":600.724231743,"data":"   ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━ 163.8/163.8 kB 6.5 MB/s eta 0:00:00\n"}
+,{"stream_name":"stdout","time":633.673937112,"data":"ERROR: pip's dependency resolver does not currently take into account all the packages that are installed. This behaviour is the source of the following dependency conflicts.\n"}
+,{"stream_name":"stdout","time":633.674010069,"data":"bigframes 2.39.0 requires google-cloud-bigquery-storage\u003c3.0.0,\u003e=2.30.0, which is not installed.\n"}
+,{"stream_name":"stdout","time":633.674020738,"data":"ydata-profiling 4.18.4 requires numpy\u003c2.4,\u003e=1.22, but you have numpy 2.5.3 which is incompatible.\n"}
+,{"stream_name":"stdout","time":633.674028142,"data":"ydata-profiling 4.18.4 requires scipy\u003c1.17,\u003e=1.8, but you have scipy 1.18.1 which is incompatible.\n"}
+,{"stream_name":"stdout","time":633.67403467,"data":"google-colab 1.0.0 requires jupyter-server==2.14.0, but you have jupyter-server 2.12.5 which is incompatible.\n"}
+,{"stream_name":"stdout","time":633.674040567,"data":"google-colab 1.0.0 requires pandas==2.2.2, but you have pandas 2.2.3 which is incompatible.\n"}
+,{"stream_name":"stdout","time":633.674046488,"data":"dopamine-rl 4.1.2 requires gym\u003c=0.25.2, but you have gym 0.26.2 which is incompatible.\n"}
+,{"stream_name":"stdout","time":633.674052735,"data":"moviepy 1.0.3 requires decorator\u003c5.0,\u003e=4.0.2, but you have decorator 5.3.1 which is incompatible.\n"}
+,{"stream_name":"stdout","time":633.67405825,"data":"numba 0.60.0 requires numpy\u003c2.1,\u003e=1.22, but you have numpy 2.5.3 which is incompatible.\n"}
+,{"stream_name":"stdout","time":633.674063665,"data":"sklearn-compat 0.1.5 requires scikit-learn\u003c1.9,\u003e=1.2, but you have scikit-learn 1.9.1 which is incompatible.\n"}
+,{"stream_name":"stdout","time":634.086526044,"data":"\n"}
+,{"stream_name":"stdout","time":634.086587275,"data":"[Exit code: 0 | Duration: 45.1s]\n"}
+,{"stream_name":"stdout","time":634.086614178,"data":"\n"}
+,{"stream_name":"stdout","time":634.086619149,"data":"===========================================================================\n"}
+,{"stream_name":"stdout","time":634.086622944,"data":"  STEP 4: Running G0-G3 Gates \u0026 Visual Audit\n"}
+,{"stream_name":"stdout","time":634.08662749,"data":"===========================================================================\n"}
+,{"stream_name":"stdout","time":634.086631461,"data":"\n"}
+,{"stream_name":"stdout","time":634.086635838,"data":"\u003e\u003e\u003e Running: /usr/bin/python3 run_gates.py --visual-audit\n"}
+,{"stream_name":"stdout","time":731.539521672,"data":"ecg_id 381 routed to FAIL: ['3 leads failed quality checks']\n"}
+,{"stream_name":"stdout","time":755.32732237,"data":"ecg_id 655 routed to FAIL: ['3 leads failed quality checks']\n"}
+,{"stream_name":"stdout","time":757.345880019,"data":"\n"}
+,{"stream_name":"stdout","time":757.345935672,"data":"[Exit code: 0 | Duration: 123.3s]\n"}
+,{"stream_name":"stdout","time":757.345942961,"data":"\n"}
+,{"stream_name":"stdout","time":757.345948164,"data":"===========================================================================\n"}
+,{"stream_name":"stdout","time":757.345954516,"data":"  STEP 5: Running Preprocessing Pipeline (Folds 1-8)\n"}
+,{"stream_name":"stdout","time":757.345960216,"data":"===========================================================================\n"}
+,{"stream_name":"stdout","time":757.345966114,"data":"\n"}
+,{"stream_name":"stdout","time":757.345971011,"data":"\u003e\u003e\u003e Running: /usr/bin/python3 run_pipeline.py --role development\n"}
+,{"stream_name":"stdout","time":759.15802001,"data":"{\n"}
+,{"stream_name":"stdout","time":759.158134492,"data":"  \"environment\": \"kaggle\",\n"}
+,{"stream_name":"stdout","time":759.158146173,"data":"  \"ptbxl_root\": \"/kaggle/input/datasets/garethwmch/ptb-xl-1-0-3/ptb-xl-a-large-publicly-available-electrocardiography-dataset-1.0.3\",\n"}
+,{"stream_name":"stdout","time":759.1581718,"data":"  \"ptbxl_plus_root\": \"/kaggle/input/datasets/antonymgitau/ptb-xl-a-comprehensive-ecg-feature-dataset/ptb-xl-a-comprehensive-electrocardiographic-feature-dataset-1.0.1\",\n"}
+,{"stream_name":"stdout","time":759.158179773,"data":"  \"output_root\": \"/kaggle/working/aquire-artifacts\",\n"}
+,{"stream_name":"stdout","time":759.158186005,"data":"  \"sampling_rate\": 100\n"}
+,{"stream_name":"stdout","time":759.158191785,"data":"}\n"}
+,{"stream_name":"stdout","time":759.370475497,"data":"Dataset identity: {\n"}
+,{"stream_name":"stdout","time":759.370537822,"data":"  \"declared_version\": \"1.0.3\",\n"}
+,{"stream_name":"stdout","time":759.370546991,"data":"  \"record_count\": 21799,\n"}
+,{"stream_name":"stdout","time":759.370552496,"data":"  \"unique_ecg_ids\": 21799,\n"}
+,{"stream_name":"stdout","time":759.370557512,"data":"  \"unique_patients\": 18869,\n"}
+,{"stream_name":"stdout","time":759.370562916,"data":"  \"folds\": [\n"}
+,{"stream_name":"stdout","time":759.370567978,"data":"    1,\n"}
+,{"stream_name":"stdout","time":759.370573098,"data":"    2,\n"}
+,{"stream_name":"stdout","time":759.370577841,"data":"    3,\n"}
+,{"stream_name":"stdout","time":759.370582784,"data":"    4,\n"}
+,{"stream_name":"stdout","time":759.370587419,"data":"    5,\n"}
+,{"stream_name":"stdout","time":759.370592308,"data":"    6,\n"}
+,{"stream_name":"stdout","time":759.37059743,"data":"    7,\n"}
+,{"stream_name":"stdout","time":759.370602379,"data":"    8,\n"}
+,{"stream_name":"stdout","time":759.370607702,"data":"    9,\n"}
+,{"stream_name":"stdout","time":759.37061253,"data":"    10\n"}
+,{"stream_name":"stdout","time":759.370636614,"data":"  ],\n"}
+,{"stream_name":"stdout","time":759.370640945,"data":"  \"database_sha256\": \"7600de9c1b27d181d850b3c6038a35d7c3ddb6bb33b702e3a20252a6859d216b\",\n"}
+,{"stream_name":"stdout","time":759.370645015,"data":"  \"statements_sha256\": \"ad05b0b1fcae83bb1230755ad9cfc7c96f303feddc08a4a9ad5bdc9ca63bac8f\",\n"}
+,{"stream_name":"stdout","time":759.370648989,"data":"  \"checksum_manifest\": \"/kaggle/input/datasets/garethwmch/ptb-xl-1-0-3/ptb-xl-a-large-publicly-available-electrocardiography-dataset-1.0.3/SHA256SUMS.txt\",\n"}
+,{"stream_name":"stdout","time":759.370653698,"data":"  \"checksum_manifest_verified\": true,\n"}
+,{"stream_name":"stdout","time":759.370658311,"data":"  \"verified\": true,\n"}
+,{"stream_name":"stdout","time":759.370661939,"data":"  \"errors\": []\n"}
+,{"stream_name":"stdout","time":759.370826988,"data":"}\n"}
+,{"stream_name":"stdout","time":845.772024477,"data":"2026-09-17 09:35:18,271 [WARNING] aquire_preprocessing.router: ecg_id 381 routed to FAIL: ['3 leads failed quality checks']\n"}
+,{"stream_name":"stdout","time":871.065139507,"data":"2026-09-17 09:35:43,565 [WARNING] aquire_preprocessing.router: ecg_id 655 routed to FAIL: ['3 leads failed quality checks']\n"}
+,{"stream_name":"stdout","time":888.562851167,"data":"2026-09-17 09:36:01,062 [WARNING] aquire_preprocessing.router: ecg_id 801 routed to FAIL: ['4 leads failed quality checks']\n"}
+,{"stream_name":"stdout","time":908.104496017,"data":"2026-09-17 09:36:20,604 [WARNING] aquire_preprocessing.router: ecg_id 956 routed to FAIL: ['3 leads failed quality checks']\n"}
+,{"stream_name":"stdout","time":930.275987084,"data":"2026-09-17 09:36:42,775 [WARNING] aquire_preprocessing.router: ecg_id 1143 routed to FAIL: ['4 leads failed quality checks']\n"}
+,{"stream_name":"stdout","time":951.362697176,"data":"2026-09-17 09:37:03,862 [WARNING] aquire_preprocessing.router: ecg_id 1339 routed to FAIL: ['4 leads failed quality checks']\n"}
+,{"stream_name":"stdout","time":998.603075621,"data":"2026-09-17 09:37:51,102 [WARNING] aquire_preprocessing.router: ecg_id 1772 routed to FAIL: ['3 leads failed quality checks']\n"}
+,{"stream_name":"stdout","time":1011.890334685,"data":"2026-09-17 09:38:04,390 [WARNING] aquire_preprocessing.router: ecg_id 1890 routed to FAIL: ['6 leads failed quality checks']\n"}
+,{"stream_name":"stdout","time":1024.480556357,"data":"2026-09-17 09:38:16,980 [WARNING] aquire_preprocessing.router: ecg_id 2009 routed to FAIL: ['3 leads failed quality checks']\n"}
+,{"stream_name":"stdout","time":1089.97666212,"data":"2026-09-17 09:39:22,476 [WARNING] aquire_preprocessing.router: ecg_id 2597 routed to FAIL: ['3 leads failed quality checks']\n"}
+,{"stream_name":"stdout","time":1098.724139486,"data":"2026-09-17 09:39:31,224 [WARNING] aquire_preprocessing.router: ecg_id 2687 routed to FAIL: ['6 leads failed quality checks']\n"}
+,{"stream_name":"stdout","time":1114.166647649,"data":"2026-09-17 09:39:46,666 [WARNING] aquire_preprocessing.router: ecg_id 2826 routed to FAIL: ['3 leads failed quality checks']\n"}
+,{"stream_name":"stdout","time":1128.814729467,"data":"2026-09-17 09:40:01,314 [WARNING] aquire_preprocessing.router: ecg_id 2991 routed to FAIL: ['3 leads failed quality checks']\n"}
+,{"stream_name":"stdout","time":1140.998132064,"data":"2026-09-17 09:40:13,498 [WARNING] aquire_preprocessing.router: ecg_id 3090 routed to FAIL: ['5 leads failed quality checks']\n"}
+,{"stream_name":"stdout","time":1142.563401145,"data":"2026-09-17 09:40:15,063 [WARNING] aquire_preprocessing.router: ecg_id 3098 routed to FAIL: ['5 leads failed quality checks']\n"}
+,{"stream_name":"stdout","time":1150.348478106,"data":"2026-09-17 09:40:22,848 [WARNING] aquire_preprocessing.router: ecg_id 3167 routed to FAIL: ['5 leads failed quality checks']\n"}
+,{"stream_name":"stdout","time":1161.255977335,"data":"2026-09-17 09:40:33,756 [WARNING] aquire_preprocessing.router: ecg_id 3252 routed to FAIL: ['3 leads failed quality checks']\n"}
+,{"stream_name":"stdout","time":1170.820414589,"data":"2026-09-17 09:40:43,320 [WARNING] aquire_preprocessing.router: ecg_id 3334 routed to FAIL: ['3 leads failed quality checks']\n"}
+,{"stream_name":"stdout","time":1172.115774368,"data":"2026-09-17 09:40:44,615 [WARNING] aquire_preprocessing.router: ecg_id 3348 routed to FAIL: ['5 leads failed quality checks']\n"}
+,{"stream_name":"stdout","time":1180.047422205,"data":"2026-09-17 09:40:52,547 [WARNING] aquire_preprocessing.router: ecg_id 3429 routed to FAIL: ['3 leads failed quality checks']\n"}
+,{"stream_name":"stdout","time":1184.675492017,"data":"2026-09-17 09:40:57,175 [WARNING] aquire_preprocessing.router: ecg_id 3462 routed to FAIL: ['3 leads failed quality checks']\n"}
+,{"stream_name":"stdout","time":1218.447988558,"data":"2026-09-17 09:41:30,947 [WARNING] aquire_preprocessing.router: ecg_id 3825 routed to FAIL: ['3 leads failed quality checks']\n"}
+,{"stream_name":"stdout","time":1234.652408279,"data":"2026-09-17 09:41:47,152 [WARNING] aquire_preprocessing.router: ecg_id 3985 routed to FAIL: ['3 leads failed quality checks']\n"}
+,{"stream_name":"stdout","time":1314.677551474,"data":"2026-09-17 09:43:07,177 [WARNING] aquire_preprocessing.router: ecg_id 4720 routed to FAIL: ['3 leads failed quality checks']\n"}
+,{"stream_name":"stdout","time":1317.144987218,"data":"2026-09-17 09:43:09,645 [WARNING] aquire_preprocessing.router: ecg_id 4738 routed to FAIL: ['5 leads failed quality checks']\n"}
+,{"stream_name":"stdout","time":1395.726142082,"data":"2026-09-17 09:44:28,226 [WARNING] aquire_preprocessing.router: ecg_id 5697 routed to FAIL: ['3 leads failed quality checks']\n"}
+,{"stream_name":"stdout","time":1396.604985991,"data":"2026-09-17 09:44:29,105 [WARNING] aquire_preprocessing.router: ecg_id 5710 routed to FAIL: ['3 leads failed quality checks']\n"}
+,{"stream_name":"stdout","time":1397.538998708,"data":"2026-09-17 09:44:30,039 [WARNING] aquire_preprocessing.router: ecg_id 5724 routed to FAIL: ['4 leads failed quality checks']\n"}
+,{"stream_name":"stdout","time":1413.215064384,"data":"2026-09-17 09:44:45,715 [WARNING] aquire_preprocessing.router: ecg_id 5875 routed to FAIL: ['3 leads failed quality checks']\n"}
+,{"stream_name":"stdout","time":1417.980738719,"data":"2026-09-17 09:44:50,480 [WARNING] aquire_preprocessing.router: ecg_id 5939 routed to FAIL: ['3 leads failed quality checks']\n"}
+,{"stream_name":"stdout","time":1465.559137202,"data":"2026-09-17 09:45:38,059 [WARNING] aquire_preprocessing.router: ecg_id 6393 routed to FAIL: ['3 leads failed quality checks']\n"}
+,{"stream_name":"stdout","time":1483.246869373,"data":"2026-09-17 09:45:55,746 [WARNING] aquire_preprocessing.router: ecg_id 6545 routed to FAIL: ['4 leads failed quality checks']\n"}
+,{"stream_name":"stdout","time":1520.743694133,"data":"2026-09-17 09:46:33,243 [WARNING] aquire_preprocessing.router: ecg_id 6915 routed to FAIL: ['6 leads failed quality checks']\n"}
+,{"stream_name":"stdout","time":1573.666050947,"data":"2026-09-17 09:47:26,166 [WARNING] aquire_preprocessing.router: ecg_id 7568 routed to FAIL: ['3 leads failed quality checks']\n"}
+,{"stream_name":"stdout","time":1580.710051852,"data":"2026-09-17 09:47:33,210 [WARNING] aquire_preprocessing.router: ecg_id 7662 routed to FAIL: ['3 leads failed quality checks']\n"}
+,{"stream_name":"stdout","time":1635.235726814,"data":"2026-09-17 09:48:27,735 [WARNING] aquire_preprocessing.router: ecg_id 8227 routed to FAIL: ['3 leads failed quality checks']\n"}
+,{"stream_name":"stdout","time":1639.025990208,"data":"2026-09-17 09:48:31,526 [WARNING] aquire_preprocessing.router: ecg_id 8286 routed to FAIL: ['3 leads failed quality checks']\n"}
+,{"stream_name":"stdout","time":1662.104068295,"data":"2026-09-17 09:48:54,604 [WARNING] aquire_preprocessing.router: ecg_id 8485 routed to FAIL: ['3 leads failed quality checks']\n"}
+,{"stream_name":"stdout","time":1670.327278215,"data":"2026-09-17 09:49:02,827 [WARNING] aquire_preprocessing.router: ecg_id 8547 routed to FAIL: ['4 leads failed quality checks']\n"}
+,{"stream_name":"stdout","time":1725.60573718,"data":"2026-09-17 09:49:58,105 [WARNING] aquire_preprocessing.router: ecg_id 9118 routed to FAIL: ['4 leads failed quality checks']\n"}
+,{"stream_name":"stdout","time":1784.146719843,"data":"2026-09-17 09:50:56,646 [WARNING] aquire_preprocessing.router: ecg_id 9836 routed to FAIL: ['3 leads failed quality checks']\n"}
+,{"stream_name":"stdout","time":1833.299532252,"data":"2026-09-17 09:51:45,799 [WARNING] aquire_preprocessing.router: ecg_id 10338 routed to FAIL: ['3 leads failed quality checks']\n"}
+,{"stream_name":"stdout","time":1849.125718895,"data":"2026-09-17 09:52:01,625 [WARNING] aquire_preprocessing.router: ecg_id 10492 routed to FAIL: ['3 leads failed quality checks']\n"}
+,{"stream_name":"stdout","time":1906.661306073,"data":"2026-09-17 09:52:59,161 [WARNING] aquire_preprocessing.router: ecg_id 11082 routed to FAIL: ['5 leads failed quality checks']\n"}
+,{"stream_name":"stdout","time":1966.139035499,"data":"2026-09-17 09:53:58,638 [WARNING] aquire_preprocessing.router: ecg_id 11813 routed to FAIL: ['5 leads failed quality checks']\n"}
+,{"stream_name":"stdout","time":1982.736905592,"data":"2026-09-17 09:54:15,236 [WARNING] aquire_preprocessing.router: ecg_id 12010 routed to FAIL: ['6 leads failed quality checks']\n"}
+,{"stream_name":"stdout","time":2055.697422066,"data":"2026-09-17 09:55:28,197 [WARNING] aquire_preprocessing.router: ecg_id 12722 routed to FAIL: ['3 leads failed quality checks']\n"}
+,{"stream_name":"stdout","time":2056.542374023,"data":"2026-09-17 09:55:29,042 [WARNING] aquire_preprocessing.router: ecg_id 12728 routed to FAIL: ['3 leads failed quality checks']\n"}
+,{"stream_name":"stdout","time":2114.440172079,"data":"2026-09-17 09:56:26,940 [WARNING] aquire_preprocessing.router: ecg_id 13415 routed to FAIL: ['4 leads failed quality checks']\n"}
+,{"stream_name":"stdout","time":2136.220568716,"data":"2026-09-17 09:56:48,720 [WARNING] aquire_preprocessing.router: ecg_id 13716 routed to FAIL: ['4 leads failed quality checks']\n"}
+,{"stream_name":"stdout","time":2142.807087031,"data":"2026-09-17 09:56:55,307 [WARNING] aquire_preprocessing.router: ecg_id 13784 routed to FAIL: ['4 leads failed quality checks']\n"}
+,{"stream_name":"stdout","time":2146.346782193,"data":"2026-09-17 09:56:58,846 [WARNING] aquire_preprocessing.router: ecg_id 13824 routed to FAIL: ['3 leads failed quality checks']\n"}
+,{"stream_name":"stdout","time":2223.079209404,"data":"2026-09-17 09:58:15,579 [WARNING] aquire_preprocessing.router: ecg_id 14579 routed to FAIL: ['3 leads failed quality checks']\n"}
+,{"stream_name":"stdout","time":2226.039084415,"data":"2026-09-17 09:58:18,539 [WARNING] aquire_preprocessing.router: ecg_id 14619 routed to FAIL: ['4 leads failed quality checks']\n"}
+,{"stream_name":"stdout","time":2230.82881347,"data":"2026-09-17 09:58:23,328 [WARNING] aquire_preprocessing.router: ecg_id 14668 routed to FAIL: ['3 leads failed quality checks']\n"}
+,{"stream_name":"stdout","time":2257.534061675,"data":"2026-09-17 09:58:50,034 [WARNING] aquire_preprocessing.router: ecg_id 14936 routed to FAIL: ['3 leads failed quality checks']\n"}
+,{"stream_name":"stdout","time":2287.219538766,"data":"2026-09-17 09:59:19,719 [WARNING] aquire_preprocessing.router: ecg_id 15287 routed to FAIL: ['3 leads failed quality checks']\n"}
+,{"stream_name":"stdout","time":2319.272655565,"data":"2026-09-17 09:59:51,772 [WARNING] aquire_preprocessing.router: ecg_id 15719 routed to FAIL: ['3 leads failed quality checks']\n"}
+,{"stream_name":"stdout","time":2325.551439431,"data":"2026-09-17 09:59:58,051 [WARNING] aquire_preprocessing.router: ecg_id 15804 routed to FAIL: ['3 leads failed quality checks']\n"}
+,{"stream_name":"stdout","time":2346.748704268,"data":"2026-09-17 10:00:19,248 [WARNING] aquire_preprocessing.router: ecg_id 16030 routed to FAIL: ['3 leads failed quality checks']\n"}
+,{"stream_name":"stdout","time":2363.410005535,"data":"2026-09-17 10:00:35,910 [WARNING] aquire_preprocessing.router: ecg_id 16203 routed to FAIL: ['3 leads failed quality checks']\n"}
+,{"stream_name":"stdout","time":2373.623481347,"data":"2026-09-17 10:00:46,123 [WARNING] aquire_preprocessing.router: ecg_id 16314 routed to FAIL: ['3 leads failed quality checks']\n"}
+,{"stream_name":"stdout","time":2408.224513316,"data":"2026-09-17 10:01:20,724 [WARNING] aquire_preprocessing.router: ecg_id 16635 routed to FAIL: ['6 leads failed quality checks']\n"}
+,{"stream_name":"stdout","time":2409.003000642,"data":"2026-09-17 10:01:21,503 [WARNING] aquire_preprocessing.router: ecg_id 16641 routed to FAIL: ['4 leads failed quality checks']\n"}
+,{"stream_name":"stdout","time":2427.807066565,"data":"2026-09-17 10:01:40,307 [WARNING] aquire_preprocessing.router: ecg_id 16837 routed to FAIL: ['3 leads failed quality checks']\n"}
+,{"stream_name":"stdout","time":2444.051810125,"data":"2026-09-17 10:01:56,551 [WARNING] aquire_preprocessing.router: ecg_id 17009 routed to FAIL: ['3 leads failed quality checks']\n"}
+,{"stream_name":"stdout","time":2517.639230308,"data":"2026-09-17 10:03:10,139 [WARNING] aquire_preprocessing.router: ecg_id 17896 routed to FAIL: ['3 leads failed quality checks']\n"}
+,{"stream_name":"stdout","time":2551.136850473,"data":"2026-09-17 10:03:43,636 [WARNING] aquire_preprocessing.router: ecg_id 18230 routed to FAIL: ['4 leads failed quality checks']\n"}
+,{"stream_name":"stdout","time":2621.973916702,"data":"2026-09-17 10:04:54,473 [WARNING] aquire_preprocessing.router: ecg_id 19122 routed to FAIL: ['4 leads failed quality checks']\n"}
+,{"stream_name":"stdout","time":2632.06782978,"data":"2026-09-17 10:05:04,567 [WARNING] aquire_preprocessing.router: ecg_id 19261 routed to FAIL: ['5 leads failed quality checks']\n"}
+,{"stream_name":"stdout","time":2829.326752563,"data":"Pipeline summary: {\n"}
+,{"stream_name":"stdout","time":2829.326828172,"data":"  \"total_requested\": 17418,\n"}
+,{"stream_name":"stdout","time":2829.32683566,"data":"  \"total_completed\": 17418,\n"}
+,{"stream_name":"stdout","time":2829.326840706,"data":"  \"structural_failures\": 0,\n"}
+,{"stream_name":"stdout","time":2829.326845792,"data":"  \"primary\": 17348,\n"}
+,{"stream_name":"stdout","time":2829.326851034,"data":"  \"quarantine\": 70,\n"}
+,{"stream_name":"stdout","time":2829.326856146,"data":"  \"gate_rejections\": 1793,\n"}
+,{"stream_name":"stdout","time":2829.326860837,"data":"  \"seconds\": 2011.5167110839998,\n"}
+,{"stream_name":"stdout","time":2829.326866651,"data":"  \"records_per_second\": 8.659137606971953,\n"}
+,{"stream_name":"stdout","time":2829.326872631,"data":"  \"purpose\": \"preprocessing_tuning\"\n"}
+,{"stream_name":"stdout","time":2829.326878332,"data":"}\n"}
+,{"stream_name":"stdout","time":2829.666810842,"data":"\n"}
+,{"stream_name":"stdout","time":2829.666858384,"data":"[Exit code: 0 | Duration: 2072.3s]\n"}
+,{"stream_name":"stdout","time":2829.66726033,"data":"\n"}
+,{"stream_name":"stdout","time":2829.667283491,"data":"===========================================================================\n"}
+,{"stream_name":"stdout","time":2829.667289742,"data":"  STEP 6: Running QC Calibration\n"}
+,{"stream_name":"stdout","time":2829.667309511,"data":"===========================================================================\n"}
+,{"stream_name":"stdout","time":2829.667762048,"data":"\n"}
+,{"stream_name":"stdout","time":2829.667774289,"data":"\u003e\u003e\u003e Running: /usr/bin/python3 run_qc_calibration.py --metrics /kaggle/working/aquire-artifacts/qc_metrics_development.csv --spec configs/qc_detectors.json\n"}
+,{"stream_name":"stdout","time":2830.855993187,"data":"/kaggle/working/Quantum-ML-hybrid/run_qc_calibration.py:20: DtypeWarning: Columns (22) have mixed types. Specify dtype option on import or set low_memory=False.\n"}
+,{"stream_name":"stdout","time":2830.856042552,"data":"  frame = pd.read_csv(args.metrics)\n"}
+,{"stream_name":"stdout","time":2862.700117364,"data":"\n"}
+,{"stream_name":"stdout","time":2862.700183595,"data":"[Exit code: 0 | Duration: 33.0s]\n"}
+,{"stream_name":"stdout","time":2862.700189847,"data":"\n"}
+,{"stream_name":"stdout","time":2862.700193832,"data":"===========================================================================\n"}
+,{"stream_name":"stdout","time":2862.700198624,"data":"  STEP 7: Fitting Waveform Normalization\n"}
+,{"stream_name":"stdout","time":2862.7002199,"data":"===========================================================================\n"}
+,{"stream_name":"stdout","time":2862.700721076,"data":"\n"}
+,{"stream_name":"stdout","time":2862.700752069,"data":"\u003e\u003e\u003e Running: /usr/bin/python3 run_normalization.py --hdf5 /kaggle/working/aquire-artifacts/primary_development_100hz.h5\n"}
+,{"stream_name":"stdout","time":3860.376886155,"data":"\n"}
+,{"stream_name":"stdout","time":3860.37721304,"data":"[Exit code: 0 | Duration: 997.7s]\n"}
+,{"stream_name":"stdout","time":3860.377228912,"data":"\n"}
+,{"stream_name":"stdout","time":3860.377236026,"data":"===========================================================================\n"}
+,{"stream_name":"stdout","time":3860.377241831,"data":"  STEP 8: Running Parity Check\n"}
+,{"stream_name":"stdout","time":3860.377247079,"data":"===========================================================================\n"}
+,{"stream_name":"stdout","time":3860.377252566,"data":"\n"}
+,{"stream_name":"stdout","time":3860.37725738,"data":"\u003e\u003e\u003e Running: /usr/bin/python3 run_parity_check.py\n"}
+,{"stream_name":"stdout","time":4023.920510126,"data":"\n"}
+,{"stream_name":"stdout","time":4023.92059509,"data":"[Exit code: 0 | Duration: 163.5s]\n"}
+,{"stream_name":"stdout","time":4023.920601388,"data":"\n"}
+,{"stream_name":"stdout","time":4023.92060528,"data":"===========================================================================\n"}
+,{"stream_name":"stdout","time":4023.920630615,"data":"  STEP 9: Preparing Artifacts for Download\n"}
+,{"stream_name":"stdout","time":4023.920634694,"data":"===========================================================================\n"}
+,{"stream_name":"stdout","time":4023.927584361,"data":"✓ Copied /kaggle/working/Quantum-ML-hybrid/artifacts to /kaggle/working/artifacts\n"}
+,{"stream_name":"stdout","time":4023.927641077,"data":"\n"}
+,{"stream_name":"stdout","time":4023.927649054,"data":"Listing /kaggle/working:\n"}
+,{"stream_name":"stdout","time":4023.928278353,"data":"  - Quantum-ML-hybrid/run_reference_baselines.py (0.00 MB)\n"}
+,{"stream_name":"stdout","time":4023.928393711,"data":"  - Quantum-ML-hybrid/run_feature_validation.py (0.00 MB)\n"}
+,{"stream_name":"stdout","time":4023.928627413,"data":"  - Quantum-ML-hybrid/signal-data-preprocessing-plan.md (0.02 MB)\n"}
+,{"stream_name":"stdout","time":4023.928790041,"data":"  - Quantum-ML-hybrid/requirements.lock (0.00 MB)\n"}
+,{"stream_name":"stdout","time":4023.928978104,"data":"  - Quantum-ML-hybrid/demo_pipeline_walkthrough.py (0.02 MB)\n"}
+,{"stream_name":"stdout","time":4023.929192644,"data":"  - Quantum-ML-hybrid/run_classical_baselines.py (0.00 MB)\n"}
+,{"stream_name":"stdout","time":4023.929470964,"data":"  - Quantum-ML-hybrid/run_pipeline.py (0.00 MB)\n"}
+,{"stream_name":"stdout","time":4023.929604209,"data":"  - Quantum-ML-hybrid/pyproject.toml (0.00 MB)\n"}
+,{"stream_name":"stdout","time":4023.929731093,"data":"  - Quantum-ML-hybrid/kernel-metadata.json (0.00 MB)\n"}
+,{"stream_name":"stdout","time":4023.929937342,"data":"  - Quantum-ML-hybrid/.gitignore (0.00 MB)\n"}
+,{"stream_name":"stdout","time":4023.930156542,"data":"  - Quantum-ML-hybrid/run_parity_check.py (0.00 MB)\n"}
+,{"stream_name":"stdout","time":4023.930335577,"data":"  - Quantum-ML-hybrid/kaggle_notebook_pipeline.py (0.00 MB)\n"}
+,{"stream_name":"stdout","time":4023.930526126,"data":"  - Quantum-ML-hybrid/PLAN.md (0.00 MB)\n"}
+,{"stream_name":"stdout","time":4023.930675194,"data":"  - Quantum-ML-hybrid/run_normalization.py (0.00 MB)\n"}
+,{"stream_name":"stdout","time":4023.930804068,"data":"  - Quantum-ML-hybrid/run_gates.py (0.00 MB)\n"}
+,{"stream_name":"stdout","time":4023.930922001,"data":"  - Quantum-ML-hybrid/README.md (0.00 MB)\n"}
+,{"stream_name":"stdout","time":4023.93121129,"data":"  - Quantum-ML-hybrid/run_qc_calibration.py (0.00 MB)\n"}
+,{"stream_name":"stdout","time":4023.93143827,"data":"  - aquire-artifacts/deployable_features_development.csv (22.53 MB)\n"}
+,{"stream_name":"stdout","time":4023.931559065,"data":"  - aquire-artifacts/qc_metrics_development.csv (28.18 MB)\n"}
+,{"stream_name":"stdout","time":4023.931707111,"data":"  - aquire-artifacts/primary_development_100hz.h5 (976.92 MB)\n"}
+,{"stream_name":"stdout","time":4023.931846267,"data":"  - aquire-artifacts/processing_metadata_development.csv (3.47 MB)\n"}
+,{"stream_name":"stdout","time":4023.932039301,"data":"  - aquire-artifacts/morphology_metrics_development.csv (3.04 MB)\n"}
+,{"stream_name":"stdout","time":4023.93216564,"data":"  - aquire-artifacts/quarantine_development_100hz.h5 (3.74 MB)\n"}
+,{"stream_name":"stdout","time":4023.932565137,"data":"  - Quantum-ML-hybrid/tests/test_structural.py (0.00 MB)\n"}
+,{"stream_name":"stdout","time":4023.932731911,"data":"  - Quantum-ML-hybrid/tests/test_storage_and_baselines.py (0.00 MB)\n"}
+,{"stream_name":"stdout","time":4023.932867863,"data":"  - Quantum-ML-hybrid/tests/__init__.py (0.00 MB)\n"}
+,{"stream_name":"stdout","time":4023.933014006,"data":"  - Quantum-ML-hybrid/tests/test_leakage.py (0.01 MB)\n"}
+,{"stream_name":"stdout","time":4023.933212728,"data":"  - Quantum-ML-hybrid/tests/test_morphology.py (0.01 MB)\n"}
+,{"stream_name":"stdout","time":4023.933395115,"data":"  - Quantum-ML-hybrid/tests/test_quality.py (0.01 MB)\n"}
+,{"stream_name":"stdout","time":4023.933541635,"data":"  - Quantum-ML-hybrid/tests/test_resampling.py (0.00 MB)\n"}
+,{"stream_name":"stdout","time":4023.933723546,"data":"  - Quantum-ML-hybrid/tests/test_research_hardening.py (0.01 MB)\n"}
+,{"stream_name":"stdout","time":4023.933975424,"data":"  - Quantum-ML-hybrid/.git/HEAD (0.00 MB)\n"}
+,{"stream_name":"stdout","time":4023.934191653,"data":"  - Quantum-ML-hybrid/.git/index (0.00 MB)\n"}
+,{"stream_name":"stdout","time":4023.934310875,"data":"  - Quantum-ML-hybrid/.git/config (0.00 MB)\n"}
+,{"stream_name":"stdout","time":4023.934543327,"data":"  - Quantum-ML-hybrid/.git/description (0.00 MB)\n"}
+,{"stream_name":"stdout","time":4023.934712939,"data":"  - Quantum-ML-hybrid/.git/packed-refs (0.00 MB)\n"}
+,{"stream_name":"stdout","time":4023.934925352,"data":"  - Quantum-ML-hybrid/configs/deployable_reference_pairs.json (0.00 MB)\n"}
+,{"stream_name":"stdout","time":4023.935125767,"data":"  - Quantum-ML-hybrid/configs/qc_detectors.json (0.00 MB)\n"}
+,{"stream_name":"stdout","time":4023.935349559,"data":"  - Quantum-ML-hybrid/docs/feature_deployability.md (0.00 MB)\n"}
+,{"stream_name":"stdout","time":4023.935516307,"data":"  - Quantum-ML-hybrid/docs/scientific_task_contract.md (0.00 MB)\n"}
+,{"stream_name":"stdout","time":4023.93571972,"data":"  - Quantum-ML-hybrid/aquire_med.egg-info/dependency_links.txt (0.00 MB)\n"}
+,{"stream_name":"stdout","time":4023.935900096,"data":"  - Quantum-ML-hybrid/aquire_med.egg-info/requires.txt (0.00 MB)\n"}
+,{"stream_name":"stdout","time":4023.936073974,"data":"  - Quantum-ML-hybrid/aquire_med.egg-info/PKG-INFO (0.00 MB)\n"}
+,{"stream_name":"stdout","time":4023.936238673,"data":"  - Quantum-ML-hybrid/aquire_med.egg-info/SOURCES.txt (0.00 MB)\n"}
+,{"stream_name":"stdout","time":4023.93637804,"data":"  - Quantum-ML-hybrid/aquire_med.egg-info/top_level.txt (0.00 MB)\n"}
+,{"stream_name":"stdout","time":4023.936678132,"data":"  - Quantum-ML-hybrid/__pycache__/kaggle_notebook_pipeline.cpython-312.pyc (0.00 MB)\n"}
+,{"stream_name":"stdout","time":4023.936849423,"data":"  - Quantum-ML-hybrid/__pycache__/run_pipeline.cpython-312.pyc (0.00 MB)\n"}
+,{"stream_name":"stdout","time":4023.937091936,"data":"  - Quantum-ML-hybrid/aquire_preprocessing/views.py (0.01 MB)\n"}
+,{"stream_name":"stdout","time":4023.937315257,"data":"  - Quantum-ML-hybrid/aquire_preprocessing/baselines.py (0.01 MB)\n"}
+,{"stream_name":"stdout","time":4023.93743884,"data":"  - Quantum-ML-hybrid/aquire_preprocessing/pipeline.py (0.02 MB)\n"}
+,{"stream_name":"stdout","time":4023.937594918,"data":"  - Quantum-ML-hybrid/aquire_preprocessing/feature_validation.py (0.00 MB)\n"}
+,{"stream_name":"stdout","time":4023.937770657,"data":"  - Quantum-ML-hybrid/aquire_preprocessing/__init__.py (0.00 MB)\n"}
+,{"stream_name":"stdout","time":4023.937938025,"data":"  - Quantum-ML-hybrid/aquire_preprocessing/quality.py (0.02 MB)\n"}
+,{"stream_name":"stdout","time":4023.938121903,"data":"  - Quantum-ML-hybrid/aquire_preprocessing/morphology_gate.py (0.01 MB)\n"}
+,{"stream_name":"stdout","time":4023.93830592,"data":"  - Quantum-ML-hybrid/aquire_preprocessing/config.py (0.01 MB)\n"}
+,{"stream_name":"stdout","time":4023.938439209,"data":"  - Quantum-ML-hybrid/aquire_preprocessing/structural.py (0.01 MB)\n"}
+,{"stream_name":"stdout","time":4023.93860082,"data":"  - Quantum-ML-hybrid/aquire_preprocessing/qc_calibration.py (0.00 MB)\n"}
+,{"stream_name":"stdout","time":4023.938839266,"data":"  - Quantum-ML-hybrid/aquire_preprocessing/dataset.py (0.00 MB)\n"}
+,{"stream_name":"stdout","time":4023.938968152,"data":"  - Quantum-ML-hybrid/aquire_preprocessing/reports.py (0.00 MB)\n"}
+,{"stream_name":"stdout","time":4023.939178344,"data":"  - Quantum-ML-hybrid/aquire_preprocessing/features.py (0.01 MB)\n"}
+,{"stream_name":"stdout","time":4023.939393242,"data":"  - Quantum-ML-hybrid/aquire_preprocessing/resampling.py (0.00 MB)\n"}
+,{"stream_name":"stdout","time":4023.93951736,"data":"  - Quantum-ML-hybrid/aquire_preprocessing/router.py (0.01 MB)\n"}
+,{"stream_name":"stdout","time":4023.939680119,"data":"  - Quantum-ML-hybrid/aquire_preprocessing/storage.py (0.00 MB)\n"}
+,{"stream_name":"stdout","time":4023.939822733,"data":"  - Quantum-ML-hybrid/aquire_preprocessing/filters.py (0.01 MB)\n"}
+,{"stream_name":"stdout","time":4023.939950582,"data":"  - Quantum-ML-hybrid/aquire_preprocessing/normalization.py (0.01 MB)\n"}
+,{"stream_name":"stdout","time":4023.940115923,"data":"  - Quantum-ML-hybrid/aquire_preprocessing/visual_audit.py (0.00 MB)\n"}
+,{"stream_name":"stdout","time":4023.940356584,"data":"  - Quantum-ML-hybrid/aquire_preprocessing/manifest.py (0.01 MB)\n"}
+,{"stream_name":"stdout","time":4023.940428381,"data":"  - Quantum-ML-hybrid/aquire_preprocessing/registry.py (0.00 MB)\n"}
+,{"stream_name":"stdout","time":4023.940604409,"data":"  - Quantum-ML-hybrid/aquire_preprocessing/augmentation.py (0.01 MB)\n"}
+,{"stream_name":"stdout","time":4023.940741919,"data":"  - Quantum-ML-hybrid/aquire_preprocessing/contracts.py (0.00 MB)\n"}
+,{"stream_name":"stdout","time":4023.941109031,"data":"  - Quantum-ML-hybrid/.git/info/exclude (0.00 MB)\n"}
+,{"stream_name":"stdout","time":4023.941555402,"data":"  - Quantum-ML-hybrid/.git/hooks/pre-applypatch.sample (0.00 MB)\n"}
+,{"stream_name":"stdout","time":4023.941580139,"data":"  - Quantum-ML-hybrid/.git/hooks/pre-rebase.sample (0.00 MB)\n"}
+,{"stream_name":"stdout","time":4023.941784455,"data":"  - Quantum-ML-hybrid/.git/hooks/commit-msg.sample (0.00 MB)\n"}
+,{"stream_name":"stdout","time":4023.941959575,"data":"  - Quantum-ML-hybrid/.git/hooks/pre-push.sample (0.00 MB)\n"}
+,{"stream_name":"stdout","time":4023.94217515,"data":"  - Quantum-ML-hybrid/.git/hooks/pre-merge-commit.sample (0.00 MB)\n"}
+,{"stream_name":"stdout","time":4023.942359265,"data":"  - Quantum-ML-hybrid/.git/hooks/pre-commit.sample (0.00 MB)\n"}
+,{"stream_name":"stdout","time":4023.94254242,"data":"  - Quantum-ML-hybrid/.git/hooks/applypatch-msg.sample (0.00 MB)\n"}
+,{"stream_name":"stdout","time":4023.94271844,"data":"  - Quantum-ML-hybrid/.git/hooks/post-update.sample (0.00 MB)\n"}
+,{"stream_name":"stdout","time":4023.94288029,"data":"  - Quantum-ML-hybrid/.git/hooks/fsmonitor-watchman.sample (0.00 MB)\n"}
+,{"stream_name":"stdout","time":4023.943062274,"data":"  - Quantum-ML-hybrid/.git/hooks/prepare-commit-msg.sample (0.00 MB)\n"}
+,{"stream_name":"stdout","time":4023.943294464,"data":"  - Quantum-ML-hybrid/.git/hooks/pre-receive.sample (0.00 MB)\n"}
+,{"stream_name":"stdout","time":4023.943459049,"data":"  - Quantum-ML-hybrid/.git/hooks/update.sample (0.00 MB)\n"}
+,{"stream_name":"stdout","time":4023.943630491,"data":"  - Quantum-ML-hybrid/.git/hooks/push-to-checkout.sample (0.00 MB)\n"}
+,{"stream_name":"stdout","time":4023.943966576,"data":"  - Quantum-ML-hybrid/.git/logs/HEAD (0.00 MB)\n"}
+,{"stream_name":"stdout","time":4023.944333884,"data":"  - Quantum-ML-hybrid/.git/refs/heads/main (0.00 MB)\n"}
+,{"stream_name":"stdout","time":4023.944748504,"data":"  - Quantum-ML-hybrid/.git/refs/remotes/origin/HEAD (0.00 MB)\n"}
+,{"stream_name":"stdout","time":4023.945236003,"data":"  - Quantum-ML-hybrid/.git/objects/pack/pack-6221a8244ce0ab8214e6fa1097f41e99b5c2fc70.idx (0.00 MB)\n"}
+,{"stream_name":"stdout","time":4023.945259012,"data":"  - Quantum-ML-hybrid/.git/objects/pack/pack-6221a8244ce0ab8214e6fa1097f41e99b5c2fc70.pack (0.20 MB)\n"}
+,{"stream_name":"stdout","time":4023.945673258,"data":"  - Quantum-ML-hybrid/.git/logs/refs/heads/main (0.00 MB)\n"}
+,{"stream_name":"stdout","time":4023.94602466,"data":"  - Quantum-ML-hybrid/.git/logs/refs/remotes/origin/HEAD (0.00 MB)\n"}
+,{"stream_name":"stdout","time":4023.946370436,"data":"  - Quantum-ML-hybrid/artifacts/g5/package_kaggle_parity.json (0.00 MB)\n"}
+,{"stream_name":"stdout","time":4023.946623061,"data":"  - Quantum-ML-hybrid/artifacts/g4_qc/electrode_amplitude_problem_operating_points.csv (0.00 MB)\n"}
+,{"stream_name":"stdout","time":4023.946797997,"data":"  - Quantum-ML-hybrid/artifacts/g4_qc/high_frequency_noise_operating_points.csv (0.02 MB)\n"}
+,{"stream_name":"stdout","time":4023.946982765,"data":"  - Quantum-ML-hybrid/artifacts/g4_qc/baseline_wander_operating_points.csv (0.02 MB)\n"}
+,{"stream_name":"stdout","time":4023.947239498,"data":"  - Quantum-ML-hybrid/artifacts/g4_qc/qc_threshold_validation.json (0.00 MB)\n"}
+,{"stream_name":"stdout","time":4023.947443579,"data":"  - Quantum-ML-hybrid/artifacts/gates/visual_audit.csv (0.00 MB)\n"}
+,{"stream_name":"stdout","time":4023.947617872,"data":"  - Quantum-ML-hybrid/artifacts/gates/visual_audit.png (1.36 MB)\n"}
+,{"stream_name":"stdout","time":4023.947757613,"data":"  - Quantum-ML-hybrid/artifacts/gates/cohort_report.json (0.00 MB)\n"}
+,{"stream_name":"stdout","time":4023.947928607,"data":"  - Quantum-ML-hybrid/artifacts/gates/ptbxl_plus_audit.json (0.03 MB)\n"}
+,{"stream_name":"stdout","time":4023.94815995,"data":"  - Quantum-ML-hybrid/artifacts/gates/ptbxl_plus_coverage.csv (0.91 MB)\n"}
+,{"stream_name":"stdout","time":4023.948324465,"data":"  - Quantum-ML-hybrid/artifacts/gates/uncertain_mi_manifest.csv (0.21 MB)\n"}
+,{"stream_name":"stdout","time":4023.948467884,"data":"  - Quantum-ML-hybrid/artifacts/gates/file_registry.json (0.00 MB)\n"}
+,{"stream_name":"stdout","time":4023.948642106,"data":"  - Quantum-ML-hybrid/artifacts/gates/dataset_identity.json (0.00 MB)\n"}
+,{"stream_name":"stdout","time":4023.948920412,"data":"  - Quantum-ML-hybrid/artifacts/g5/normalizers/normalizer_holdout_fold_5.json (0.00 MB)\n"}
+,{"stream_name":"stdout","time":4023.949131634,"data":"  - Quantum-ML-hybrid/artifacts/g5/normalizers/normalizer_holdout_fold_6.json (0.00 MB)\n"}
+,{"stream_name":"stdout","time":4023.949343568,"data":"  - Quantum-ML-hybrid/artifacts/g5/normalizers/normalizer_holdout_fold_2.json (0.00 MB)\n"}
+,{"stream_name":"stdout","time":4023.949518887,"data":"  - Quantum-ML-hybrid/artifacts/g5/normalizers/normalizer_holdout_fold_3.json (0.00 MB)\n"}
+,{"stream_name":"stdout","time":4023.949692678,"data":"  - Quantum-ML-hybrid/artifacts/g5/normalizers/normalizer_holdout_fold_8.json (0.00 MB)\n"}
+,{"stream_name":"stdout","time":4023.949887575,"data":"  - Quantum-ML-hybrid/artifacts/g5/normalizers/normalizer_holdout_fold_7.json (0.00 MB)\n"}
+,{"stream_name":"stdout","time":4023.9501196,"data":"  - Quantum-ML-hybrid/artifacts/g5/normalizers/normalizer_holdout_fold_4.json (0.00 MB)\n"}
+,{"stream_name":"stdout","time":4023.950305188,"data":"  - Quantum-ML-hybrid/artifacts/g5/normalizers/normalizer_holdout_fold_1.json (0.00 MB)\n"}
+,{"stream_name":"stdout","time":4023.950726446,"data":"  - Quantum-ML-hybrid/aquire_preprocessing/__pycache__/filters.cpython-312.pyc (0.01 MB)\n"}
+,{"stream_name":"stdout","time":4023.950898444,"data":"  - Quantum-ML-hybrid/aquire_preprocessing/__pycache__/pipeline.cpython-312.pyc (0.02 MB)\n"}
+,{"stream_name":"stdout","time":4023.951070646,"data":"  - Quantum-ML-hybrid/aquire_preprocessing/__pycache__/router.cpython-312.pyc (0.01 MB)\n"}
+,{"stream_name":"stdout","time":4023.951322625,"data":"  - Quantum-ML-hybrid/aquire_preprocessing/__pycache__/structural.cpython-312.pyc (0.01 MB)\n"}
+,{"stream_name":"stdout","time":4023.951448218,"data":"  - Quantum-ML-hybrid/aquire_preprocessing/__pycache__/quality.cpython-312.pyc (0.02 MB)\n"}
+,{"stream_name":"stdout","time":4023.95162741,"data":"  - Quantum-ML-hybrid/aquire_preprocessing/__pycache__/feature_validation.cpython-312.pyc (0.00 MB)\n"}
+,{"stream_name":"stdout","time":4023.95186679,"data":"  - Quantum-ML-hybrid/aquire_preprocessing/__pycache__/views.cpython-312.pyc (0.01 MB)\n"}
+,{"stream_name":"stdout","time":4023.951914176,"data":"  - Quantum-ML-hybrid/aquire_preprocessing/__pycache__/storage.cpython-312.pyc (0.01 MB)\n"}
+,{"stream_name":"stdout","time":4023.952112373,"data":"  - Quantum-ML-hybrid/aquire_preprocessing/__pycache__/registry.cpython-312.pyc (0.01 MB)\n"}
+,{"stream_name":"stdout","time":4023.952295552,"data":"  - Quantum-ML-hybrid/aquire_preprocessing/__pycache__/normalization.cpython-312.pyc (0.02 MB)\n"}
+,{"stream_name":"stdout","time":4023.952468136,"data":"  - Quantum-ML-hybrid/aquire_preprocessing/__pycache__/qc_calibration.cpython-312.pyc (0.01 MB)\n"}
+,{"stream_name":"stdout","time":4023.952637858,"data":"  - Quantum-ML-hybrid/aquire_preprocessing/__pycache__/resampling.cpython-312.pyc (0.00 MB)\n"}
+,{"stream_name":"stdout","time":4023.952866498,"data":"  - Quantum-ML-hybrid/aquire_preprocessing/__pycache__/features.cpython-312.pyc (0.02 MB)\n"}
+,{"stream_name":"stdout","time":4023.953020972,"data":"  - Quantum-ML-hybrid/aquire_preprocessing/__pycache__/reports.cpython-312.pyc (0.00 MB)\n"}
+,{"stream_name":"stdout","time":4023.953312464,"data":"  - Quantum-ML-hybrid/aquire_preprocessing/__pycache__/config.cpython-312.pyc (0.01 MB)\n"}
+,{"stream_name":"stdout","time":4023.953448994,"data":"  - Quantum-ML-hybrid/aquire_preprocessing/__pycache__/morphology_gate.cpython-312.pyc (0.02 MB)\n"}
+,{"stream_name":"stdout","time":4023.953598479,"data":"  - Quantum-ML-hybrid/aquire_preprocessing/__pycache__/visual_audit.cpython-312.pyc (0.01 MB)\n"}
+,{"stream_name":"stdout","time":4023.953789133,"data":"  - Quantum-ML-hybrid/aquire_preprocessing/__pycache__/contracts.cpython-312.pyc (0.00 MB)\n"}
+,{"stream_name":"stdout","time":4023.953901597,"data":"  - Quantum-ML-hybrid/aquire_preprocessing/__pycache__/__init__.cpython-312.pyc (0.00 MB)\n"}
+,{"stream_name":"stdout","time":4023.954109178,"data":"  - Quantum-ML-hybrid/aquire_preprocessing/__pycache__/manifest.cpython-312.pyc (0.02 MB)\n"}
+,{"stream_name":"stdout","time":4023.954452213,"data":"  - aquire-artifacts/manifests/waveform_reference_report.json (0.00 MB)\n"}
+,{"stream_name":"stdout","time":4023.954570417,"data":"  - aquire-artifacts/manifests/fold_report.json (0.00 MB)\n"}
+,{"stream_name":"stdout","time":4023.954777524,"data":"  - aquire-artifacts/manifests/patient_manifest.csv (9.04 MB)\n"}
+,{"stream_name":"stdout","time":4023.955062449,"data":"  - artifacts/g5/package_kaggle_parity.json (0.00 MB)\n"}
+,{"stream_name":"stdout","time":4023.955314504,"data":"  - artifacts/g4_qc/electrode_amplitude_problem_operating_points.csv (0.00 MB)\n"}
+,{"stream_name":"stdout","time":4023.95546223,"data":"  - artifacts/g4_qc/high_frequency_noise_operating_points.csv (0.02 MB)\n"}
+,{"stream_name":"stdout","time":4023.955602894,"data":"  - artifacts/g4_qc/baseline_wander_operating_points.csv (0.02 MB)\n"}
+,{"stream_name":"stdout","time":4023.95578058,"data":"  - artifacts/g4_qc/qc_threshold_validation.json (0.00 MB)\n"}
+,{"stream_name":"stdout","time":4023.955995781,"data":"  - artifacts/gates/visual_audit.csv (0.00 MB)\n"}
+,{"stream_name":"stdout","time":4023.956186288,"data":"  - artifacts/gates/visual_audit.png (1.36 MB)\n"}
+,{"stream_name":"stdout","time":4023.956349406,"data":"  - artifacts/gates/cohort_report.json (0.00 MB)\n"}
+,{"stream_name":"stdout","time":4023.956513834,"data":"  - artifacts/gates/ptbxl_plus_audit.json (0.03 MB)\n"}
+,{"stream_name":"stdout","time":4023.956655936,"data":"  - artifacts/gates/ptbxl_plus_coverage.csv (0.91 MB)\n"}
+,{"stream_name":"stdout","time":4023.956814553,"data":"  - artifacts/gates/uncertain_mi_manifest.csv (0.21 MB)\n"}
+,{"stream_name":"stdout","time":4023.957042016,"data":"  - artifacts/gates/file_registry.json (0.00 MB)\n"}
+,{"stream_name":"stdout","time":4023.957171159,"data":"  - artifacts/gates/dataset_identity.json (0.00 MB)\n"}
+,{"stream_name":"stdout","time":4023.957500545,"data":"  - artifacts/g5/normalizers/normalizer_holdout_fold_5.json (0.00 MB)\n"}
+,{"stream_name":"stdout","time":4023.957621753,"data":"  - artifacts/g5/normalizers/normalizer_holdout_fold_6.json (0.00 MB)\n"}
+,{"stream_name":"stdout","time":4023.957817557,"data":"  - artifacts/g5/normalizers/normalizer_holdout_fold_2.json (0.00 MB)\n"}
+,{"stream_name":"stdout","time":4023.957966543,"data":"  - artifacts/g5/normalizers/normalizer_holdout_fold_3.json (0.00 MB)\n"}
+,{"stream_name":"stdout","time":4023.958175531,"data":"  - artifacts/g5/normalizers/normalizer_holdout_fold_8.json (0.00 MB)\n"}
+,{"stream_name":"stdout","time":4023.958376916,"data":"  - artifacts/g5/normalizers/normalizer_holdout_fold_7.json (0.00 MB)\n"}
+,{"stream_name":"stdout","time":4023.958562581,"data":"  - artifacts/g5/normalizers/normalizer_holdout_fold_4.json (0.00 MB)\n"}
+,{"stream_name":"stdout","time":4023.958739451,"data":"  - artifacts/g5/normalizers/normalizer_holdout_fold_1.json (0.00 MB)\n"}
+,{"stream_name":"stdout","time":4023.95901263,"data":"\n"}
+,{"stream_name":"stdout","time":4023.959021333,"data":"===========================================================================\n"}
+,{"stream_name":"stdout","time":4023.959026469,"data":"  PIPELINE COMPLETED SUCCESSFULLY!\n"}
+,{"stream_name":"stdout","time":4023.959031257,"data":"===========================================================================\n"}
+,{"stream_name":"stderr","time":4026.862251123,"data":"/usr/local/lib/python3.12/dist-packages/mistune.py:435: SyntaxWarning: invalid escape sequence '\\|'\n"}
+,{"stream_name":"stderr","time":4026.862380546,"data":"  cells[i][c] = re.sub('\\\\\\\\\\|', '|', cell)\n"}
+,{"stream_name":"stderr","time":4027.280736871,"data":"/usr/local/lib/python3.12/dist-packages/nbconvert/filters/filter_links.py:36: SyntaxWarning: invalid escape sequence '\\_'\n"}
+,{"stream_name":"stderr","time":4027.28079645,"data":"  text = re.sub(r'_', '\\_', text) # Escape underscores in display text\n"}
+,{"stream_name":"stderr","time":4028.100693451,"data":"[NbConvertApp] Converting notebook __script__.ipynb to html\n"}
+,{"stream_name":"stderr","time":4029.852265982,"data":"[NbConvertApp] Writing 300017 bytes to __results__.html\n"}
+]
