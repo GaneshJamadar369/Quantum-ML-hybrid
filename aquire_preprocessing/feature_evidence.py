@@ -880,7 +880,13 @@ def run_feature_evidence_gate(
 
     reference_rows = 0
     if reference_features is not None and reference_pairs:
-        reference = pd.read_csv(reference_features).set_index("ecg_id")
+        raw_reference_columns = sorted({
+            column.removeprefix("ref_ecgdeli__") for column in reference_pairs.values()
+        })
+        reference = pd.read_csv(
+            reference_features,
+            usecols=lambda column: column == "ecg_id" or column in raw_reference_columns,
+        ).set_index("ecg_id")
         reference = reference.add_prefix("ref_ecgdeli__")
         reference_joined = base.join(reference, how="left", validate="one_to_one")
         result = compare_local_to_reference(reference_joined, reference_pairs, output_dir / "measurement_validation")

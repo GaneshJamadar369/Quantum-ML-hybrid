@@ -82,11 +82,22 @@ def test_complete_gate_aligns_by_ecg_id_and_builds_decision_register(tmp_path):
         "age": np.linspace(35, 85, n),
         "label_quality_group": "high",
     })
-    summary = run_feature_evidence_gate(features, metadata, manifest, tmp_path)
+    reference = tmp_path / "ecgdeli_features.csv"
+    pd.DataFrame({
+        "ecg_id": np.arange(1, n + 1),
+        "RR_Mean_Global": features.rr_median_ms,
+        "unused_large_reference_field": np.arange(n),
+    }).to_csv(reference, index=False)
+    summary = run_feature_evidence_gate(
+        features, metadata, manifest, tmp_path,
+        reference_features=reference,
+        reference_pairs={"rr_median_ms": "ref_ecgdeli__RR_Mean_Global"},
+    )
     assert summary["folds_used"] == list(range(1, 9))
     assert summary["fold_9_accessed"] is False
     assert summary["fold_10_accessed"] is False
     assert summary["ready_for_automatic_feature_deletion"] is False
+    assert summary["reference_pairs_evaluated"] == 1
     assert (tmp_path / "candidate_feature_registry.csv").exists()
     assert (tmp_path / "post_extraction" / "feature_decision_register.csv").exists()
 
