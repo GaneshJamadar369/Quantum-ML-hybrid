@@ -364,13 +364,14 @@ def raw_waveform_statistical_audit(
             masks = np.asarray(h5["sample_mask"][start:stop], dtype=bool)
             lead_masks = np.asarray(h5["lead_mask"][start:stop], dtype=bool)
             labels = np.asarray(h5["mi_label"][start:stop], dtype=int)
+            valid_signal = np.where(masks, signal, np.nan)
+            per_lead_range = np.nanmax(valid_signal, axis=2) - np.nanmin(valid_signal, axis=2)
+            per_lead_rms = np.sqrt(np.nanmean(valid_signal ** 2, axis=2))
+            per_lead_baseline = np.abs(np.nanmedian(valid_signal, axis=2))
+            per_lead_valid = masks.mean(axis=2)
+            correction_rms = np.sqrt(np.nanmean((signal - minimal) ** 2, axis=(1, 2)))
+            max_abs_amplitude = np.nanmax(np.abs(valid_signal), axis=(1, 2))
             for offset in range(stop - start):
-                valid_signal = np.where(masks[offset], signal[offset], np.nan)
-                per_lead_range = np.nanmax(valid_signal, axis=1) - np.nanmin(valid_signal, axis=1)
-                per_lead_rms = np.sqrt(np.nanmean(valid_signal ** 2, axis=1))
-                per_lead_baseline = np.abs(np.nanmedian(valid_signal, axis=1))
-                per_lead_valid = masks[offset].mean(axis=1)
-                diff = signal[offset] - minimal[offset]
                 row = {
                     "array_index": start + offset,
                     "ecg_id": int(h5["ecg_id"][start + offset]),
@@ -379,21 +380,26 @@ def raw_waveform_statistical_audit(
                     "strat_fold": int(folds[start + offset]),
                     "valid_lead_count": int(lead_masks[offset].sum()),
                     "valid_sample_fraction": float(masks[offset].mean()),
-                    "median_lead_range_mv": float(np.nanmedian(per_lead_range)),
-                    "median_lead_rms_mv": float(np.nanmedian(per_lead_rms)),
-                    "median_abs_baseline_mv": float(np.nanmedian(per_lead_baseline)),
-                    "max_abs_amplitude_mv": float(np.nanmax(np.abs(valid_signal))),
-                    "correction_rms_change_mv": float(np.sqrt(np.nanmean(diff ** 2))),
+                    "median_lead_range_mv": float(np.nanmedian(per_lead_range[offset])),
+                    "median_lead_rms_mv": float(np.nanmedian(per_lead_rms[offset])),
+                    "median_abs_baseline_mv": float(np.nanmedian(per_lead_baseline[offset])),
+                    "max_abs_amplitude_mv": float(max_abs_amplitude[offset]),
+                    "correction_rms_change_mv": float(correction_rms[offset]),
                 }
                 record_rows.append(row)
+            batch_metrics = {
+                "range_mv": per_lead_range,
+                "rms_mv": per_lead_rms,
+                "abs_baseline_mv": per_lead_baseline,
+                "valid_fraction": per_lead_valid,
+            }
+            for label in (0, 1):
+                label_mask = labels == label
                 for lead_index, lead in enumerate(leads):
-                    for metric, value in {
-                        "range_mv": per_lead_range[lead_index],
-                        "rms_mv": per_lead_rms[lead_index],
-                        "abs_baseline_mv": per_lead_baseline[lead_index],
-                        "valid_fraction": per_lead_valid[lead_index],
-                    }.items():
-                        lead_values.setdefault((lead, int(labels[offset]), metric), []).append(float(value))
+                    for metric, values in batch_metrics.items():
+                        lead_values.setdefault((lead, label, metric), []).extend(
+                            values[label_mask, lead_index].astype(float).tolist()
+                        )
 
     lead_rows = []
     for (lead, label, metric), values in lead_values.items():
