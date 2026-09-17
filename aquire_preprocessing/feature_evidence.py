@@ -497,23 +497,36 @@ def _feature_evidence(feature: str, series: pd.Series, labels: np.ndarray) -> di
     }
 
 
-def _sensitivity_at_specificity(y: np.ndarray, probability: np.ndarray, target: float = 0.90) -> float:
+def _sensitivity_at_specificity(
+    y: np.ndarray,
+    probability: np.ndarray,
+    target: float = 0.90,
+    sample_weight: Optional[np.ndarray] = None,
+) -> float:
     from sklearn.metrics import roc_curve
 
-    false_positive_rate, true_positive_rate, _ = roc_curve(y, probability)
+    false_positive_rate, true_positive_rate, _ = roc_curve(
+        y, probability, sample_weight=sample_weight
+    )
     valid = np.where((1.0 - false_positive_rate) >= target)[0]
     return float(np.max(true_positive_rate[valid])) if len(valid) else 0.0
 
 
-def _ablation_metrics(y: np.ndarray, probability: np.ndarray) -> dict:
+def _ablation_metrics(
+    y: np.ndarray,
+    probability: np.ndarray,
+    sample_weight: Optional[np.ndarray] = None,
+) -> dict:
     from sklearn.metrics import brier_score_loss, log_loss
 
     return {
-        "auprc": float(average_precision_score(y, probability)),
-        "auroc": float(roc_auc_score(y, probability)),
-        "brier": float(brier_score_loss(y, probability)),
-        "log_loss": float(log_loss(y, probability, labels=[0, 1])),
-        "sensitivity_at_90_specificity": _sensitivity_at_specificity(y, probability),
+        "auprc": float(average_precision_score(y, probability, sample_weight=sample_weight)),
+        "auroc": float(roc_auc_score(y, probability, sample_weight=sample_weight)),
+        "brier": float(brier_score_loss(y, probability, sample_weight=sample_weight)),
+        "log_loss": float(log_loss(y, probability, labels=[0, 1], sample_weight=sample_weight)),
+        "sensitivity_at_90_specificity": _sensitivity_at_specificity(
+            y, probability, sample_weight=sample_weight
+        ),
     }
 
 
@@ -586,17 +599,19 @@ def run_clinical_group_ablation(
 
     base_probability = probabilities["existing_94"]
     combined_probability = probabilities["existing_plus_clinical"]
-    unique_patients = np.unique(patients_array)
+    unique_patients, patient_inverse = np.unique(patients_array, return_inverse=True)
     rng = np.random.default_rng(seed)
     bootstrap_rows = []
     for repeat in range(bootstrap_repeats):
-        sampled_patients = rng.choice(unique_patients, len(unique_patients), replace=True)
-        sampled_indices = np.concatenate([np.where(patients_array == patient)[0] for patient in sampled_patients])
-        y = labels_array[sampled_indices]
-        if len(np.unique(y)) < 2:
+        patient_counts = rng.multinomial(
+            len(unique_patients), np.full(len(unique_patients), 1.0 / len(unique_patients))
+        )
+        record_weights = patient_counts[patient_inverse].astype(float)
+        represented = record_weights > 0
+        if len(np.unique(labels_array[represented])) < 2:
             continue
-        base_metrics = _ablation_metrics(y, base_probability[sampled_indices])
-        combined_metrics = _ablation_metrics(y, combined_probability[sampled_indices])
+        base_metrics = _ablation_metrics(labels_array, base_probability, record_weights)
+        combined_metrics = _ablation_metrics(labels_array, combined_probability, record_weights)
         bootstrap_rows.append({
             "repeat": repeat,
             "delta_auprc": combined_metrics["auprc"] - base_metrics["auprc"],
