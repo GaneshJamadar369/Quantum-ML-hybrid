@@ -572,8 +572,13 @@ def run_clinical_group_ablation(
         ], axis=1),
     }
     estimator = make_pipeline(
-        SimpleImputer(strategy="median"), RobustScaler(),
-        LogisticRegression(max_iter=3000, class_weight="balanced", random_state=seed),
+        SimpleImputer(strategy="median", keep_empty_features=True), RobustScaler(),
+        LogisticRegression(
+            max_iter=1000,
+            solver="liblinear",
+            class_weight="balanced",
+            random_state=seed,
+        ),
     )
     prediction_rows = []
     probabilities: Dict[str, np.ndarray] = {}
