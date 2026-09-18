@@ -9,5 +9,7 @@ neurokit2==0.2.10
 xgboost==3.0.0
 pyarrow==19.0.1
 matplotlib==3.10.1
+imbalanced-learn==0.13.0
+shap==0.46.0
 pytest==8.3.5
 pytest-cov==6.0.0
