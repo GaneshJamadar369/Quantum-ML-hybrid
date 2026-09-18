@@ -49,8 +49,8 @@ This file is the operational source of truth. A checked **implementation** item 
 - [x] Run v0.3 on the 1,024-patient stratified calibration sample. **STOP/REPAIR:** RR passed; four interval fields failed; five of eight amplitudes passed.
 - [x] Exclude unvalidated 100 Hz PR/QRS/QT/QTc families from predictor eligibility rather than relaxing their failed thresholds.
 - [x] Run signed-fiducial v0.4 on 1,024 previously unseen patients. **PASS:** RR and six of eight R-amplitude pairs passed; V2/V3 remain under exclusion/review.
-- [ ] If calibration passes, re-extract all 17,348 accepted ECGs and repeat the full evidence gate. If it fails, repair or exclude failed measurement families before a full run.
-- [ ] Freeze and sign the final approved feature manifest.
+- [x] If calibration passes, re-extract all 17,348 accepted ECGs and repeat the full evidence gate. **PASS:** Full 17,348 re-extraction completed on Kaggle (350826460); clinical composites promoted (ΔAUPRC 0.0164 [0.0122, 0.0208]).
+- [x] Freeze and sign the final approved feature manifest. **DONE:** `configs/approved_feature_manifest_v0_4.json` signed (106 approved, 20 excluded).
 
 ## Phase 6 — blocked until G0–G5 pass
 
