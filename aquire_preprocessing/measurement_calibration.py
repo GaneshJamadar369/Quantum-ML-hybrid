@@ -130,7 +130,7 @@ def run_measurement_calibration(
         "all_thresholds_prespecified": True,
         "reference_role": "ECGDeli agreement reference; not clinical ground truth",
         "next_action": (
-            "re-extract all accepted development ECGs with v0.3"
+            "re-extract all accepted development ECGs with the approved extractor version"
             if decision == "PASS_FULL_REEXTRACTION"
             else "inspect failed pairs and repair or exclude the affected measurements"
         ),
@@ -138,4 +138,3 @@ def run_measurement_calibration(
     path = output_dir / "measurement_calibration_conclusion.json"
     path.write_text(json.dumps(conclusion, indent=2))
     return conclusion
-

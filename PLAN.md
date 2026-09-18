@@ -48,7 +48,7 @@ This file is the operational source of truth. A checked **implementation** item 
 - [x] Accept clinical composites only if patient-bootstrap OOF ablation supports them. **Promoted to nested evaluation:** ΔAUPRC 0.0158 [0.0105, 0.0204].
 - [x] Run v0.3 on the 1,024-patient stratified calibration sample. **STOP/REPAIR:** RR passed; four interval fields failed; five of eight amplitudes passed.
 - [x] Exclude unvalidated 100 Hz PR/QRS/QT/QTc families from predictor eligibility rather than relaxing their failed thresholds.
-- [ ] Run signed-fiducial v0.4 on 1,024 previously unseen patients; require RR and at least six of eight R-amplitude pairs to pass.
+- [x] Run signed-fiducial v0.4 on 1,024 previously unseen patients. **PASS:** RR and six of eight R-amplitude pairs passed; V2/V3 remain under exclusion/review.
 - [ ] If calibration passes, re-extract all 17,348 accepted ECGs and repeat the full evidence gate. If it fails, repair or exclude failed measurement families before a full run.
 - [ ] Freeze and sign the final approved feature manifest.
 

@@ -100,3 +100,10 @@ where dominant-S leads can be negative, while v0.3 selected the positive QRS
 maximum. v0.4 corrects that definition. It must pass on 1,024 patients excluded
 from the v0.3 sample before full re-extraction is permitted. Classical baseline
 training remains blocked until calibration and the repeated evidence gate pass.
+
+The v0.4 unseen-patient holdout passed its frozen gate. RR correlation was
+0.963 with 2 ms median absolute error. I, II, V1 and V4–V6 passed amplitude
+coverage, correlation and error thresholds. V2 and V3 correlations improved
+to 0.752 and 0.737, but their median errors (0.513 and 0.637 mV) exceeded the
+0.25 mV limit; they remain excluded from agreement-based acceptance. Full v0.4
+re-extraction and a repeated evidence gate are now permitted.

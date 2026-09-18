@@ -8,9 +8,21 @@ from aquire_preprocessing.feature_evidence import (
     analyse_extracted_features,
     benjamini_hochberg,
     derive_clinical_composites,
+    predictor_eligible_columns,
     raw_waveform_statistical_audit,
     run_feature_evidence_gate,
 )
+
+
+def test_reviewed_family_decisions_exclude_predictors_but_keep_audit_columns():
+    columns = ["rr_median_ms", "pr_interval_ms", "v2__r_amp_mv", "i__r_amp_mv", "i__valid_fraction"]
+    eligible, excluded = predictor_eligible_columns(columns, {
+        "intervals": {"status": "EXCLUDE_UNVALIDATED", "features": ["pr_interval_ms"]},
+        "v2": {"status": "EXCLUDE_UNVALIDATED", "features": ["v2__r_amp_mv"]},
+        "qc": {"status": "QC_METADATA_ONLY", "features": ["*__valid_fraction"]},
+    })
+    assert eligible == ["rr_median_ms", "i__r_amp_mv"]
+    assert excluded == ["pr_interval_ms", "v2__r_amp_mv", "i__valid_fraction"]
 
 
 def _deployable_features(n=32):

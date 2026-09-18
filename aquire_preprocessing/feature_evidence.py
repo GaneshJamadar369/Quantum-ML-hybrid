@@ -15,6 +15,7 @@ from __future__ import annotations
 
 from dataclasses import dataclass, asdict
 import json
+import fnmatch
 from pathlib import Path
 from typing import Dict, Iterable, Mapping, Optional, Sequence, Tuple
 import zlib
@@ -66,6 +67,28 @@ def _atomic_json(payload: object, output: Path) -> None:
     temporary = output.with_suffix(output.suffix + ".tmp")
     temporary.write_text(json.dumps(payload, indent=2, default=str))
     temporary.replace(output)
+
+
+def predictor_eligible_columns(
+    columns: Sequence[str],
+    family_decisions: Optional[Mapping[str, object]],
+) -> tuple[list[str], list[str]]:
+    """Apply reviewed feature-family exclusions without deleting audit data."""
+
+    excluded_patterns: list[str] = []
+    if family_decisions:
+        for decision in family_decisions.values():
+            if not isinstance(decision, Mapping):
+                continue
+            status = str(decision.get("status", ""))
+            if status.startswith("EXCLUDE") or status == "QC_METADATA_ONLY":
+                excluded_patterns.extend(str(value) for value in decision.get("features", []))
+    excluded = [
+        column for column in columns
+        if any(fnmatch.fnmatch(column, pattern) for pattern in excluded_patterns)
+    ]
+    eligible = [column for column in columns if column not in set(excluded)]
+    return eligible, excluded
 
 
 def benjamini_hochberg(p_values: Sequence[float]) -> np.ndarray:
@@ -832,17 +855,29 @@ def run_feature_evidence_gate(
     reference_features: Optional[Path] = None,
     reference_pairs: Optional[Mapping[str, str]] = None,
     max_raw_records: Optional[int] = None,
+    family_decisions: Optional[Mapping[str, object]] = None,
 ) -> dict:
     """Run the complete pre/post-extraction evidence gate."""
 
     output_dir = Path(output_dir)
     output_dir.mkdir(parents=True, exist_ok=True)
+    features = features.copy()
+    metadata = metadata.copy()
+    manifest = manifest.copy()
     for frame in (features, metadata, manifest):
         if "ecg_id" in frame.columns:
             frame.set_index("ecg_id", inplace=True)
         frame.index = pd.to_numeric(frame.index, errors="raise").astype(int)
         if not frame.index.is_unique:
             raise ValueError("ecg_id must be unique in every feature-evidence input")
+    # Re-extraction artifacts carry cohort fields for standalone calibration;
+    # the authoritative copies for evidence remain metadata/manifest.
+    features.drop(
+        columns=[column for column in [
+            "patient_id", "mi_label", "strat_fold", "hard_negative", "eligibility",
+        ] if column in features],
+        inplace=True,
+    )
     joined = metadata.join(manifest, how="inner", rsuffix="__manifest", validate="one_to_one")
     joined = joined[joined.strat_fold.isin(DEV_FOLDS) & joined.eligibility.eq("PRIMARY")]
     joined = joined.join(features, how="inner", validate="one_to_one")
@@ -854,6 +889,8 @@ def run_feature_evidence_gate(
 
     feature_columns = [column for column in features.columns if column in joined.columns]
     base = joined[feature_columns].copy()
+    eligible_columns, excluded_columns = predictor_eligible_columns(base.columns, family_decisions)
+    eligible_base = base[eligible_columns].copy()
     derived, derived_registry = derive_clinical_composites(base)
     combined = pd.concat([base, derived], axis=1)
     existing_registry = build_existing_feature_registry(base)
@@ -867,7 +904,7 @@ def run_feature_evidence_gate(
         output_dir / "post_extraction",
     )
     ablation_metrics, _ = run_clinical_group_ablation(
-        base,
+        eligible_base,
         derived,
         joined.mi_label.to_numpy(),
         joined.strat_fold.to_numpy(),
@@ -906,6 +943,8 @@ def run_feature_evidence_gate(
         "fold_9_accessed": False,
         "fold_10_accessed": False,
         "ready_for_automatic_feature_deletion": False,
+        "predictor_eligible_base_columns": int(len(eligible_columns)),
+        "reviewed_excluded_base_columns": sorted(excluded_columns),
         "next_required_action": "clinical review, repair invalid measurements, then freeze the approved feature manifest",
     }
     _atomic_json(summary, output_dir / "feature_evidence_summary.json")

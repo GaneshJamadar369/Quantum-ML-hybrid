@@ -25,6 +25,11 @@ def main() -> None:
     )
     parser.add_argument("--output", type=Path, default=Path("artifacts/g5_feature_evidence"))
     parser.add_argument("--max-raw-records", type=int)
+    parser.add_argument(
+        "--feature-family-decisions",
+        type=Path,
+        default=Path("configs/feature_family_decisions.json"),
+    )
     args = parser.parse_args()
 
     features = pd.read_csv(args.features)
@@ -33,6 +38,10 @@ def main() -> None:
     reference_pairs = None
     if args.reference_features:
         reference_pairs = json.loads(args.reference_pairs.read_text())
+    family_decisions = (
+        json.loads(args.feature_family_decisions.read_text())
+        if args.feature_family_decisions.exists() else None
+    )
     summary = run_feature_evidence_gate(
         features=features,
         metadata=metadata,
@@ -42,6 +51,7 @@ def main() -> None:
         reference_features=args.reference_features,
         reference_pairs=reference_pairs,
         max_raw_records=args.max_raw_records,
+        family_decisions=family_decisions,
     )
     print(json.dumps(summary, indent=2))
 

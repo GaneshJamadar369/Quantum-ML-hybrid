@@ -10,9 +10,14 @@
     "reason": "NeuroKit2 single-lead 100 Hz fiducials failed the frozen v0.3 ECGDeli agreement gate. Values may remain in audit output but cannot enter a predictor matrix."
   },
   "r_amplitudes": {
-    "status": "RETAIN_PENDING_V0_4_HOLDOUT",
-    "features": ["*__r_amp_mv"],
-    "reason": "v0.4 changes R amplitude to the signed voltage at the common R fiducial; requires unseen-patient agreement."
+    "status": "RETAIN_VALIDATED_SUBSET",
+    "features": ["i__r_amp_mv", "ii__r_amp_mv", "v1__r_amp_mv", "v4__r_amp_mv", "v5__r_amp_mv", "v6__r_amp_mv"],
+    "reason": "These six leads passed the v0.4 unseen-patient ECGDeli agreement gate."
+  },
+  "r_amplitudes_v2_v3": {
+    "status": "EXCLUDE_UNVALIDATED",
+    "features": ["v2__r_amp_mv", "v3__r_amp_mv"],
+    "reason": "Correlation improved after signed-fiducial repair, but median absolute errors exceeded the frozen 0.25 mV limit."
   },
   "valid_fraction": {
     "status": "QC_METADATA_ONLY",
