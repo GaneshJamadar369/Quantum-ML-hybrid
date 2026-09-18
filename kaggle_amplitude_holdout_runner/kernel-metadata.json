@@ -1,0 +1,20 @@
+{
+  "id": "swayamjeetbhagat4/aquire-med-amplitude-holdout",
+  "title": "AQUIRE-Med Amplitude Holdout",
+  "code_file": "amplitude_holdout_cloud_runner.py",
+  "language": "python",
+  "kernel_type": "script",
+  "is_private": true,
+  "enable_gpu": false,
+  "enable_tpu": false,
+  "enable_internet": true,
+  "dataset_sources": [
+    "antonymgitau/ptb-xl-a-comprehensive-ecg-feature-dataset"
+  ],
+  "competition_sources": [],
+  "kernel_sources": [
+    "swayamjeetbhagat4/aquire-med-preprocessing-pipeline",
+    "swayamjeetbhagat4/aquire-med-measurement-calibration"
+  ],
+  "model_sources": []
+}
