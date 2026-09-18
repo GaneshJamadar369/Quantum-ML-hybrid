@@ -55,9 +55,24 @@ clinical ST thresholds remain deferred until the clinical protocol is frozen.
 ## Measurement validity
 
 Every local measurement mapped to PTB-XL+ ECGDeli is evaluated by coverage,
-correlation, mean absolute error, median absolute error and failure rate.
+Pearson and Spearman correlation, bias, median absolute error, bootstrap
+uncertainty and Bland–Altman limits. The thresholds are frozen in
+`configs/measurement_acceptance.json` before the repaired extractor is run.
 Commercial 12SL and Uni-G measurements are oracle benchmarks and are never
 required for a new submitted ECG.
+
+The repair uses a common NeuroKit2-delineated beat timebase, with lead II
+preferred and another valid lead used only when lead II fails. PR/QRS/QT values
+are emitted only from actual fiducials; approximate fallback windows may never
+create interval values. ST60 is measured 60 ms after the delineated QRS offset
+relative to a beat-specific pre-QRS baseline.
+
+Before full re-extraction, v0.3 is tested on a deterministic 1,024-patient
+sample balanced across folds 1–8 and MI, hard-negative non-MI and other non-MI
+cohorts. All five timing comparisons and at least six of eight R-amplitude lead
+comparisons must pass their frozen point-estimate thresholds. ECGDeli agreement
+is a reproducibility gate, not clinical ground truth. Failure stops the full
+run and triggers repair or exclusion of the affected measurement family.
 
 ## Post-extraction statistical evidence
 
@@ -99,4 +114,3 @@ an evidence screen, not the classical champion selection.
 Final inclusion is frozen in an approved feature manifest before classical
 champion selection. The same manifest and fold-local transformations are then
 used for all classical and quantum comparisons.
-

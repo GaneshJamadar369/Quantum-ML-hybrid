@@ -26,6 +26,8 @@ This file is the operational source of truth. A checked **implementation** item 
 - [x] Pre/post-extraction feature evidence gate and clinical-composite generator are implemented.
 - [x] Feature-level effect sizes, FDR, mutual information, redundancy and fold stability are implemented.
 - [x] Patient-bootstrap OOF ablation for clinical feature groups is implemented.
+- [x] v0.3 delineated-beat feature extractor and restartable HDF5 re-extraction are implemented.
+- [x] Patient-stratified ECGDeli calibration gate and acceptance thresholds are frozen in code.
 
 ## G0–G5 evidence gates
 
@@ -38,12 +40,14 @@ This file is the operational source of truth. A checked **implementation** item 
 
 ## G5F — feature evidence gate (required before Phase 6)
 
-- [ ] Generate the development-cohort and raw-waveform statistical audits.
-- [ ] Review extractor failures and local-versus-ECGDeli measurement agreement.
-- [ ] Review every feature's coverage, effect size, FDR, mutual information and fold stability.
+- [x] Generate the development-cohort and raw-waveform statistical audits.
+- [x] Review extractor failures and local-versus-ECGDeli measurement agreement. **MODIFY:** intervals absent; RR invalid; V1–V3 R amplitude weak.
+- [x] Review every feature's coverage, effect size, FDR, mutual information and fold stability.
 - [ ] Resolve every `REPAIR_OR_EXCLUDE`, `EXCLUDE_NONINFORMATIVE` and `REVIEW_UNSTABLE` recommendation.
 - [ ] Review rho ≥ 0.95 redundancy clusters using reliability and clinical interpretability.
-- [ ] Accept clinical composites only if patient-bootstrap OOF ablation supports them.
+- [x] Accept clinical composites only if patient-bootstrap OOF ablation supports them. **Promoted to nested evaluation:** ΔAUPRC 0.0158 [0.0105, 0.0204].
+- [ ] Run v0.3 on the 1,024-patient stratified calibration sample; require all five timing pairs and at least six of eight R-amplitude pairs to pass.
+- [ ] If calibration passes, re-extract all 17,348 accepted ECGs and repeat the full evidence gate. If it fails, repair or exclude failed measurement families before a full run.
 - [ ] Freeze and sign the final approved feature manifest.
 
 ## Phase 6 — blocked until G0–G5 pass

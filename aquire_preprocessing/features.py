@@ -17,16 +17,83 @@ from .manifest import guard_fold_access
 class FeatureBundle:
     ecg_id: int
     values: Dict[str, float]
-    extractor: str = "aquire-local-v0.2.0"
+    extractor: str = "aquire-local-v0.3.0"
     failures: List[str] = field(default_factory=list)
 
 
 def _r_peaks(signal: np.ndarray, fs: int) -> np.ndarray:
+    """Fallback polarity-aware detector; validated extraction uses NeuroKit2."""
     centered = signal - np.median(signal)
     envelope = np.abs(centered)
     prominence = max(float(np.median(np.abs(centered - np.median(centered)))) * 2.0, 0.02)
-    peaks, _ = find_peaks(envelope, distance=max(1, int(0.25 * fs)), prominence=prominence)
+    peaks, _ = find_peaks(envelope, distance=max(1, int(0.30 * fs)), prominence=prominence)
     return peaks
+
+
+def _wave_array(waves: dict, key: str, length: int) -> np.ndarray:
+    values = np.asarray(waves.get(key, []), dtype=float)
+    result = np.full(length, np.nan, dtype=float)
+    result[:min(length, len(values))] = values[:length]
+    return result
+
+
+def _detect_delineated_beats(
+    signal_mv: np.ndarray,
+    sample_mask: np.ndarray,
+    lead_mask: np.ndarray,
+    fs: int,
+    failures: List[str],
+    require_delineation: bool,
+) -> tuple[np.ndarray, dict, Optional[int]]:
+    preferred = CANONICAL_LEAD_ORDER.index("II")
+    candidates = [preferred] + [
+        index for index in range(len(CANONICAL_LEAD_ORDER)) if index != preferred
+    ]
+    candidates = [
+        index for index in candidates
+        if lead_mask[index] and sample_mask[index].mean() > 0.95
+    ]
+    try:
+        import neurokit2 as nk  # type: ignore
+    except ImportError as exc:
+        failures.append("neurokit2_not_installed")
+        if require_delineation:
+            raise RuntimeError("NeuroKit2 is required for validated feature extraction") from exc
+        if not candidates:
+            return np.array([], dtype=int), {}, None
+        failures.append("unvalidated_fallback_r_peaks")
+        return _r_peaks(signal_mv[candidates[0]], fs), {}, candidates[0]
+
+    for lead_index in candidates:
+        try:
+            cleaned = nk.ecg_clean(signal_mv[lead_index], sampling_rate=fs, method="neurokit")
+            _, info = nk.ecg_peaks(cleaned, sampling_rate=fs)
+            peaks = np.asarray(info.get("ECG_R_Peaks", []), dtype=int)
+            if len(peaks) < 2:
+                continue
+            rr_ms = np.diff(peaks) * 1000.0 / fs
+            plausible = (rr_ms >= 300.0) & (rr_ms <= 2000.0)
+            if plausible.mean() < 0.8:
+                continue
+            _, waves = nk.ecg_delineate(
+                cleaned, peaks, sampling_rate=fs, method="dwt", show=False
+            )
+            onset = _wave_array(waves, "ECG_R_Onsets", len(peaks))
+            offset = _wave_array(waves, "ECG_R_Offsets", len(peaks))
+            delineated = np.isfinite(onset) & np.isfinite(offset) & (offset > onset)
+            if delineated.mean() < 0.5:
+                failures.append(f"delineation_lead_{CANONICAL_LEAD_ORDER[lead_index]}:low_coverage")
+                continue
+            return peaks, waves, lead_index
+        except Exception as exc:  # try the next valid lead before failing
+            failures.append(f"delineation_lead_{CANONICAL_LEAD_ORDER[lead_index]}:{type(exc).__name__}")
+    failures.append("validated_delineation_failed")
+    if require_delineation:
+        return np.array([], dtype=int), {}, None
+    if candidates:
+        failures.append("unvalidated_fallback_r_peaks")
+        return _r_peaks(signal_mv[candidates[0]], fs), {}, candidates[0]
+    return np.array([], dtype=int), {}, None
 
 
 def extract_deployable_features(
@@ -35,11 +102,13 @@ def extract_deployable_features(
     ecg_id: int,
     sample_mask: Optional[np.ndarray] = None,
     lead_mask: Optional[np.ndarray] = None,
+    require_delineation: bool = False,
 ) -> FeatureBundle:
     """Extract deterministic features available from a new waveform.
 
-    Fiducial intervals are attempted with NeuroKit2 when installed. The core
-    amplitude, RR, ST and quality features remain available without it.
+    A common delineated beat time-base is used across all leads. This avoids
+    treating S waves or T waves as separate beats and measures ST60 relative to
+    a beat-specific pre-QRS baseline and a delineated QRS offset.
     """
     signal_mv = np.asarray(signal_mv, dtype=float)
     sample_mask = np.ones_like(signal_mv, dtype=bool) if sample_mask is None else np.asarray(sample_mask, bool)
@@ -53,12 +122,9 @@ def extract_deployable_features(
         ]
     })
 
-    preferred = CANONICAL_LEAD_ORDER.index("II")
-    candidates = [preferred] + [i for i in range(len(CANONICAL_LEAD_ORDER)) if i != preferred]
-    peak_lead = next((i for i in candidates if lead_mask[i] and sample_mask[i].mean() > 0.95), None)
-    peaks = np.array([], dtype=int)
-    if peak_lead is not None:
-        peaks = _r_peaks(signal_mv[peak_lead], fs)
+    peaks, waves, peak_lead = _detect_delineated_beats(
+        signal_mv, sample_mask, lead_mask, fs, failures, require_delineation
+    )
     if len(peaks) >= 2:
         rr_ms = np.diff(peaks) * 1000.0 / fs
         values.update({
@@ -71,6 +137,34 @@ def extract_deployable_features(
         failures.append("insufficient_r_peaks")
         values.update({k: np.nan for k in ["heart_rate_bpm", "rr_median_ms", "rr_iqr_ms", "rr_cv"]})
 
+    fiducial_onset = _wave_array(waves, "ECG_R_Onsets", len(peaks))
+    fiducial_offset = _wave_array(waves, "ECG_R_Offsets", len(peaks))
+    p_onset = _wave_array(waves, "ECG_P_Onsets", len(peaks))
+    t_offset = _wave_array(waves, "ECG_T_Offsets", len(peaks))
+
+    interval_specs = [
+        ("pr_interval_ms", p_onset, fiducial_onset, 80.0, 400.0),
+        ("qrs_duration_ms", fiducial_onset, fiducial_offset, 40.0, 250.0),
+        ("qt_interval_ms", fiducial_onset, t_offset, 200.0, 700.0),
+    ]
+    for feature, left, right, lower, upper in interval_specs:
+        interval_ms = (right - left) * 1000.0 / fs
+        valid_interval = (
+            np.isfinite(left) & np.isfinite(right)
+            & (interval_ms >= lower) & (interval_ms <= upper)
+        )
+        values[feature] = (
+            float(np.median(interval_ms[valid_interval]))
+            if valid_interval.any() else np.nan
+        )
+    qt = values["qt_interval_ms"]
+    rr = values.get("rr_median_ms", np.nan)
+    if np.isfinite(qt) and np.isfinite(rr) and rr > 0:
+        rr_seconds = rr / 1000.0
+        values["qtc_bazett_ms"] = float(qt / np.sqrt(rr_seconds))
+        values["qtc_fridericia_ms"] = float(qt / np.cbrt(rr_seconds))
+        values["qtc_framingham_ms"] = float(qt + 154.0 * (1.0 - rr_seconds))
+
     for index, lead in enumerate(CANONICAL_LEAD_ORDER):
         valid = sample_mask[index] & np.isfinite(signal_mv[index])
         x = signal_mv[index, valid]
@@ -79,27 +173,44 @@ def extract_deployable_features(
             for suffix in ["range_mv", "r_amp_mv", "s_amp_mv", "rs_ratio", "st60_mv", "t_polarity", "valid_fraction"]:
                 values[f"{prefix}__{suffix}"] = np.nan
             continue
-        baseline = float(np.median(x))
         values[f"{prefix}__range_mv"] = float(np.ptp(x))
         values[f"{prefix}__valid_fraction"] = float(valid.mean())
-        lead_peaks = _r_peaks(signal_mv[index], fs)
         r_values: List[float] = []
         s_values: List[float] = []
         st_values: List[float] = []
         t_values: List[float] = []
-        for peak in lead_peaks:
-            qrs_start, qrs_stop = peak - int(0.04 * fs), peak + int(0.08 * fs)
-            if qrs_start < 0 or qrs_stop >= signal_mv.shape[1]:
+        for beat_index, peak in enumerate(peaks):
+            # Approximate windows are allowed only for morphology amplitudes in
+            # the explicitly flagged non-validated fallback path. They never
+            # create PR/QRS/QT interval values.
+            qrs_start = int(round(fiducial_onset[beat_index])) if np.isfinite(fiducial_onset[beat_index]) else peak - int(round(0.05 * fs))
+            qrs_stop = int(round(fiducial_offset[beat_index])) if np.isfinite(fiducial_offset[beat_index]) else peak + int(round(0.08 * fs))
+            if qrs_start < int(0.20 * fs) or qrs_stop <= qrs_start or qrs_stop >= signal_mv.shape[1]:
                 continue
-            segment = signal_mv[index, qrs_start:qrs_stop]
+            baseline_start = qrs_start - int(round(0.20 * fs))
+            baseline_stop = qrs_start - int(round(0.08 * fs))
+            baseline_samples = signal_mv[index, baseline_start:baseline_stop]
+            baseline_mask = sample_mask[index, baseline_start:baseline_stop]
+            if not baseline_mask.any():
+                continue
+            baseline = float(np.median(baseline_samples[baseline_mask]))
+            if not sample_mask[index, qrs_start:qrs_stop + 1].all():
+                continue
+            segment = signal_mv[index, qrs_start:qrs_stop + 1]
             r_values.append(float(np.max(segment) - baseline))
             s_values.append(float(np.min(segment) - baseline))
-            st_idx = peak + int(0.14 * fs)
-            if st_idx < signal_mv.shape[1]:
+            st_idx = qrs_stop + int(round(0.06 * fs))
+            if st_idx < signal_mv.shape[1] and sample_mask[index, st_idx]:
                 st_values.append(float(signal_mv[index, st_idx] - baseline))
-            t_start, t_stop = peak + int(0.18 * fs), peak + int(0.38 * fs)
-            if t_stop < signal_mv.shape[1]:
-                t_values.append(float(np.mean(signal_mv[index, t_start:t_stop]) - baseline))
+            t_start = qrs_stop + int(round(0.08 * fs))
+            t_stop = min(qrs_stop + int(round(0.40 * fs)), signal_mv.shape[1])
+            if beat_index + 1 < len(peaks):
+                next_onset = fiducial_onset[beat_index + 1]
+                next_qrs = int(next_onset) if np.isfinite(next_onset) else int(peaks[beat_index + 1])
+                t_stop = min(t_stop, next_qrs - int(round(0.05 * fs)))
+            if t_stop > t_start and sample_mask[index, t_start:t_stop].all():
+                t_segment = signal_mv[index, t_start:t_stop] - baseline
+                t_values.append(float(t_segment[np.argmax(np.abs(t_segment))]))
         r_amp = float(np.median(r_values)) if r_values else np.nan
         s_amp = float(np.median(s_values)) if s_values else np.nan
         values[f"{prefix}__r_amp_mv"] = r_amp
@@ -108,37 +219,6 @@ def extract_deployable_features(
         values[f"{prefix}__st60_mv"] = float(np.median(st_values)) if st_values else np.nan
         t_value = float(np.median(t_values)) if t_values else np.nan
         values[f"{prefix}__t_polarity"] = float(np.sign(t_value)) if np.isfinite(t_value) and abs(t_value) > 0.01 else 0.0
-
-    # Optional research-quality delineation. Missing dependency is recorded,
-    # never silently replaced with a database lookup.
-    try:
-        import neurokit2 as nk  # type: ignore
-        if peak_lead is not None:
-            cleaned = nk.ecg_clean(signal_mv[peak_lead], sampling_rate=fs, method="neurokit")
-            _, info = nk.ecg_peaks(cleaned, sampling_rate=fs)
-            rpeaks = np.asarray(info.get("ECG_R_Peaks", []), dtype=int)
-            if len(rpeaks):
-                _, waves = nk.ecg_delineate(cleaned, rpeaks, sampling_rate=fs, method="dwt")
-                for feature, left, right in [
-                    ("pr_interval_ms", "ECG_P_Onsets", "ECG_R_Onsets"),
-                    ("qrs_duration_ms", "ECG_R_Onsets", "ECG_R_Offsets"),
-                    ("qt_interval_ms", "ECG_R_Onsets", "ECG_T_Offsets"),
-                ]:
-                    a = np.asarray(waves.get(left, []), dtype=float)
-                    b = np.asarray(waves.get(right, []), dtype=float)
-                    valid = np.isfinite(a) & np.isfinite(b) & (b > a)
-                    values[feature] = float(np.median((b[valid] - a[valid]) * 1000.0 / fs)) if valid.any() else np.nan
-                qt = values["qt_interval_ms"]
-                rr = values.get("rr_median_ms", np.nan)
-                if np.isfinite(qt) and np.isfinite(rr) and rr > 0:
-                    rr_seconds = rr / 1000.0
-                    values["qtc_bazett_ms"] = float(qt / np.sqrt(rr_seconds))
-                    values["qtc_fridericia_ms"] = float(qt / np.cbrt(rr_seconds))
-                    values["qtc_framingham_ms"] = float(qt + 154.0 * (1.0 - rr_seconds))
-    except ImportError:
-        failures.append("neurokit2_not_installed")
-    except Exception as exc:
-        failures.append(f"delineation_failed:{type(exc).__name__}")
 
     return FeatureBundle(ecg_id=int(ecg_id), values=values, failures=failures)
 
