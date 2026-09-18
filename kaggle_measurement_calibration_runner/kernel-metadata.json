@@ -1,0 +1,19 @@
+{
+  "id": "swayamjeetbhagat4/aquire-med-measurement-calibration",
+  "title": "AQUIRE-Med Measurement Calibration",
+  "code_file": "measurement_calibration_cloud_runner.py",
+  "language": "python",
+  "kernel_type": "script",
+  "is_private": true,
+  "enable_gpu": false,
+  "enable_tpu": false,
+  "enable_internet": true,
+  "dataset_sources": [
+    "antonymgitau/ptb-xl-a-comprehensive-ecg-feature-dataset"
+  ],
+  "competition_sources": [],
+  "kernel_sources": [
+    "swayamjeetbhagat4/aquire-med-preprocessing-pipeline"
+  ],
+  "model_sources": []
+}
