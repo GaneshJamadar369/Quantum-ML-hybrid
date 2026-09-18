@@ -1,0 +1,49 @@
+{
+  "redundancy_clusters": {
+    "cluster_1": {
+      "features": ["heart_rate_bpm", "rr_median_ms"],
+      "keep": "rr_median_ms",
+      "rationale": "Directly measured; HR is derived"
+    },
+    "cluster_2": {
+      "features": ["avf__r_amp_mv", "clinical__inferior__r_mean_mv"],
+      "keep": "clinical__inferior__r_mean_mv",
+      "rationale": "Multi-lead composite is more robust"
+    },
+    "cluster_3": {
+      "features": ["avf__rs_ratio", "clinical__inferior__rs_median"],
+      "keep": "clinical__inferior__rs_median",
+      "rationale": "Multi-lead composite is more robust"
+    },
+    "cluster_4": {
+      "features": ["avf__st60_mv", "clinical__inferior__st_mean_mv"],
+      "keep": "clinical__inferior__st_mean_mv",
+      "rationale": "Multi-lead composite is more robust"
+    },
+    "cluster_5": {
+      "features": ["avl__r_amp_mv", "clinical__high_lateral__r_mean_mv"],
+      "keep": "clinical__high_lateral__r_mean_mv",
+      "rationale": "Multi-lead composite is more robust"
+    },
+    "cluster_6": {
+      "features": ["i__r_amp_mv", "clinical__high_lateral__r_mean_mv"],
+      "keep": "clinical__high_lateral__r_mean_mv",
+      "rationale": "Multi-lead composite is more robust"
+    },
+    "cluster_7": {
+      "features": ["i__st60_mv", "clinical__high_lateral__st_mean_mv"],
+      "keep": "clinical__high_lateral__st_mean_mv",
+      "rationale": "Multi-lead composite is more robust"
+    },
+    "cluster_8": {
+      "features": ["iii__st60_mv", "clinical__inferior_high_lateral_st_reciprocity"],
+      "keep": "clinical__inferior_high_lateral_st_reciprocity",
+      "rationale": "Composite more interpretable"
+    },
+    "cluster_9": {
+      "features": ["avr__r_amp_mv", "avr__s_amp_mv"],
+      "keep": "both",
+      "rationale": "Different morphological aspects"
+    }
+  }
+}

@@ -52,11 +52,23 @@ This file is the operational source of truth. A checked **implementation** item 
 - [x] If calibration passes, re-extract all 17,348 accepted ECGs and repeat the full evidence gate. **PASS:** Full 17,348 re-extraction completed on Kaggle (350826460); clinical composites promoted (ΔAUPRC 0.0164 [0.0122, 0.0208]).
 - [x] Freeze and sign the final approved feature manifest. **DONE:** `configs/approved_feature_manifest_v0_4.json` signed (106 approved, 20 excluded).
 
+## G5.5 — Pre-Modelling Data Conditioning (Advanced Feature Engineering)
+
+- [x] **Stage 1 & 2:** Fold-local P1/P99 outlier clipping and Yeo-Johnson power transforms to guard scalers.
+- [x] **Stage 3 & 4:** Pre-specified clinical interaction feature engineering (5 cardiologically motivated pairs) and fold-local zero-variance filter.
+- [x] **Stage 5:** Hybrid ANOVA-F + Mutual Information fold-local selection.
+- [x] **Stage 6:** Layered class imbalance conditioning (SMOTE-ENN on training folds + hard-negative sample weights).
+- [x] **Stage 7:** Redundancy cluster resolution (`configs/redundancy_resolution.json`).
+- [x] **Stage 8 & 10:** Fold-local Platt probability calibration and subgroup/hard-negative sensitivity analysis.
+- [x] **Stage 9:** Post-OOF SHAP attribution audit implementation.
+- [x] **Stage 11:** Split conformal prediction sets (RAPS, 90% coverage) implementation.
+
 ## Phase 6 — blocked until G0–G5 pass
 
-- [ ] Generate 8-fold patient-safe OOF predictions on folds 1–8.
+- [ ] Generate 8-fold patient-safe OOF predictions on folds 1–8 using the G5.5 conditioned feature matrix.
 - [ ] Compare logistic regression, RBF-SVC, random forest, XGBoost, small MLP and 1D ResNet.
 - [ ] Compare waveform, deployable-feature and fused branches.
 - [ ] Keep 12SL/Uni-G reference performance in a separate oracle table.
 - [ ] Select the provisional champion using pooled OOF AUPRC, then Brier score and latency when within 0.005 AUPRC.
+- [ ] **BLOCK:** Champion selection is blocked until Stage 9 SHAP attribution audit passes clinical plausibility checks.
 - [ ] Freeze the classical champion and OOF residuals before any `z4/z8` or quantum experiment.

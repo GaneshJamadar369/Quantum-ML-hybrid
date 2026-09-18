@@ -238,6 +238,9 @@ class FoldLocalTabularTransformer:
         self.centers_: Optional[pd.Series] = None
         self.scales_: Optional[pd.Series] = None
         self.fitted_folds_: List[int] = []
+        self.power_transformer_ = None
+        self.pt_cols_: List[str] = []
+        self.lambdas_: Optional[np.ndarray] = None
 
     def fit(
         self,
@@ -257,25 +260,73 @@ class FoldLocalTabularTransformer:
         train = train[self.columns_].replace([np.inf, -np.inf], np.nan)
         self.medians_ = train.median()
         filled = train.fillna(self.medians_)
+        
+        # Stage 2: Fold-Local Power Transform
+        self.pt_cols_ = [c for c in self.columns_ if "polarity" not in c and "hard_negative" not in c and "eligibility" not in c]
+        if self.pt_cols_:
+            try:
+                from sklearn.preprocessing import PowerTransformer
+            except ImportError as exc:
+                raise RuntimeError("scikit-learn is required for PowerTransformer") from exc
+            self.power_transformer_ = PowerTransformer(method='yeo-johnson', standardize=True)
+            filled_pt = filled.copy()
+            filled_pt[self.pt_cols_] = self.power_transformer_.fit_transform(filled[self.pt_cols_])
+            self.lambdas_ = self.power_transformer_.lambdas_
+            filled = filled_pt
+            
         self.centers_ = filled.median()
         self.scales_ = (filled.quantile(0.75) - filled.quantile(0.25)).replace(0, 1.0)
         scaled = (filled - self.centers_) / self.scales_
-        nonconstant = [c for c in scaled.columns if float(scaled[c].var()) > 1e-12]
+        
+        # Stage 4: Zero-variance filter (variance >= 1e-6)
+        nonconstant = [c for c in scaled.columns if float(scaled[c].var()) >= 1e-6]
+        
         corr = scaled[nonconstant].corr().abs()
         keep: List[str] = []
         for column in nonconstant:
             if not any(float(corr.at[column, existing]) >= self.correlation_threshold for existing in keep):
                 keep.append(column)
+                
+        # Stage 5: Hybrid ANOVA-F + MI selection
         if labels is not None and len(keep) > max_features:
             try:
-                from sklearn.feature_selection import f_classif
+                from sklearn.feature_selection import f_classif, mutual_info_classif
             except ImportError as exc:
-                raise RuntimeError("scikit-learn is required for fold-local ANOVA selection") from exc
+                raise RuntimeError("scikit-learn is required for hybrid feature selection") from exc
             y = np.asarray(labels)[mask]
-            scores, _ = f_classif(scaled[keep].to_numpy(), y)
-            scores = np.nan_to_num(scores, nan=-np.inf)
-            chosen = np.argsort(scores)[-max_features:]
-            keep = [keep[index] for index in sorted(chosen)]
+            
+            X_scaled = scaled[keep].to_numpy()
+            
+            # 1. ANOVA-F
+            f_scores, _ = f_classif(X_scaled, y)
+            f_scores = np.nan_to_num(f_scores, nan=-np.inf)
+            f_ranks = np.argsort(np.argsort(f_scores))
+            
+            # 2. Mutual Information
+            mi_scores = mutual_info_classif(X_scaled, y, n_neighbors=5, random_state=42)
+            mi_ranks = np.argsort(np.argsort(mi_scores))
+            
+            # 3. Combined score
+            hybrid_scores = 0.5 * f_ranks + 0.5 * mi_ranks
+            chosen_idx = np.argsort(hybrid_scores)[-max_features:]
+            top_k_keep = set([keep[i] for i in chosen_idx])
+            
+            # 4. Force-include REVIEW_UNSTABLE
+            # We assume REVIEW_UNSTABLE features are known to the domain and kept in "keep"
+            # Here we can look for specific keywords if needed, or rely on manifest.
+            # (If the manifest isn't available here, we'll just keep the top_k. The plan specifies 
+            # to include 10 REVIEW_UNSTABLE. If they are in `keep`, we keep them.)
+            REVIEW_UNSTABLE = [
+                "qtc_bazett_ms", "qtc_fridericia_ms", "qtc_framingham_ms",
+                "pr_interval_ms", "qrs_duration_ms", "qt_interval_ms",
+                "v2__r_amp_mv", "v2__s_amp_mv", "v3__r_amp_mv", "v3__s_amp_mv"
+            ]
+            for col in REVIEW_UNSTABLE:
+                if col in keep:
+                    top_k_keep.add(col)
+                    
+            keep = [col for col in keep if col in top_k_keep]
+            
         self.selected_columns_ = keep
         self.fitted_folds_ = sorted(allowed)
         return self
@@ -285,5 +336,11 @@ class FoldLocalTabularTransformer:
             raise RuntimeError("Transformer is not fitted")
         data = frame.reindex(columns=self.columns_).replace([np.inf, -np.inf], np.nan)
         data = data.fillna(self.medians_)
+        
+        if self.power_transformer_ is not None and self.pt_cols_:
+            data_pt = data.copy()
+            data_pt[self.pt_cols_] = self.power_transformer_.transform(data[self.pt_cols_])
+            data = data_pt
+            
         scaled = (data - self.centers_) / self.scales_
         return scaled[self.selected_columns_].to_numpy(dtype=np.float32)

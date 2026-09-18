@@ -14,6 +14,9 @@ import pandas as pd
 from .config import DEV_FOLDS
 from .manifest import guard_fold_access
 from .features import FoldLocalTabularTransformer
+from .feature_conditioning import FoldLocalOutlierClipper
+from .feature_interactions import ClinicalInteractionEngineer
+from .imbalance import fold_safe_smote_enn, hard_negative_weights
 
 
 @dataclass
@@ -29,6 +32,10 @@ class ModelMetrics:
     brier: float
     calibration_error: float
     inference_ms_per_record: float
+    hard_neg_fpr: float
+    normal_specificity: float
+    mi_vs_hard_neg_auprc: float
+    mi_vs_hard_neg_auroc: float
 
 
 def _require_sklearn():
@@ -93,17 +100,81 @@ def _expected_calibration_error(y: np.ndarray, p: np.ndarray, bins: int = 10) ->
     for lower, upper in zip(edges[:-1], edges[1:]):
         mask = (p >= lower) & (p < upper if upper < 1.0 else p <= upper)
         if mask.any():
-            value += float(mask.mean()) * abs(float(y[mask].mean()) - float(p[mask].mean()))
+            value += float(mask.sum() / total) * abs(float(y[mask].mean()) - float(p[mask].mean()))
     return value if total else float("nan")
 
 
-def evaluate_probabilities(y: np.ndarray, p: np.ndarray, model: str, latency_ms: float) -> ModelMetrics:
+class FoldLocalPlattCalibrator:
+    """OOF-safe Platt scaling.
+
+    For each held-out fold k, the calibrator is trained on the OOF logits
+    of all OTHER folds (i.e. folds 1..k-1, k+1..8) and then applied to
+    fold k.  This is a strict leave-one-fold-out procedure — the calibrator
+    never sees any logit from the fold it is calibrating.
+    """
+
+    def __init__(self) -> None:
+        self.calibrators_: dict = {}
+
+    def fit_from_oof_logits(
+        self, logits: np.ndarray, labels: np.ndarray, folds: np.ndarray
+    ) -> "FoldLocalPlattCalibrator":
+        from sklearn.linear_model import LogisticRegression
+
+        self.calibrators_ = {}
+        for held_out in np.unique(folds):
+            calib_train = folds != held_out          # all OTHER folds
+            if calib_train.sum() < 10:
+                continue
+            lr = LogisticRegression(solver="lbfgs", max_iter=500)
+            lr.fit(logits[calib_train].reshape(-1, 1), labels[calib_train])
+            self.calibrators_[int(held_out)] = lr
+        return self
+
+    def transform(self, logits: np.ndarray, folds: np.ndarray) -> np.ndarray:
+        p_cal = np.full_like(logits, fill_value=np.nan, dtype=float)
+        for held_out, lr in self.calibrators_.items():
+            mask = folds == held_out
+            if mask.any():
+                p_cal[mask] = lr.predict_proba(logits[mask].reshape(-1, 1))[:, 1]
+        # Fallback: if any fold has no calibrator, use sigmoid of raw logit
+        no_cal = np.isnan(p_cal)
+        if no_cal.any():
+            p_cal[no_cal] = 1.0 / (1.0 + np.exp(-logits[no_cal]))
+        return p_cal
+
+
+def evaluate_probabilities(y: np.ndarray, p: np.ndarray, model: str, latency_ms: float, hard_negative: np.ndarray = None) -> ModelMetrics:
     from sklearn.metrics import (
         average_precision_score, roc_auc_score, confusion_matrix,
         f1_score, log_loss, brier_score_loss,
     )
     pred = (p >= 0.5).astype(int)
     tn, fp, fn, tp = confusion_matrix(y, pred, labels=[0, 1]).ravel()
+    
+    # Subgroup metrics
+    hard_neg_fpr = 0.0
+    normal_specificity = 0.0
+    mi_vs_hard_neg_auprc = 0.0
+    mi_vs_hard_neg_auroc = 0.0
+    
+    if hard_negative is not None:
+        # hard_neg_fpr: FPR on hard_negative == True (where y == 0)
+        hard_neg_mask = (y == 0) & hard_negative
+        if hard_neg_mask.any():
+            hard_neg_fpr = float(pred[hard_neg_mask].mean())
+            
+        # normal_specificity: Specificity on truly normal ECGs (where y == 0 and not hard_negative)
+        normal_mask = (y == 0) & (~hard_negative)
+        if normal_mask.any():
+            normal_specificity = float((1 - pred[normal_mask]).mean())
+            
+        # mi_vs_hard_neg: restricted to y == 1 OR (y == 0 and hard_negative)
+        mi_vs_hn_mask = (y == 1) | ((y == 0) & hard_negative)
+        if mi_vs_hn_mask.any() and y[mi_vs_hn_mask].sum() > 0 and (y[mi_vs_hn_mask] == 0).sum() > 0:
+            mi_vs_hard_neg_auprc = float(average_precision_score(y[mi_vs_hn_mask], p[mi_vs_hn_mask]))
+            mi_vs_hard_neg_auroc = float(roc_auc_score(y[mi_vs_hn_mask], p[mi_vs_hn_mask]))
+
     return ModelMetrics(
         model=model,
         auprc=float(average_precision_score(y, p)),
@@ -116,6 +187,10 @@ def evaluate_probabilities(y: np.ndarray, p: np.ndarray, model: str, latency_ms:
         brier=float(brier_score_loss(y, p)),
         calibration_error=_expected_calibration_error(y, p),
         inference_ms_per_record=float(latency_ms),
+        hard_neg_fpr=hard_neg_fpr,
+        normal_specificity=normal_specificity,
+        mi_vs_hard_neg_auprc=mi_vs_hard_neg_auprc,
+        mi_vs_hard_neg_auroc=mi_vs_hard_neg_auroc,
     )
 
 
@@ -157,19 +232,38 @@ def run_oof_baselines(
     x = features.select_dtypes(include=[np.number]).replace([np.inf, -np.inf], np.nan)
     fold_matrices = {}
     selection_report = {}
+    
+    # Pre-compute pre-modelling conditioning
     for held_out in sorted(np.unique(folds)):
         allowed = [int(value) for value in sorted(np.unique(folds)) if value != held_out]
+        train_mask = np.isin(folds, allowed)
+        
+        # 1. Outlier clipping
+        clipper = FoldLocalOutlierClipper()
+        clipper.fit(x.loc[train_mask])
+        x_clipped = clipper.transform(x)
+        
+        # 2. Interactions
+        interactor = ClinicalInteractionEngineer()
+        interactor.fit(x_clipped.loc[train_mask], labels[train_mask])
+        x_inter = interactor.transform(x_clipped)
+        
+        # 3. Features Transformer (Yeo-Johnson, variance, ANOVA+MI, etc.)
         transformer = FoldLocalTabularTransformer().fit(
-            x, folds, allowed, labels=labels, max_features=256
+            x_inter, folds, allowed, labels=labels, max_features=256
         )
-        fold_matrices[int(held_out)] = transformer.transform(x)
+        fold_matrices[int(held_out)] = transformer.transform(x_inter)
         selection_report[str(int(held_out))] = {
             "training_folds": allowed,
             "input_columns": transformer.columns_,
             "selected_columns": transformer.selected_columns_,
+            "clip_report": clipper.audit_report(),
+            "interaction_correlations": interactor.audit_report()
         }
+        
     predictions = []
     metric_rows = []
+    
     for model_name, template in _models(seed).items():
         probability = np.full(len(x), np.nan, dtype=float)
         total_latency = 0.0
@@ -179,21 +273,50 @@ def run_oof_baselines(
             valid = folds == held_out
             model = template
             transformed = fold_matrices[int(held_out)]
-            model.fit(transformed[train], labels[train])
+            
+            X_train_f = transformed[train]
+            y_train_f = labels[train]
+            
+            # Apply SMOTE-ENN only for specific models on training fold
+            if model_name in ["logistic", "rbf_svc", "mlp"]:
+                X_train_f, y_train_f = fold_safe_smote_enn(X_train_f, y_train_f, random_state=seed)
+                
+            # Compute sample weights (for hard negatives)
+            sample_weight = hard_negative_weights(y_train_f, hard_negative[train] if hard_negative is not None else np.zeros_like(y_train_f, dtype=bool))
+            
+            # Fit model
+            if model_name in ["logistic", "random_forest", "hist_gradient_boosting", "xgboost"]:
+                # SVM CalibratedClassifierCV and MLP don't natively support sample_weight well in all paths
+                try:
+                    model.fit(X_train_f, y_train_f, **{f"{model.steps[-1][0]}__sample_weight": sample_weight} if hasattr(model, 'steps') else {'sample_weight': sample_weight})
+                except TypeError:
+                    model.fit(X_train_f, y_train_f)
+            else:
+                model.fit(X_train_f, y_train_f)
+                
             start = time.perf_counter()
             probability[valid] = model.predict_proba(transformed[valid])[:, 1]
             total_latency += time.perf_counter() - start
             total_predicted += int(valid.sum())
+            
         if not np.isfinite(probability).all():
             raise RuntimeError(f"{model_name} did not produce complete OOF probabilities")
+            
         latency_ms = total_latency * 1000.0 / max(total_predicted, 1)
-        metrics = evaluate_probabilities(labels, probability, model_name, latency_ms)
+        
+        # Stage 8: Platt Calibration
+        logits = np.log(np.clip(probability, 1e-7, 1 - 1e-7) / np.clip(1 - probability, 1e-7, 1))
+        calibrator = FoldLocalPlattCalibrator()
+        calibrator.fit_from_oof_logits(logits, labels, folds)
+        calibrated_probability = calibrator.transform(logits, folds)
+        
+        metrics = evaluate_probabilities(labels, calibrated_probability, model_name, latency_ms, hard_negative=hard_negative)
         metric_rows.append(asdict(metrics))
         predictions.append(pd.DataFrame({
             "row_index": np.arange(len(x)), "ecg_id": record_ids, "patient_id": patient_ids,
             "fold": folds, "label": labels, "model": model_name,
-            "logit": np.log(np.clip(probability, 1e-7, 1 - 1e-7) / np.clip(1 - probability, 1e-7, 1)),
-            "probability": probability, "qc_group": qc_groups,
+            "logit": logits,
+            "probability": calibrated_probability, "qc_group": qc_groups,
             "hard_negative": hard_negative,
         }))
 
@@ -203,7 +326,10 @@ def run_oof_baselines(
     output_dir.mkdir(parents=True, exist_ok=True)
     metrics_df.to_csv(output_dir / "classical_oof_metrics.csv", index=False)
     predictions_df.to_csv(output_dir / "classical_oof_predictions.csv", index=False)
-    winner = metrics_df.iloc[0].to_dict()
+    # Separate subgroup CSV for hard-negative sensitivity analysis
+    subgroup_cols = ["model", "hard_neg_fpr", "normal_specificity",
+                     "mi_vs_hard_neg_auprc", "mi_vs_hard_neg_auroc"]
+    metrics_df[subgroup_cols].to_csv(output_dir / "subgroup_metrics.csv", index=False)
     # Within 0.005 AUPRC, prefer Brier then latency.
     near = metrics_df[metrics_df.auprc >= float(metrics_df.auprc.max()) - 0.005]
     winner = near.sort_values(["brier", "inference_ms_per_record"]).iloc[0].to_dict()
