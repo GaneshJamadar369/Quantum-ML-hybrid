@@ -891,7 +891,9 @@ def run_feature_evidence_gate(
     base = joined[feature_columns].copy()
     eligible_columns, excluded_columns = predictor_eligible_columns(base.columns, family_decisions)
     eligible_base = base[eligible_columns].copy()
-    derived, derived_registry = derive_clinical_composites(base)
+    # Derived predictors may only use reviewed, predictor-eligible inputs.
+    # Excluded measurements remain in `base` for audit statistics.
+    derived, derived_registry = derive_clinical_composites(eligible_base)
     combined = pd.concat([base, derived], axis=1)
     existing_registry = build_existing_feature_registry(base)
     registry = pd.concat([existing_registry, derived_registry], ignore_index=True, sort=False)
