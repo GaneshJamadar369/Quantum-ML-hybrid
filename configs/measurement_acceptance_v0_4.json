@@ -1,0 +1,11 @@
+{
+  "rr_median_ms": {"group": "timing", "minimum_coverage": 0.95, "minimum_correlation": 0.90, "maximum_median_absolute_error": 50.0},
+  "i__r_amp_mv": {"group": "amplitude", "minimum_coverage": 0.90, "minimum_correlation": 0.50, "maximum_median_absolute_error": 0.25},
+  "ii__r_amp_mv": {"group": "amplitude", "minimum_coverage": 0.90, "minimum_correlation": 0.50, "maximum_median_absolute_error": 0.25},
+  "v1__r_amp_mv": {"group": "amplitude", "minimum_coverage": 0.90, "minimum_correlation": 0.50, "maximum_median_absolute_error": 0.25},
+  "v2__r_amp_mv": {"group": "amplitude", "minimum_coverage": 0.90, "minimum_correlation": 0.50, "maximum_median_absolute_error": 0.25},
+  "v3__r_amp_mv": {"group": "amplitude", "minimum_coverage": 0.90, "minimum_correlation": 0.50, "maximum_median_absolute_error": 0.25},
+  "v4__r_amp_mv": {"group": "amplitude", "minimum_coverage": 0.90, "minimum_correlation": 0.50, "maximum_median_absolute_error": 0.25},
+  "v5__r_amp_mv": {"group": "amplitude", "minimum_coverage": 0.90, "minimum_correlation": 0.50, "maximum_median_absolute_error": 0.25},
+  "v6__r_amp_mv": {"group": "amplitude", "minimum_coverage": 0.90, "minimum_correlation": 0.50, "maximum_median_absolute_error": 0.25}
+}

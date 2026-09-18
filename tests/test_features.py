@@ -37,7 +37,7 @@ def test_validated_extractor_uses_common_delineated_beats(monkeypatch):
     bundle = extract_deployable_features(
         _synthetic_ecg(), 100, 7, require_delineation=True
     )
-    assert bundle.extractor == "aquire-local-v0.3.0"
+    assert bundle.extractor == "aquire-local-v0.4.0"
     assert bundle.values["rr_median_ms"] == pytest.approx(1000.0)
     assert bundle.values["pr_interval_ms"] == pytest.approx(150.0)
     assert bundle.values["qrs_duration_ms"] == pytest.approx(130.0)
@@ -47,6 +47,18 @@ def test_validated_extractor_uses_common_delineated_beats(monkeypatch):
     assert bundle.values["ii__st60_mv"] == pytest.approx(0.15)
     assert bundle.values["ii__t_polarity"] == 1.0
     assert not bundle.failures
+
+
+def test_r_amplitude_is_signed_at_common_fiducial(monkeypatch):
+    monkeypatch.setitem(sys.modules, "neurokit2", _fake_neurokit())
+    signal = _synthetic_ecg()
+    signal[6] = 0.0  # V1
+    for peak in range(100, 1000, 100):
+        signal[6, peak - 5:peak + 9] = -1.0
+        signal[6, peak] = -0.8
+        signal[6, peak + 2] = 0.2
+    bundle = extract_deployable_features(signal, 100, 10, require_delineation=True)
+    assert bundle.values["v1__r_amp_mv"] == pytest.approx(-0.8)
 
 
 def test_fallback_never_fabricates_intervals(monkeypatch):

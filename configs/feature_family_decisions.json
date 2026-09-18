@@ -1,0 +1,22 @@
+{
+  "rhythm": {
+    "status": "RETAIN_PENDING_V0_4_HOLDOUT",
+    "features": ["rr_median_ms", "heart_rate_bpm", "rr_iqr_ms", "rr_cv"],
+    "reason": "RR passed v0.3 ECGDeli agreement; redundant heart-rate/RR choice remains pending."
+  },
+  "intervals_100hz": {
+    "status": "EXCLUDE_UNVALIDATED",
+    "features": ["pr_interval_ms", "qrs_duration_ms", "qt_interval_ms", "qtc_bazett_ms", "qtc_fridericia_ms", "qtc_framingham_ms"],
+    "reason": "NeuroKit2 single-lead 100 Hz fiducials failed the frozen v0.3 ECGDeli agreement gate. Values may remain in audit output but cannot enter a predictor matrix."
+  },
+  "r_amplitudes": {
+    "status": "RETAIN_PENDING_V0_4_HOLDOUT",
+    "features": ["*__r_amp_mv"],
+    "reason": "v0.4 changes R amplitude to the signed voltage at the common R fiducial; requires unseen-patient agreement."
+  },
+  "valid_fraction": {
+    "status": "QC_METADATA_ONLY",
+    "features": ["*__valid_fraction"],
+    "reason": "Effectively constant in the accepted development cohort."
+  }
+}

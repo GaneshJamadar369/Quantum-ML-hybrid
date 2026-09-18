@@ -95,6 +95,7 @@ def reextract_features_from_hdf5(
     seed: int = 42,
     shard_size: int = 128,
     require_delineation: bool = True,
+    exclude_ecg_ids: Optional[set[int]] = None,
 ) -> dict:
     """Extract v0.3 features without rerunning waveform preprocessing.
 
@@ -114,6 +115,8 @@ def reextract_features_from_hdf5(
 
     with h5py.File(hdf5_path, "r") as handle:
         population = _index_frame(handle)
+        excluded = set() if exclude_ecg_ids is None else {int(value) for value in exclude_ecg_ids}
+        population = population[~population.ecg_id.isin(excluded)].reset_index(drop=True)
         selected = select_patient_stratified_sample(population, sample_size, seed)
         selected_ids = set(selected.ecg_id.astype(int))
         completed_ids: set[int] = set()
@@ -174,13 +177,14 @@ def reextract_features_from_hdf5(
             failure_counts[failure] = failure_counts.get(failure, 0) + 1
     manifest = {
         "status": "COMPLETE",
-        "extractor_version": "aquire-local-v0.3.0",
+        "extractor_version": "aquire-local-v0.4.0",
         "source_hdf5": str(hdf5_path),
         "records": int(len(combined)),
         "unique_patients": int(combined.patient_id.nunique()),
         "folds": sorted(combined.strat_fold.astype(int).unique().tolist()),
         "patient_stratified_sample": sample_size is not None,
         "requested_sample_size": sample_size,
+        "excluded_prior_calibration_ecgs": int(len(excluded)),
         "require_delineation": require_delineation,
         "failure_counts": dict(sorted(failure_counts.items())),
     }
@@ -189,4 +193,3 @@ def reextract_features_from_hdf5(
     tmp_manifest.write_text(json.dumps(manifest, indent=2))
     tmp_manifest.replace(manifest_path)
     return manifest
-

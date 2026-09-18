@@ -67,12 +67,16 @@ are emitted only from actual fiducials; approximate fallback windows may never
 create interval values. ST60 is measured 60 ms after the delineated QRS offset
 relative to a beat-specific pre-QRS baseline.
 
-Before full re-extraction, v0.3 is tested on a deterministic 1,024-patient
+Before full re-extraction, v0.3 was tested on a deterministic 1,024-patient
 sample balanced across folds 1–8 and MI, hard-negative non-MI and other non-MI
 cohorts. All five timing comparisons and at least six of eight R-amplitude lead
-comparisons must pass their frozen point-estimate thresholds. ECGDeli agreement
-is a reproducibility gate, not clinical ground truth. Failure stops the full
-run and triggers repair or exclusion of the affected measurement family.
+comparisons were required to pass their frozen point-estimate thresholds. It
+failed. The 100 Hz PR/QRS/QT/QTc family was therefore excluded from predictor
+eligibility. The R-amplitude definition was repaired and is evaluated on a new
+1,024-patient holdout excluded from v0.3. That v0.4 gate requires RR and at least
+six of eight amplitude leads to pass. ECGDeli agreement is a reproducibility
+gate, not clinical ground truth. Failure stops the full run and triggers repair
+or exclusion of the affected measurement family.
 
 ## Post-extraction statistical evidence
 

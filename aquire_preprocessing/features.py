@@ -17,7 +17,7 @@ from .manifest import guard_fold_access
 class FeatureBundle:
     ecg_id: int
     values: Dict[str, float]
-    extractor: str = "aquire-local-v0.3.0"
+    extractor: str = "aquire-local-v0.4.0"
     failures: List[str] = field(default_factory=list)
 
 
@@ -197,7 +197,11 @@ def extract_deployable_features(
             if not sample_mask[index, qrs_start:qrs_stop + 1].all():
                 continue
             segment = signal_mv[index, qrs_start:qrs_stop + 1]
-            r_values.append(float(np.max(segment) - baseline))
+            # ECGDeli's per-lead R amplitude is signed at the common R
+            # fiducial. Sampling the fiducial also preserves dominant-S
+            # morphology in V1-V3; taking the positive maximum incorrectly
+            # turned those leads into large positive R waves.
+            r_values.append(float(signal_mv[index, peak] - baseline))
             s_values.append(float(np.min(segment) - baseline))
             st_idx = qrs_stop + int(round(0.06 * fs))
             if st_idx < signal_mv.shape[1] and sample_mask[index, st_idx]:

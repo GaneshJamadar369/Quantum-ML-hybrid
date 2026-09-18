@@ -84,7 +84,19 @@ interval and all-lead morphology measurements. It never fabricates interval
 values from fallback windows. Re-extraction is restartable and reads directly
 from the accepted HDF5, so the verified signal preprocessing is preserved.
 
-The next computation is deliberately limited to a patient-stratified sample of
-1,024 ECGs. Frozen timing and amplitude agreement thresholds decide whether a
-full 17,348-record extraction is permitted. Classical baseline training remains
-blocked until this calibration and the repeated feature-evidence gate pass.
+The v0.3 computation on 1,024 unique patients correctly returned
+`STOP_REPAIR_EXTRACTOR`. RR was repaired (Pearson 0.950; median absolute error
+2 ms), but PR/QRS/QT/QTc failed and only five of eight R-amplitude leads passed.
+
+The interval comparison also exposed a definition mismatch: PTB-XL+ ECGDeli
+global interval fields represent maximum values across leads, while the local
+extractor used one delineation lead. Even against lead II, local 100 Hz
+fiducials had inadequate agreement. These six interval/QTc fields are now
+explicitly `EXCLUDE_UNVALIDATED` for the deployable predictor matrix. This is a
+feature exclusion after a failed gate, not a relaxed threshold.
+
+V1–V3 failed because ECGDeli records signed voltage at the common R fiducial,
+where dominant-S leads can be negative, while v0.3 selected the positive QRS
+maximum. v0.4 corrects that definition. It must pass on 1,024 patients excluded
+from the v0.3 sample before full re-extraction is permitted. Classical baseline
+training remains blocked until calibration and the repeated evidence gate pass.
