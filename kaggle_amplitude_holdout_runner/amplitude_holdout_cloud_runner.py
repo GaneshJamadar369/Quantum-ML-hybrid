@@ -29,24 +29,29 @@ def run(command: list[str], cwd: Path | None = None) -> None:
         raise SystemExit(process.returncode)
 
 
-def locate(root: Path, filename: str, preferred_token: str | None = None) -> Path:
-    matches = list(root.glob(f"**/{filename}"))
-    if not matches:
-        raise FileNotFoundError(f"Could not find {filename} below {root}")
-    preferred = [path for path in matches if preferred_token and preferred_token in str(path)]
-    selected = preferred[0] if preferred else matches[0]
-    print(f"{filename}: {selected}", flush=True)
-    return selected
+def require(path: Path) -> Path:
+    if not path.exists():
+        raise FileNotFoundError(f"Required mounted input is absent: {path}")
+    print(f"input: {path}", flush=True)
+    return path
 
 
 def main() -> None:
     input_root = Path("/kaggle/input")
     output = Path("/kaggle/working/amplitude-holdout")
     output.mkdir(parents=True, exist_ok=True)
-    primary = locate(input_root, "primary_development_100hz.h5", "preprocessing-pipeline")
-    reference = locate(input_root, "ecgdeli_features.csv")
-    prior_sample = locate(
-        input_root, "deployable_features_v0_3_calibration.csv", "measurement-calibration"
+    primary = require(
+        input_root / "notebooks/swayamjeetbhagat4/aquire-med-preprocessing-pipeline/"
+        "aquire-artifacts/primary_development_100hz.h5"
+    )
+    reference = require(
+        input_root / "datasets/antonymgitau/ptb-xl-a-comprehensive-ecg-feature-dataset/"
+        "ptb-xl-a-comprehensive-electrocardiographic-feature-dataset-1.0.1/"
+        "features/ecgdeli_features.csv"
+    )
+    prior_sample = require(
+        input_root / "notebooks/swayamjeetbhagat4/aquire-med-measurement-calibration/"
+        "measurement-calibration/deployable_features_v0_3_calibration.csv"
     )
 
     repo = Path("/tmp/Quantum-ML-hybrid")
