@@ -57,25 +57,18 @@ def _models(seed: int = 42) -> Dict[str, object]:
     from sklearn.svm import SVC
 
     models: Dict[str, object] = {
-        "logistic": make_pipeline(SimpleImputer(strategy="median"), RobustScaler(), LogisticRegression(max_iter=3000, class_weight="balanced", random_state=seed)),
-        "rbf_svc": make_pipeline(
-            SimpleImputer(strategy="median"), RobustScaler(),
-            CalibratedClassifierCV(
-                SVC(C=1.0, kernel="rbf", class_weight="balanced", random_state=seed),
-                method="sigmoid", cv=3, ensemble=False,
-            ),
-        ),
-        "random_forest": make_pipeline(SimpleImputer(strategy="median"), RandomForestClassifier(n_estimators=500, class_weight="balanced_subsample", min_samples_leaf=2, n_jobs=-1, random_state=seed)),
-        "hist_gradient_boosting": make_pipeline(SimpleImputer(strategy="median"), HistGradientBoostingClassifier(max_iter=300, learning_rate=0.05, l2_regularization=1.0, random_state=seed)),
-        "mlp": make_pipeline(SimpleImputer(strategy="median"), RobustScaler(), MLPClassifier(hidden_layer_sizes=(64, 32), early_stopping=True, max_iter=400, random_state=seed)),
+        "logistic": make_pipeline(SimpleImputer(strategy="median"), RobustScaler(), LogisticRegression(max_iter=2000, class_weight="balanced", random_state=seed)),
+        "random_forest": make_pipeline(SimpleImputer(strategy="median"), RandomForestClassifier(n_estimators=150, class_weight="balanced_subsample", min_samples_leaf=2, n_jobs=-1, random_state=seed)),
+        "hist_gradient_boosting": make_pipeline(SimpleImputer(strategy="median"), HistGradientBoostingClassifier(max_iter=200, learning_rate=0.05, l2_regularization=1.0, random_state=seed)),
+        "mlp": make_pipeline(SimpleImputer(strategy="median"), RobustScaler(), MLPClassifier(hidden_layer_sizes=(64, 32), early_stopping=True, max_iter=250, random_state=seed)),
     }
     try:
         from xgboost import XGBClassifier  # type: ignore
         models["xgboost"] = make_pipeline(
             SimpleImputer(strategy="median"),
             XGBClassifier(
-                n_estimators=500, max_depth=4, learning_rate=0.04,
-                subsample=0.8, colsample_bytree=0.8, eval_metric="logloss",
+                n_estimators=300, max_depth=4, learning_rate=0.04,
+                subsample=0.8, colsample_bytree=0.8, tree_method="hist", eval_metric="logloss",
                 random_state=seed, n_jobs=-1,
             ),
         )

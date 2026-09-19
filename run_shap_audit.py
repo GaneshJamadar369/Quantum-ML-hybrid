@@ -139,9 +139,10 @@ def run_shap_audit(
         final_estimator = template.steps[-1][1] if hasattr(template, "steps") else template
 
         try:
+            eval_sample = X_eval[:500]
             if model_name in _TREE_MODELS:
                 explainer = shap.TreeExplainer(final_estimator, feature_names=feature_names)
-                shap_values = explainer.shap_values(X_eval)
+                shap_values = explainer.shap_values(eval_sample)
                 # For binary classifiers some versions return list [neg, pos]
                 if isinstance(shap_values, list):
                     shap_values = shap_values[1]
@@ -151,7 +152,7 @@ def run_shap_audit(
                 explainer = shap.LinearExplainer(
                     final_estimator, background, feature_names=feature_names
                 )
-                shap_values = explainer.shap_values(X_eval)
+                shap_values = explainer.shap_values(eval_sample)
         except Exception as exc:
             print(f"    SHAP failed for {model_name}: {exc}")
             continue
@@ -164,7 +165,7 @@ def run_shap_audit(
         # ------------------------------------------------------------------ #
         fig, ax = plt.subplots(figsize=(10, 8))
         shap.summary_plot(
-            shap_values, X_eval,
+            shap_values, eval_sample,
             feature_names=feature_names,
             max_display=20, show=False, plot_size=None,
         )
@@ -181,7 +182,7 @@ def run_shap_audit(
             feat = feature_names[idx_int]
             fig, ax = plt.subplots(figsize=(6, 4))
             shap.dependence_plot(
-                idx_int, shap_values, X_eval,
+                idx_int, shap_values, eval_sample,
                 feature_names=feature_names, ax=ax, show=False,
             )
             ax.set_title(f"{model_name} | {feat}")
@@ -190,18 +191,18 @@ def run_shap_audit(
             plt.close(fig)
 
         # ------------------------------------------------------------------ #
-        # SHAP interaction matrix (tree models only)
+        # SHAP interaction matrix (XGBoost champion only for speed)
         # ------------------------------------------------------------------ #
-        if model_name in _TREE_MODELS:
+        if model_name == "xgboost":
             try:
-                inter_values = explainer.shap_interaction_values(X_eval[:200])
+                inter_values = explainer.shap_interaction_values(eval_sample[:100])
                 if isinstance(inter_values, list):
                     inter_values = inter_values[1]
                 inter_mean = np.abs(inter_values).mean(axis=0)
                 inter_df = pd.DataFrame(inter_mean, index=feature_names, columns=feature_names)
-                inter_df.to_csv(output_dir / f"shap_interaction_matrix_{model_name}.csv")
-            except Exception:
-                pass  # interaction values not supported for all tree types
+                inter_df.to_csv(output_dir / "shap_interaction_matrix.csv")
+            except Exception as exc:
+                print(f"    Interaction values skipped: {exc}")
 
         # ------------------------------------------------------------------ #
         # Clinical plausibility check
