@@ -81,6 +81,10 @@ def main() -> None:
     # ------------------------------------------------------------------ #
     repo = Path("/tmp/Quantum-ML-hybrid")
     run(["git", "clone", REPOSITORY, str(repo)])
+    run(["git", "fetch", "--all"], cwd=repo)
+    run(["git", "checkout", "main"], cwd=repo)
+    run(["git", "reset", "--hard", "origin/main"], cwd=repo)
+    run(["git", "log", "-1", "--oneline"], cwd=repo)
     run([sys.executable, "-m", "pip", "install", "-q", "-e", str(repo)])
     run([sys.executable, "-m", "pip", "install", "-q",
          "neurokit2==0.2.10",
