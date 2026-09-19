@@ -177,10 +177,11 @@ def run_shap_audit(
         # ------------------------------------------------------------------ #
         top5_idx = np.argsort(mean_abs)[-5:][::-1]
         for i, idx in enumerate(top5_idx):
-            feat = feature_names[idx]
+            idx_int = int(idx)
+            feat = feature_names[idx_int]
             fig, ax = plt.subplots(figsize=(6, 4))
             shap.dependence_plot(
-                idx, shap_values, X_eval,
+                idx_int, shap_values, X_eval,
                 feature_names=feature_names, ax=ax, show=False,
             )
             ax.set_title(f"{model_name} | {feat}")
