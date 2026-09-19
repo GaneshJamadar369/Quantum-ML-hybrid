@@ -69,7 +69,9 @@ def main() -> None:
 
     primary = require(preprocessing / "primary_development_100hz.h5")
     metadata = require(preprocessing / "processing_metadata_development.csv")
-    features_csv = require(feature_repair / "deployable_features_v0_4_development.csv")
+    features_csv = require(
+        feature_repair / "feature-evidence-v0-4/deployable_features_with_clinical_composites.csv"
+    )
 
     output = Path("/kaggle/working/g6-classical-baselines")
     output.mkdir(parents=True, exist_ok=True)
