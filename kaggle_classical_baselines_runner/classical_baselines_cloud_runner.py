@@ -99,13 +99,12 @@ def main() -> None:
     # Step 1 — OOF classical baselines (all three MI label policies)
     # ------------------------------------------------------------------ #
     for policy in ["all", "supported_or_high", "high_only"]:
-        policy_out = output / policy
         run([
             sys.executable, "run_classical_baselines.py",
             "--features", str(features_csv),
             "--metadata", str(metadata),
             "--approved-feature-manifest", str(manifest),
-            "--output", str(policy_out),
+            "--output", str(output),
             "--mi-label-policy", policy,
         ], cwd=repo)
 
