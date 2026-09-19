@@ -70,19 +70,15 @@ def main() -> None:
     primary = require(preprocessing / "primary_development_100hz.h5")
     metadata = require(preprocessing / "processing_metadata_development.csv")
     features_csv = require(feature_repair / "deployable_features_v0_4_development.csv")
-    manifest = require(
-        feature_repair / "feature-evidence-v0-4/approved_feature_manifest_v0_4.json"
-    )
 
     output = Path("/kaggle/working/g6-classical-baselines")
     output.mkdir(parents=True, exist_ok=True)
 
     # ------------------------------------------------------------------ #
-    # Clone and install the package at the pinned G5.5 commit
+    # Clone and install the package at the latest commit
     # ------------------------------------------------------------------ #
     repo = Path("/tmp/Quantum-ML-hybrid")
     run(["git", "clone", REPOSITORY, str(repo)])
-    run(["git", "checkout", CODE_COMMIT], cwd=repo)
     run([sys.executable, "-m", "pip", "install", "-q", "-e", str(repo)])
     run([sys.executable, "-m", "pip", "install", "-q",
          "neurokit2==0.2.10",
@@ -90,6 +86,8 @@ def main() -> None:
          "shap",
          "matplotlib",
     ])
+
+    manifest = require(repo / "configs/approved_feature_manifest_v0_4.json")
 
     # ------------------------------------------------------------------ #
     # Step 1 — OOF classical baselines (all three MI label policies)
