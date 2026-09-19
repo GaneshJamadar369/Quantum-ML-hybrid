@@ -143,16 +143,22 @@ def run_shap_audit(
             if model_name in _TREE_MODELS:
                 explainer = shap.TreeExplainer(final_estimator, feature_names=feature_names)
                 shap_values = explainer.shap_values(eval_sample)
-                # For binary classifiers some versions return list [neg, pos]
-                if isinstance(shap_values, list):
-                    shap_values = shap_values[1]
             else:  # linear
-                # Use training data summary as background
                 background = shap.sample(X_train, min(200, len(X_train)), random_state=seed)
                 explainer = shap.LinearExplainer(
                     final_estimator, background, feature_names=feature_names
                 )
                 shap_values = explainer.shap_values(eval_sample)
+
+            # Normalize output to 2D (N, D) for positive class in binary classification
+            if isinstance(shap_values, list):
+                shap_values = shap_values[1] if len(shap_values) > 1 else shap_values[0]
+            elif isinstance(shap_values, np.ndarray) and shap_values.ndim == 3:
+                if shap_values.shape[-1] == 2:
+                    shap_values = shap_values[:, :, 1]
+                elif shap_values.shape[0] == 2:
+                    shap_values = shap_values[1, :, :]
+            shap_values = np.asarray(shap_values, dtype=float)
         except Exception as exc:
             print(f"    SHAP failed for {model_name}: {exc}")
             continue
