@@ -264,6 +264,8 @@ def run_oof_baselines(
     predictions = []
     metric_rows = []
     
+    from sklearn.base import clone
+
     for model_name, template in _models(seed).items():
         probability = np.full(len(x), np.nan, dtype=float)
         total_latency = 0.0
@@ -271,25 +273,27 @@ def run_oof_baselines(
         for held_out in sorted(np.unique(folds)):
             train = folds != held_out
             valid = folds == held_out
-            model = template
+            model = clone(template)
             transformed = fold_matrices[int(held_out)]
             
             X_train_f = transformed[train]
             y_train_f = labels[train]
             
-            # Apply SMOTE-ENN only for specific models on training fold
+            # Apply SMOTE-ENN only for linear/neural models on training fold
             if model_name in ["logistic", "rbf_svc", "mlp"]:
                 X_train_f, y_train_f = fold_safe_smote_enn(X_train_f, y_train_f, random_state=seed)
-                
-            # Compute sample weights (for hard negatives)
-            sample_weight = hard_negative_weights(y_train_f, hard_negative[train] if hard_negative is not None else np.zeros_like(y_train_f, dtype=bool))
+                sample_weight = None
+            else:
+                hn_train = hard_negative[train] if hard_negative is not None else np.zeros_like(y_train_f, dtype=bool)
+                sample_weight = hard_negative_weights(y_train_f, hn_train)
             
             # Fit model
-            if model_name in ["logistic", "random_forest", "hist_gradient_boosting", "xgboost"]:
-                # SVM CalibratedClassifierCV and MLP don't natively support sample_weight well in all paths
+            if sample_weight is not None and model_name in ["random_forest", "hist_gradient_boosting", "xgboost"]:
                 try:
-                    model.fit(X_train_f, y_train_f, **{f"{model.steps[-1][0]}__sample_weight": sample_weight} if hasattr(model, 'steps') else {'sample_weight': sample_weight})
-                except TypeError:
+                    step_name = model.steps[-1][0] if hasattr(model, 'steps') else None
+                    fit_params = {f"{step_name}__sample_weight": sample_weight} if step_name else {'sample_weight': sample_weight}
+                    model.fit(X_train_f, y_train_f, **fit_params)
+                except (TypeError, ValueError):
                     model.fit(X_train_f, y_train_f)
             else:
                 model.fit(X_train_f, y_train_f)
