@@ -1,6 +1,6 @@
 {
-  "id": "classical-baselines-phase6a",
-  "title": "AQUIRE-Med — Phase 6A Classical Baselines",
+  "id": "swayamjeetbhagat4/aquire-med-classical-baselines",
+  "title": "AQUIRE-Med Classical Baselines",
   "code_file": "classical_baselines_cloud_runner.py",
   "language": "python",
   "kernel_type": "script",
