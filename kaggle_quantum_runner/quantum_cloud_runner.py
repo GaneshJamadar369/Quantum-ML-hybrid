@@ -1,82 +1,119 @@
-"""Cloud runner for AQUIRE-Med Phase 6Q Quantum ML & Phase 7 Locked Holdout Evaluation."""
+"""Kaggle Cloud Runner for Phase 6Q Quantum ML & Phase 7 Locked Holdout Evaluation."""
 
-import os
+from __future__ import annotations
+
+import json
+from pathlib import Path
 import subprocess
 import sys
-from pathlib import Path
+import time
+
+REPOSITORY = "https://github.com/GaneshJamadar369/Quantum-ML-hybrid.git"
 
 
-def run_cmd(cmd: str) -> None:
-    print(f"\n>>> {cmd}", flush=True)
-    res = subprocess.run(cmd, shell=True, text=True)
-    if res.returncode != 0:
-        print(f"Command failed with exit code {res.returncode}", file=sys.stderr)
-        sys.exit(res.returncode)
+def run(command: list[str], cwd: Path | None = None) -> None:
+    print("\n>>> " + " ".join(command), flush=True)
+    started = time.time()
+    process = subprocess.Popen(
+        command, cwd=str(cwd) if cwd else None,
+        stdout=subprocess.PIPE, stderr=subprocess.STDOUT, text=True, bufsize=1,
+    )
+    assert process.stdout is not None
+    for line in process.stdout:
+        print(line, end="", flush=True)
+    process.wait()
+    print(f"[exit={process.returncode}, seconds={time.time() - started:.1f}]", flush=True)
+    if process.returncode:
+        raise SystemExit(process.returncode)
+
+
+def require(path: Path) -> Path:
+    if not path.exists():
+        raise FileNotFoundError(f"Required mounted input is absent: {path}")
+    print(f"input: {path}", flush=True)
+    return path
 
 
 def main() -> None:
     print("=== AQUIRE-Med Phase 6Q (Quantum) & Phase 7 (Holdout) Runner ===", flush=True)
+    root = Path("/kaggle/input")
 
-    # 1. Install PennyLane and PyTorch dependencies
-    print("\n--- Installing dependencies ---", flush=True)
-    run_cmd("pip install pennylane pennylane-lightning xgboost shap")
+    # Locate mounted inputs
+    preprocessing = (
+        root / "notebooks/swayamjeetbhagat4/aquire-med-preprocessing-pipeline/aquire-artifacts"
+    )
+    feature_repair = (
+        root / "notebooks/swayamjeetbhagat4/aquire-med-full-feature-repair/full-feature-repair"
+    )
 
-    # 2. Clone latest repo
-    repo_url = "https://github.com/GaneshJamadar369/Quantum-ML-hybrid.git"
-    work_dir = Path("/tmp/Quantum-ML-hybrid")
-    if work_dir.exists():
-        run_cmd(f"rm -rf {work_dir}")
-
-    run_cmd(f"git clone {repo_url} {work_dir}")
-    os.chdir(work_dir)
-
-    # 3. Locate inputs
-    input_root = Path("/kaggle/input")
-    h5_candidates = list(input_root.glob("**/primary_development_100hz.h5"))
-    meta_candidates = list(input_root.glob("**/processing_metadata_development.csv"))
-    feat_candidates = list(input_root.glob("**/deployable_features_with_clinical_composites.csv"))
-
-    if not h5_candidates:
-        raise FileNotFoundError("primary_development_100hz.h5 not found in /kaggle/input")
-    if not meta_candidates:
-        raise FileNotFoundError("processing_metadata_development.csv not found in /kaggle/input")
-    if not feat_candidates:
-        raise FileNotFoundError("deployable_features_with_clinical_composites.csv not found in /kaggle/input")
-
-    h5_path = h5_candidates[0]
-    meta_path = meta_candidates[0]
-    feat_path = feat_candidates[0]
-    manifest_path = Path("aquire_preprocessing/feature_manifest.json")
+    primary_h5 = require(preprocessing / "primary_development_100hz.h5")
+    metadata_csv = require(preprocessing / "processing_metadata_development.csv")
+    features_csv = require(
+        feature_repair / "feature-evidence-v0-4/deployable_features_with_clinical_composites.csv"
+    )
 
     out_dir_6q = Path("/kaggle/working/g6-quantum-baselines")
     out_dir_7 = Path("/kaggle/working/g7-locked-holdout")
+    out_dir_6q.mkdir(parents=True, exist_ok=True)
+    out_dir_7.mkdir(parents=True, exist_ok=True)
 
-    # 4. Execute Phase 6Q Quantum Baselines
+    # Clone latest repo
+    repo = Path("/tmp/Quantum-ML-hybrid")
+    if repo.exists():
+        run(["rm", "-rf", str(repo)])
+    run(["git", "clone", REPOSITORY, str(repo)])
+    run(["git", "fetch", "--all"], cwd=repo)
+    run(["git", "checkout", "main"], cwd=repo)
+    run(["git", "reset", "--hard", "origin/main"], cwd=repo)
+    run(["git", "log", "-1", "--oneline"], cwd=repo)
+
+    # Install dependencies
+    run([sys.executable, "-m", "pip", "install", "-q", "-e", str(repo)])
+    run([sys.executable, "-m", "pip", "install", "-q", "pennylane", "pennylane-lightning", "xgboost", "shap"])
+
+    manifest = require(repo / "configs/approved_feature_manifest_v0_4.json")
+
+    # Run Phase 6Q Quantum Baselines (8-Fold OOF)
     print("\n--- Running Phase 6Q Quantum Baselines (Folds 1-8 OOF) ---", flush=True)
-    run_cmd(
-        f"python3 run_quantum_baselines.py "
-        f"--h5-path {h5_path} "
-        f"--metadata-path {meta_path} "
-        f"--features-csv {feat_path} "
-        f"--manifest-path {manifest_path} "
-        f"--output-dir {out_dir_6q} "
-        f"--epochs 15 "
-        f"--batch-size 64 "
-        f"--lr 1e-3"
-    )
+    run([
+        sys.executable, "run_quantum_baselines.py",
+        "--h5-path", str(primary_h5),
+        "--metadata-path", str(metadata_csv),
+        "--features-csv", str(features_csv),
+        "--manifest-path", str(manifest),
+        "--output-dir", str(out_dir_6q),
+        "--epochs", "15",
+        "--batch-size", "64",
+        "--lr", "1e-3",
+    ], cwd=repo)
 
-    # 5. Execute Phase 7 Locked Holdout Evaluation
+    # Run Phase 7 Locked Holdout Single-Pass Evaluation (Folds 9 & 10)
     print("\n--- Running Phase 7 Locked Holdout Single-Pass Evaluation (Folds 9 & 10) ---", flush=True)
-    run_cmd(
-        f"python3 run_sealed_holdout_evaluation.py "
-        f"--h5-path {h5_path} "
-        f"--metadata-path {meta_path} "
-        f"--features-csv {feat_path} "
-        f"--manifest-path {manifest_path} "
-        f"--output-dir {out_dir_7}"
-    )
+    run([
+        sys.executable, "run_sealed_holdout_evaluation.py",
+        "--h5-path", str(primary_h5),
+        "--metadata-path", str(metadata_csv),
+        "--features-csv", str(features_csv),
+        "--manifest-path", str(manifest),
+        "--output-dir", str(out_dir_7),
+    ], cwd=repo)
 
-    print("\n=== All Quantum & Holdout Phases Completed Successfully ===", flush=True)
+    # Manifest summary
+    files_6q = sorted(
+        ({"path": str(p.relative_to(out_dir_6q)), "bytes": p.stat().st_size}
+         for p in out_dir_6q.rglob("*") if p.is_file()),
+        key=lambda item: item["path"],
+    )
+    (out_dir_6q / "artifact_manifest.json").write_text(json.dumps(files_6q, indent=2))
+
+    files_7 = sorted(
+        ({"path": str(p.relative_to(out_dir_7)), "bytes": p.stat().st_size}
+         for p in out_dir_7.rglob("*") if p.is_file()),
+        key=lambda item: item["path"],
+    )
+    (out_dir_7 / "artifact_manifest.json").write_text(json.dumps(files_7, indent=2))
+
+    print("\n=== Phase 6Q & Phase 7 Completed Successfully ===", flush=True)
 
 
 if __name__ == "__main__":

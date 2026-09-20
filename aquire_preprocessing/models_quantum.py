@@ -20,6 +20,14 @@ except ImportError:
     qml = None
 
 
+def get_quantum_device(n_qubits: int):
+    """Select best available PennyLane device."""
+    try:
+        return qml.device("lightning.qubit", wires=n_qubits)
+    except Exception:
+        return qml.device("default.qubit", wires=n_qubits)
+
+
 # =====================================================================
 # 1. Quantum Feature Mapping & Kernel Estimation (QSVM / QKE)
 # =====================================================================
@@ -30,12 +38,12 @@ class QuantumKernelEstimator:
     Maps clinical feature vectors into a 2^n Hilbert space using Angle + Entanglement embedding
     and calculates fidelity |<psi(x_i)|psi(x_j)>|^2.
     """
-    def __init__(self, n_qubits: int = 8, n_layers: int = 2, dev_name: str = "default.qubit"):
+    def __init__(self, n_qubits: int = 8, n_layers: int = 2):
         if qml is None:
             raise ImportError("PennyLane is required for QuantumKernelEstimator. Please install pennylane.")
         self.n_qubits = n_qubits
         self.n_layers = n_layers
-        self.dev = qml.device(dev_name, wires=n_qubits)
+        self.dev = get_quantum_device(n_qubits)
         self._build_circuit()
 
     def _build_circuit(self):
@@ -85,13 +93,13 @@ class QuantumKernelEstimator:
             for i in range(n1):
                 K[i, i] = 1.0
                 for j in range(i + 1, n1):
-                    prob = self.kernel_circuit(X1_scaled[i], X2_scaled[j])[0]
+                    prob = float(self.kernel_circuit(X1_scaled[i], X2_scaled[j])[0])
                     K[i, j] = prob
                     K[j, i] = prob
         else:
             for i in range(n1):
                 for j in range(n2):
-                    prob = self.kernel_circuit(X1_scaled[i], X2_scaled[j])[0]
+                    prob = float(self.kernel_circuit(X1_scaled[i], X2_scaled[j])[0])
                     K[i, j] = prob
 
         return K
@@ -166,9 +174,9 @@ class VariationalQuantumClassifier(nn.Module):
         )
 
         # Quantum Device & Circuit
-        self.dev = qml.device("default.qubit", wires=n_qubits)
+        self.dev = get_quantum_device(n_qubits)
 
-        @qml.qnode(self.dev, interface="torch", diff_method="adjoint" if hasattr(self.dev, "adjoint_jacobian") else "backprop")
+        @qml.qnode(self.dev, interface="torch", diff_method="parameter-shift" if self.dev.name == "lightning.qubit" else "backprop")
         def quantum_circuit(inputs, weights):
             # inputs shape: (n_qubits,)
             # Angle embedding
@@ -250,9 +258,9 @@ class HybridQuantumNeuralNetwork(nn.Module):
         )
 
         # 3. Quantum Bottleneck Circuit
-        self.dev = qml.device("default.qubit", wires=n_qubits)
+        self.dev = get_quantum_device(n_qubits)
 
-        @qml.qnode(self.dev, interface="torch", diff_method="adjoint" if hasattr(self.dev, "adjoint_jacobian") else "backprop")
+        @qml.qnode(self.dev, interface="torch", diff_method="parameter-shift" if self.dev.name == "lightning.qubit" else "backprop")
         def hybrid_quantum_circuit(inputs, weights):
             # inputs shape: (n_qubits,)
             for i in range(self.n_qubits):
