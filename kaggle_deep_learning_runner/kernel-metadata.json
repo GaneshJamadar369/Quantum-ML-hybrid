@@ -1,0 +1,16 @@
+{
+  "id": "swayamjeetbhagat4/aquire-med-deep-learning-hybrid",
+  "title": "AQUIRE-Med Deep Learning & Multimodal Hybrid",
+  "code_file": "deep_learning_cloud_runner.py",
+  "language": "python",
+  "kernel_type": "script",
+  "is_private": true,
+  "enable_gpu": true,
+  "enable_internet": true,
+  "dataset_sources": [],
+  "competition_sources": [],
+  "kernel_sources": [
+    "swayamjeetbhagat4/aquire-med-preprocessing-pipeline",
+    "swayamjeetbhagat4/aquire-med-full-feature-repair"
+  ]
+}
