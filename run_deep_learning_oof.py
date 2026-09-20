@@ -45,7 +45,7 @@ class FocalLoss:
 
 def train_and_eval_fold(
     model_type: str,
-    h5_path: Path,
+    signals_arr: np.ndarray,
     metadata_df: pd.DataFrame,
     features_arr: np.ndarray,
     held_out_fold: int,
@@ -73,22 +73,9 @@ def train_and_eval_fold(
     train_indices = np.where(train_mask)[0]
     val_indices = np.where(val_mask)[0]
 
-    # Pre-load or lazy load waveforms
-    ds_train = HDF5ECGDataset(h5_path, indices=train_indices, training=True)
-    ds_val = HDF5ECGDataset(h5_path, indices=val_indices, training=False)
-
-    # Convert to tensors
-    def extract_batch(ds, indices):
-        signals = []
-        for i in range(len(ds)):
-            item = ds[i]
-            # (1000, 12) -> (12, 1000)
-            sig = item["signal"].T
-            signals.append(sig)
-        return torch.tensor(np.stack(signals), dtype=torch.float32)
-
-    X_train_sig = extract_batch(ds_train, train_indices)
-    X_val_sig = extract_batch(ds_val, val_indices)
+    # Signal tensors: guaranteed (N, 12, 1000)
+    X_train_sig = torch.tensor(signals_arr[train_indices], dtype=torch.float32)
+    X_val_sig = torch.tensor(signals_arr[val_indices], dtype=torch.float32)
 
     y_train = torch.tensor(labels[train_indices], dtype=torch.float32)
     y_val = torch.tensor(labels[val_indices], dtype=torch.float32)
@@ -214,6 +201,19 @@ def run_deep_learning_baselines(
     guard_fold_access(folds, purpose="tuning")
     features_mat = joined[approved].select_dtypes(include=[np.number]).fillna(0.0).to_numpy(dtype=np.float32)
 
+    # Pre-load 12-lead signals aligned by record_id
+    import h5py
+    print("Pre-loading 12-lead raw signals from HDF5 ...", flush=True)
+    with h5py.File(h5_path, "r") as h5:
+        h5_ids = np.asarray(h5["ecg_id"])
+        id_to_idx = {int(eid): idx for idx, eid in enumerate(h5_ids)}
+        ordered_indices = np.array([id_to_idx[eid] for eid in record_ids], dtype=int)
+        raw_signals = h5["accepted_signal"][ordered_indices].astype(np.float32)
+        # Transpose if shape is (N, 1000, 12) -> (N, 12, 1000)
+        if raw_signals.shape[1] == 1000 and raw_signals.shape[2] == 12:
+            raw_signals = np.transpose(raw_signals, (0, 2, 1))
+        print(f"Loaded raw signals shape: {raw_signals.shape} ({raw_signals.nbytes / 1024 / 1024:.1f} MB)", flush=True)
+
     model_types = ["resnet1d", "hybrid"]
     all_predictions = []
     all_metrics = []
@@ -230,7 +230,7 @@ def run_deep_learning_baselines(
             print(f"  [Fold {held_out}/8] Training on folds {[f for f in DEV_FOLDS if f != held_out]} ...", flush=True)
             val_idx, p_val, latency = train_and_eval_fold(
                 model_type=model_type,
-                h5_path=h5_path,
+                signals_arr=raw_signals,
                 metadata_df=joined,
                 features_arr=features_mat,
                 held_out_fold=int(held_out),
