@@ -1,0 +1,16 @@
+{
+  "id": "swayamjeetbhagat4/aquire-med-phase-6q-f-waveform-qsvc",
+  "title": "AQUIRE-Med Phase 6Q-F Waveform QSVC",
+  "code_file": "qsvc_runner.py",
+  "language": "python",
+  "kernel_type": "script",
+  "is_private": true,
+  "enable_gpu": false,
+  "enable_internet": true,
+  "dataset_sources": [],
+  "competition_sources": [],
+  "kernel_sources": [
+    "swayamjeetbhagat4/aquire-med-waveform-representation-v1",
+    "swayamjeetbhagat4/aquire-med-preprocessing-pipeline"
+  ]
+}
