@@ -1,0 +1,52 @@
+import numpy as np
+import pytest
+
+pytest.importorskip("torch")
+pytest.importorskip("pennylane")
+
+from aquire_preprocessing.models_quantum import QuantumKernelEstimator, QSVMClassifier
+from run_quantum_baselines import _paired_patient_bootstrap
+
+
+def test_iqp_kernel_is_psd_and_not_old_separable_angle_kernel():
+    rng = np.random.default_rng(7)
+    x = rng.normal(0.0, 0.5, size=(8, 4))
+    estimator = QuantumKernelEstimator(n_qubits=4, n_layers=2)
+    kernel = estimator.compute_kernel_matrix(x)
+    diagnostics = estimator.diagnostics(kernel)
+    assert np.allclose(kernel, kernel.T, atol=1e-10)
+    assert np.allclose(np.diag(kernel), 1.0, atol=1e-10)
+    assert diagnostics["negative_eigenvalue_count"] == 0
+
+    # This was the exact functional form of the former AngleEmbedding plus
+    # data-independent CNOT-ring kernel.  IQP data-dependent interactions must
+    # not collapse to it.
+    delta = x[:, None, :] - x[None, :, :]
+    old_product_kernel = np.prod(np.cos(delta / 2.0) ** 2, axis=-1)
+    assert not np.allclose(kernel, old_product_kernel, atol=1e-6)
+
+
+def test_qsvm_end_to_end_probability_contract():
+    rng = np.random.default_rng(11)
+    x = rng.normal(size=(32, 4))
+    y = (x[:, 0] * x[:, 1] > 0).astype(int)
+    model = QSVMClassifier(
+        n_qubits=4, n_layers=2, calibration_splits=2, seed=11
+    ).fit(x, y)
+    probability = model.predict_proba(x[:5])
+    assert probability.shape == (5, 2)
+    assert np.isfinite(probability).all()
+    assert np.allclose(probability.sum(axis=1), 1.0)
+    assert model.kernel_diagnostics_["negative_eigenvalue_count"] == 0
+
+
+def test_paired_patient_bootstrap_detects_better_scores():
+    labels = np.tile([0, 1], 20)
+    patients = np.repeat(np.arange(20), 2)
+    quantum = labels * 0.8 + (1 - labels) * 0.2
+    classical = np.full(len(labels), 0.5)
+    report = _paired_patient_bootstrap(
+        labels, patients, quantum, classical, iterations=100, seed=5
+    )
+    assert report["delta_auprc"]["ci95_low"] > 0
+    assert report["utility_gate"] == "PASS_QML_UTILITY"

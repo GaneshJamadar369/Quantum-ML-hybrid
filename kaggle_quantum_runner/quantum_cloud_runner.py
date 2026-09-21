@@ -1,4 +1,9 @@
-"""Kaggle Cloud Runner for Phase 6Q Quantum ML & Phase 7 Locked Holdout Evaluation."""
+"""Kaggle runner for the staged Phase 6Q development benchmark.
+
+This runner deliberately cannot access Fold 9 or Fold 10 and does not launch a
+holdout job.  The first gate compares the quantum kernel with a matched RBF-SVC
+on the same fold-local z8 representation and sample budget.
+"""
 
 from __future__ import annotations
 
@@ -35,7 +40,7 @@ def require(path: Path) -> Path:
 
 
 def main() -> None:
-    print("=== AQUIRE-Med Phase 6Q (Quantum) & Phase 7 (Holdout) Runner ===", flush=True)
+    print("=== AQUIRE-Med Phase 6Q-A: quantum-kernel validity benchmark ===", flush=True)
     root = Path("/kaggle/input")
 
     # Locate mounted inputs
@@ -46,16 +51,13 @@ def main() -> None:
         root / "notebooks/swayamjeetbhagat4/aquire-med-full-feature-repair/full-feature-repair"
     )
 
-    primary_h5 = require(preprocessing / "primary_development_100hz.h5")
     metadata_csv = require(preprocessing / "processing_metadata_development.csv")
     features_csv = require(
         feature_repair / "feature-evidence-v0-4/deployable_features_with_clinical_composites.csv"
     )
 
     out_dir_6q = Path("/kaggle/working/g6-quantum-baselines")
-    out_dir_7 = Path("/kaggle/working/g7-locked-holdout")
     out_dir_6q.mkdir(parents=True, exist_ok=True)
-    out_dir_7.mkdir(parents=True, exist_ok=True)
 
     # Clone latest repo
     repo = Path("/tmp/Quantum-ML-hybrid")
@@ -69,15 +71,25 @@ def main() -> None:
 
     # Install dependencies
     run([sys.executable, "-m", "pip", "install", "-q", "-e", str(repo)])
-    run([sys.executable, "-m", "pip", "install", "-q", "pennylane", "pennylane-lightning", "xgboost", "shap"])
+    # Pin the quantum stack and avoid installing SHAP here: SHAP pulls Numba's
+    # older NumPy constraint and previously downgraded the locked environment.
+    run([
+        sys.executable, "-m", "pip", "install", "-q",
+        "pennylane==0.45.1", "pennylane-lightning==0.45.0",
+    ])
+    run([
+        sys.executable, "-c",
+        "import numpy,pennylane; print('numpy',numpy.__version__,'pennylane',pennylane.__version__)",
+    ])
 
     manifest = require(repo / "configs/approved_feature_manifest_v0_4.json")
 
-    # Run Phase 6Q Quantum Baselines (8-Fold OOF)
-    print("\n--- Running Phase 6Q Quantum Baselines (Folds 1-8 OOF) ---", flush=True)
+    # Catch circuit/API/metric failures before processing real data.
+    run([sys.executable, "-m", "pytest", "-q", "tests/test_quantum_models.py"], cwd=repo)
+
+    print("\n--- Running Phase 6Q-A QSVM + matched RBF control (Folds 1-8 OOF) ---", flush=True)
     run([
         sys.executable, "run_quantum_baselines.py",
-        "--h5-path", str(primary_h5),
         "--metadata-path", str(metadata_csv),
         "--features-csv", str(features_csv),
         "--manifest-path", str(manifest),
@@ -85,17 +97,9 @@ def main() -> None:
         "--epochs", "15",
         "--batch-size", "64",
         "--lr", "1e-3",
-    ], cwd=repo)
-
-    # Run Phase 7 Locked Holdout Single-Pass Evaluation (Folds 9 & 10)
-    print("\n--- Running Phase 7 Locked Holdout Single-Pass Evaluation (Folds 9 & 10) ---", flush=True)
-    run([
-        sys.executable, "run_sealed_holdout_evaluation.py",
-        "--h5-path", str(primary_h5),
-        "--metadata-path", str(metadata_csv),
-        "--features-csv", str(features_csv),
-        "--manifest-path", str(manifest),
-        "--output-dir", str(out_dir_7),
+        "--models", "qsvm", "rbf_svc_z8",
+        "--qsvm-per-class", "500",
+        "--bootstrap-iterations", "2000",
     ], cwd=repo)
 
     # Manifest summary
@@ -106,14 +110,7 @@ def main() -> None:
     )
     (out_dir_6q / "artifact_manifest.json").write_text(json.dumps(files_6q, indent=2))
 
-    files_7 = sorted(
-        ({"path": str(p.relative_to(out_dir_7)), "bytes": p.stat().st_size}
-         for p in out_dir_7.rglob("*") if p.is_file()),
-        key=lambda item: item["path"],
-    )
-    (out_dir_7 / "artifact_manifest.json").write_text(json.dumps(files_7, indent=2))
-
-    print("\n=== Phase 6Q & Phase 7 Completed Successfully ===", flush=True)
+    print("\n=== Phase 6Q-A completed; locked holdout remains untouched ===", flush=True)
 
 
 if __name__ == "__main__":

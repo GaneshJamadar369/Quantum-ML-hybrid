@@ -41,6 +41,13 @@ def run_sealed_holdout_evaluation(
     output_dir: Path,
     seed: int = 42,
 ) -> None:
+    raise RuntimeError(
+        "Protocol-blocked legacy runner: it retrains multiple candidates and "
+        "compares them on Fold 10. Freeze exactly one champion first, use Fold 9 "
+        "for calibration/threshold selection, build a separate frozen Fold-10 "
+        "artifact, and then implement a one-model single-pass evaluator."
+    )
+
     output_dir = Path(output_dir)
     output_dir.mkdir(parents=True, exist_ok=True)
 

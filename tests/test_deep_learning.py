@@ -85,6 +85,31 @@ def test_ecg_multimodal_hybrid_backprop():
     loss.backward()
 
     assert model.tabular_encoder[0].weight.grad is not None
+    assert model.tabular_encoder[0].weight.grad.abs().sum() > 0
     assert model.waveform_encoder.stem[0].weight.grad is not None
+    assert model.waveform_encoder.stem[0].weight.grad.abs().sum() > 0
     assert model.fusion.gate[0].weight.grad is not None
+    assert model.fusion.proj_tabular.weight.grad is not None
+    assert model.fusion.proj_tabular.weight.grad.abs().sum() > 0
     assert model.head[-1].weight.grad is not None
+
+
+def test_multimodal_output_depends_on_each_modality():
+    """Regression test for the former single-key attention defect."""
+    torch.manual_seed(3)
+    model = ECGMultimodalHybrid(
+        num_tabular_features=8,
+        tabular_hidden=16,
+        waveform_channels=12,
+        waveform_embedding_dim=32,
+        fused_dim=32,
+        dropout=0.0,
+    ).eval()
+    signal = torch.randn(4, 12, 1000)
+    tabular = torch.randn(4, 8)
+    with torch.no_grad():
+        baseline, _ = model(signal, tabular)
+        changed_tabular, _ = model(signal, tabular + 2.0)
+        changed_signal, _ = model(signal * 0.0, tabular)
+    assert not torch.allclose(baseline, changed_tabular)
+    assert not torch.allclose(baseline, changed_signal)

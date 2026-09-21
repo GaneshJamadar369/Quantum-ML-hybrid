@@ -1,15 +1,15 @@
-"""
-8-Fold OOF Quantum Machine Learning Training and Evaluation Engine (Phase 6Q).
-Trains and evaluates:
-1. QSVM (Quantum Support Vector Machine with PennyLane Quantum Kernel)
-2. VQC (Variational Quantum Classifier with StronglyEntanglingLayers)
-3. HQNN (Hybrid Quantum Neural Network with 1D-ResNet + MLP + Quantum Bottleneck)
-Performs out-of-fold Platt calibration, Hard-Negative sensitivity analysis, and generates comparative metrics.
+"""Staged, patient-safe Phase 6Q development benchmark.
+
+The default fast gate compares an IQP fidelity-kernel QSVM with an RBF-SVC on
+the identical fold-local PCA z8, balanced training sample, outer folds, and
+train-only calibration design.  VQC/HQNN remain explicit opt-in experiments.
+Fold 9 and Fold 10 are rejected by the development access guard.
 """
 
 from __future__ import annotations
 
 import argparse
+import hashlib
 import json
 import time
 from dataclasses import asdict
@@ -22,7 +22,6 @@ import torch.nn as nn
 from torch.utils.data import DataLoader, TensorDataset
 
 from aquire_preprocessing.baselines import (
-    FoldLocalPlattCalibrator,
     evaluate_probabilities,
 )
 from aquire_preprocessing.config import DEV_FOLDS
@@ -33,6 +32,162 @@ from aquire_preprocessing.models_quantum import (
     VariationalQuantumClassifier,
     HybridQuantumNeuralNetwork,
 )
+
+
+SUPPORTED_MODELS = ("qsvm", "rbf_svc_z8", "vqc", "hqnn")
+
+
+def _fold_local_z8(
+    features: np.ndarray,
+    train_indices: np.ndarray,
+    val_indices: np.ndarray,
+    seed: int,
+) -> tuple[np.ndarray, np.ndarray, dict]:
+    """Fit an unsupervised eight-dimensional representation on one outer train fold."""
+    from sklearn.decomposition import PCA
+    from sklearn.impute import SimpleImputer
+    from sklearn.preprocessing import RobustScaler
+
+    imputer = SimpleImputer(strategy="median")
+    scaler = RobustScaler(quantile_range=(25.0, 75.0))
+    x_train = scaler.fit_transform(imputer.fit_transform(features[train_indices]))
+    x_val = scaler.transform(imputer.transform(features[val_indices]))
+    n_components = min(8, x_train.shape[1], x_train.shape[0] - 1)
+    if n_components != 8:
+        raise ValueError(f"z8 requires at least eight usable dimensions; got {n_components}")
+    pca = PCA(n_components=8, whiten=True, random_state=seed)
+    z_train = pca.fit_transform(x_train).astype(np.float32)
+    z_val = pca.transform(x_val).astype(np.float32)
+    return z_train, z_val, {
+        "method": "training-fold median imputation + robust scaling + PCA whitening",
+        "explained_variance_ratio": pca.explained_variance_ratio_.tolist(),
+        "explained_variance_total": float(pca.explained_variance_ratio_.sum()),
+    }
+
+
+def _balanced_training_positions(
+    labels: np.ndarray, limit_per_class: int, seed: int
+) -> np.ndarray:
+    rng = np.random.default_rng(seed)
+    positive = np.flatnonzero(labels == 1)
+    negative = np.flatnonzero(labels == 0)
+    n = min(len(positive), len(negative), int(limit_per_class))
+    if n < 2:
+        raise ValueError("Balanced QML benchmark needs at least two samples per class")
+    selected = np.concatenate(
+        [rng.choice(positive, n, replace=False), rng.choice(negative, n, replace=False)]
+    )
+    return rng.permutation(selected)
+
+
+def _calibrated_classical_svc(
+    x_train: np.ndarray,
+    y_train: np.ndarray,
+    x_val: np.ndarray,
+    kernel: str,
+    seed: int,
+) -> np.ndarray:
+    """Train-only cross-fitted sigmoid calibration for a matched SVC control."""
+    from sklearn.linear_model import LogisticRegression
+    from sklearn.model_selection import StratifiedKFold
+    from sklearn.svm import SVC
+
+    oof_score = np.full(len(y_train), np.nan, dtype=float)
+    cv = StratifiedKFold(n_splits=5, shuffle=True, random_state=seed)
+    for inner_train, inner_cal in cv.split(x_train, y_train):
+        model = SVC(kernel=kernel, C=1.0, class_weight="balanced")
+        model.fit(x_train[inner_train], y_train[inner_train])
+        oof_score[inner_cal] = model.decision_function(x_train[inner_cal])
+    calibrator = LogisticRegression(solver="lbfgs", max_iter=500)
+    calibrator.fit(oof_score.reshape(-1, 1), y_train)
+    model = SVC(kernel=kernel, C=1.0, class_weight="balanced")
+    model.fit(x_train, y_train)
+    score = model.decision_function(x_val)
+    return calibrator.predict_proba(score.reshape(-1, 1))[:, 1]
+
+
+def _fingerprint(
+    record_ids: np.ndarray,
+    model_type: str,
+    held_out_fold: int,
+    qsvm_per_class: int,
+) -> str:
+    payload = (
+        np.asarray(record_ids, dtype=np.int64).tobytes()
+        + model_type.encode()
+        + str(held_out_fold).encode()
+        + str(qsvm_per_class).encode()
+        + b"phase6q-a-schema-v2"
+    )
+    return hashlib.sha256(payload).hexdigest()
+
+
+def _paired_patient_bootstrap(
+    labels: np.ndarray,
+    patient_ids: np.ndarray,
+    quantum_probability: np.ndarray,
+    classical_probability: np.ndarray,
+    iterations: int,
+    seed: int,
+) -> dict:
+    """Paired uncertainty for QML minus classical control, clustered by patient."""
+    from sklearn.metrics import average_precision_score, brier_score_loss, roc_auc_score
+
+    labels = np.asarray(labels, dtype=int)
+    patient_ids = np.asarray(patient_ids)
+    q = np.asarray(quantum_probability, dtype=float)
+    c = np.asarray(classical_probability, dtype=float)
+    unique_patients, patient_inverse = np.unique(patient_ids, return_inverse=True)
+    rng = np.random.default_rng(seed)
+    delta_auprc = []
+    delta_auroc = []
+    delta_brier = []
+    for _ in range(int(iterations)):
+        multiplicity = np.bincount(
+            rng.integers(0, len(unique_patients), size=len(unique_patients)),
+            minlength=len(unique_patients),
+        )
+        sample_weight = multiplicity[patient_inverse]
+        present = sample_weight > 0
+        if np.unique(labels[present]).size < 2:
+            continue
+        delta_auprc.append(
+            average_precision_score(labels, q, sample_weight=sample_weight)
+            - average_precision_score(labels, c, sample_weight=sample_weight)
+        )
+        delta_auroc.append(
+            roc_auc_score(labels, q, sample_weight=sample_weight)
+            - roc_auc_score(labels, c, sample_weight=sample_weight)
+        )
+        delta_brier.append(
+            brier_score_loss(labels, q, sample_weight=sample_weight)
+            - brier_score_loss(labels, c, sample_weight=sample_weight)
+        )
+
+    def summary(values: list[float]) -> dict:
+        array = np.asarray(values, dtype=float)
+        return {
+            "mean": float(array.mean()),
+            "ci95_low": float(np.quantile(array, 0.025)),
+            "ci95_high": float(np.quantile(array, 0.975)),
+        }
+
+    auprc = summary(delta_auprc)
+    return {
+        "comparison": "qsvm_minus_rbf_svc_z8",
+        "bootstrap_unit": "patient",
+        "iterations_requested": int(iterations),
+        "iterations_valid": len(delta_auprc),
+        "delta_auprc": auprc,
+        "delta_auroc": summary(delta_auroc),
+        "delta_brier": summary(delta_brier),
+        "utility_gate": (
+            "PASS_QML_UTILITY"
+            if auprc["ci95_low"] > 0.0
+            else "NO_QML_UTILITY_DEMONSTRATED"
+        ),
+        "gate_rule": "95% patient-bootstrap CI for delta AUPRC must be entirely above zero",
+    }
 
 
 class FocalLoss:
@@ -56,7 +211,7 @@ class FocalLoss:
 
 def train_and_eval_quantum_fold(
     model_type: str,
-    signals_arr: np.ndarray,
+    signals_arr: np.ndarray | None,
     metadata_df: pd.DataFrame,
     features_arr: np.ndarray,
     held_out_fold: int,
@@ -65,7 +220,8 @@ def train_and_eval_quantum_fold(
     batch_size: int = 64,
     lr: float = 1e-3,
     seed: int = 42,
-) -> tuple[np.ndarray, np.ndarray, float]:
+    qsvm_per_class: int = 500,
+) -> tuple[np.ndarray, np.ndarray, float, dict]:
     torch.manual_seed(seed)
     np.random.seed(seed)
 
@@ -79,33 +235,41 @@ def train_and_eval_quantum_fold(
     train_indices = np.where(train_mask)[0]
     val_indices = np.where(val_mask)[0]
 
-    # Tabular features standardization
-    X_train_tab_raw = features_arr[train_indices]
-    X_val_tab_raw = features_arr[val_indices]
-
-    mean_tab = np.mean(X_train_tab_raw, axis=0, keepdims=True)
-    std_tab = np.std(X_train_tab_raw, axis=0, keepdims=True)
-    std_tab[std_tab < 1e-5] = 1.0
-
-    X_train_tab_norm = (X_train_tab_raw - mean_tab) / std_tab
-    X_val_tab_norm = (X_val_tab_raw - mean_tab) / std_tab
+    X_train_tab_norm, X_val_tab_norm, z8_audit = _fold_local_z8(
+        features_arr, train_indices, val_indices, seed + held_out_fold
+    )
 
     start_time = time.perf_counter()
 
     if model_type == "qsvm":
-        qsvm = QSVMClassifier(n_qubits=8, n_layers=2, C=1.0)
-        
-        pos_idx = np.where(labels[train_indices] == 1)[0]
-        neg_idx = np.where(labels[train_indices] == 0)[0]
-        n_sub = min(len(pos_idx), 500)
-        sub_pos = np.random.choice(pos_idx, n_sub, replace=False)
-        sub_neg = np.random.choice(neg_idx, n_sub, replace=False)
-        sub_train = np.concatenate([sub_pos, sub_neg])
-        
-        qsvm.fit(X_train_tab_norm[sub_train], labels[train_indices[sub_train]])
+        qsvm = QSVMClassifier(n_qubits=8, n_layers=2, C=1.0, seed=seed)
+        sub_train = _balanced_training_positions(
+            labels[train_indices], qsvm_per_class, seed + held_out_fold
+        )
+        qsvm.fit(X_train_tab_norm[sub_train], labels[train_indices][sub_train])
         p_val = qsvm.predict_proba(X_val_tab_norm)[:, 1]
         eval_time = (time.perf_counter() - start_time) * 1000.0 / len(val_indices)
-        return val_indices, p_val, eval_time
+        return val_indices, p_val, eval_time, {
+            "z8": z8_audit,
+            "training_records": int(len(sub_train)),
+            "kernel": qsvm.kernel_diagnostics_,
+            "simulator": qsvm.qke.dev.name,
+        }
+
+    elif model_type == "rbf_svc_z8":
+        sub_train = _balanced_training_positions(
+            labels[train_indices], qsvm_per_class, seed + held_out_fold
+        )
+        p_val = _calibrated_classical_svc(
+            X_train_tab_norm[sub_train], labels[train_indices][sub_train],
+            X_val_tab_norm, kernel="rbf", seed=seed + held_out_fold,
+        )
+        eval_time = (time.perf_counter() - start_time) * 1000.0 / len(val_indices)
+        return val_indices, p_val, eval_time, {
+            "z8": z8_audit,
+            "training_records": int(len(sub_train)),
+            "kernel": "rbf",
+        }
 
     elif model_type == "vqc":
         X_train_tab_t = torch.tensor(X_train_tab_norm, dtype=torch.float32)
@@ -121,8 +285,11 @@ def train_and_eval_quantum_fold(
         )
         val_loader = DataLoader(TensorDataset(X_val_tab_t), batch_size=batch_size, shuffle=False)
 
+        # Analytic PennyLane simulation is CPU execution.  Keeping the entire
+        # small z8 VQC on CPU avoids CUDA tensors crossing into a CPU QNode.
+        device = torch.device("cpu")
         model = VariationalQuantumClassifier(
-            in_features=features_arr.shape[1], n_qubits=8, n_layers=3
+            in_features=8, n_qubits=8, n_layers=3
         ).to(device)
 
         optimizer = torch.optim.AdamW(model.parameters(), lr=lr, weight_decay=1e-3)
@@ -150,9 +317,13 @@ def train_and_eval_quantum_fold(
                 val_preds.append(torch.sigmoid(logits).cpu().numpy())
         eval_time = (time.perf_counter() - start_time) * 1000.0 / len(val_indices)
         p_val = np.concatenate(val_preds, axis=0)
-        return val_indices, p_val, eval_time
+        return val_indices, p_val, eval_time, {
+            "z8": z8_audit, "training_records": int(len(train_indices))
+        }
 
     elif model_type == "hqnn":
+        if signals_arr is None:
+            raise ValueError("HQNN requires --h5-path")
         X_train_sig_t = torch.tensor(signals_arr[train_indices], dtype=torch.float32)
         X_val_sig_t = torch.tensor(signals_arr[val_indices], dtype=torch.float32)
         X_train_tab_t = torch.tensor(X_train_tab_norm, dtype=torch.float32)
@@ -171,8 +342,9 @@ def train_and_eval_quantum_fold(
             batch_size=batch_size, shuffle=False
         )
 
+        device = torch.device("cpu")
         model = HybridQuantumNeuralNetwork(
-            tabular_dim=features_arr.shape[1],
+            tabular_dim=8,
             raw_channels=12,
             n_qubits=8,
             n_quantum_layers=3,
@@ -204,14 +376,17 @@ def train_and_eval_quantum_fold(
                 val_preds.append(torch.sigmoid(logits).cpu().numpy())
         eval_time = (time.perf_counter() - start_time) * 1000.0 / len(val_indices)
         p_val = np.concatenate(val_preds, axis=0)
-        return val_indices, p_val, eval_time
+        return val_indices, p_val, eval_time, {
+            "z8": z8_audit, "training_records": int(len(train_indices)),
+            "warning": "analytic CPU simulation; HQNN remains experimental",
+        }
 
     else:
         raise ValueError(f"Unknown quantum model type: {model_type}")
 
 
 def run_quantum_baselines(
-    h5_path: Path,
+    h5_path: Path | None,
     metadata_path: Path,
     features_csv: Path,
     manifest_path: Path,
@@ -220,9 +395,16 @@ def run_quantum_baselines(
     batch_size: int = 64,
     lr: float = 1e-3,
     seed: int = 42,
+    models: tuple[str, ...] = ("qsvm", "rbf_svc_z8"),
+    qsvm_per_class: int = 500,
+    resume: bool = True,
+    bootstrap_iterations: int = 2000,
 ) -> None:
     device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
-    print(f"Quantum ML execution device: {device}", flush=True)
+    print(
+        f"Torch accelerator available: {device}; quantum kernels use an analytic CPU simulator",
+        flush=True,
+    )
 
     output_dir = Path(output_dir)
     output_dir.mkdir(parents=True, exist_ok=True)
@@ -249,23 +431,33 @@ def run_quantum_baselines(
     )
 
     guard_fold_access(folds, purpose="tuning")
-    features_mat = joined[approved].select_dtypes(include=[np.number]).fillna(0.0).to_numpy(dtype=np.float32)
+    feature_frame = joined[approved].select_dtypes(include=[np.number]).replace(
+        [np.inf, -np.inf], np.nan
+    )
+    features_mat = feature_frame.to_numpy(dtype=np.float32)
 
-    # Pre-load 12-lead signals
-    import h5py
-    print("Pre-loading 12-lead raw signals from HDF5 ...", flush=True)
-    with h5py.File(h5_path, "r") as h5:
-        h5_ids = np.asarray(h5["ecg_id"])
-        id_to_idx = {int(eid): idx for idx, eid in enumerate(h5_ids)}
-        ordered_indices = np.array([id_to_idx[eid] for eid in record_ids], dtype=int)
-        raw_signals = h5["accepted_signal"][ordered_indices].astype(np.float32)
-        if raw_signals.shape[1] == 1000 and raw_signals.shape[2] == 12:
-            raw_signals = np.transpose(raw_signals, (0, 2, 1))
-        print(f"Loaded raw signals shape: {raw_signals.shape} ({raw_signals.nbytes / 1024 / 1024:.1f} MB)", flush=True)
+    raw_signals = None
+    if "hqnn" in models:
+        if h5_path is None:
+            raise ValueError("--h5-path is required when hqnn is selected")
+        import h5py
+        print("Pre-loading 12-lead raw signals for HQNN ...", flush=True)
+        with h5py.File(h5_path, "r") as h5:
+            h5_ids = np.asarray(h5["ecg_id"])
+            id_to_idx = {int(eid): idx for idx, eid in enumerate(h5_ids)}
+            ordered_indices = np.array([id_to_idx[eid] for eid in record_ids], dtype=int)
+            raw_signals = h5["accepted_signal"][ordered_indices].astype(np.float32)
+            if raw_signals.shape[1] == 1000 and raw_signals.shape[2] == 12:
+                raw_signals = np.transpose(raw_signals, (0, 2, 1))
+            print(f"Loaded raw signals shape: {raw_signals.shape}", flush=True)
 
-    model_types = ["qsvm", "vqc", "hqnn"]
+    model_types = list(models)
+    unknown = sorted(set(model_types) - set(SUPPORTED_MODELS))
+    if unknown:
+        raise ValueError(f"Unsupported models: {unknown}; choose from {SUPPORTED_MODELS}")
     all_predictions = []
     all_metrics = []
+    probabilities_by_model: dict[str, np.ndarray] = {}
 
     for model_type in model_types:
         print(f"\n==========================================", flush=True)
@@ -274,49 +466,94 @@ def run_quantum_baselines(
 
         prob_oof = np.full(len(joined), np.nan, dtype=float)
         total_latency = 0.0
+        fold_audits = []
 
         for held_out in sorted(np.unique(folds)):
             print(f"  [Fold {held_out}/8] Training on folds {[f for f in DEV_FOLDS if f != held_out]} ...", flush=True)
-            val_idx, p_val, latency = train_and_eval_quantum_fold(
-                model_type=model_type,
-                signals_arr=raw_signals,
-                metadata_df=joined,
-                features_arr=features_mat,
-                held_out_fold=int(held_out),
-                device=device,
-                epochs=epochs,
-                batch_size=batch_size,
-                lr=lr,
-                seed=seed,
+            checkpoint_dir = output_dir / "checkpoints" / model_type
+            checkpoint_dir.mkdir(parents=True, exist_ok=True)
+            checkpoint = checkpoint_dir / f"fold_{int(held_out)}.npz"
+            expected_fingerprint = _fingerprint(
+                record_ids, model_type, int(held_out), qsvm_per_class
             )
+            loaded_checkpoint = False
+            if resume and checkpoint.exists():
+                saved = np.load(checkpoint, allow_pickle=False)
+                if str(saved["fingerprint"].item()) == expected_fingerprint:
+                    val_idx = saved["val_idx"].astype(int)
+                    p_val = saved["probability"].astype(float)
+                    latency = float(saved["latency_ms"].item())
+                    audit = json.loads(str(saved["audit_json"].item()))
+                    loaded_checkpoint = True
+                    print(f"    resumed {checkpoint.name}", flush=True)
+                else:
+                    print(
+                        f"    ignored stale {checkpoint.name}; configuration changed",
+                        flush=True,
+                    )
+            if not loaded_checkpoint:
+                val_idx, p_val, latency, audit = train_and_eval_quantum_fold(
+                    model_type=model_type,
+                    signals_arr=raw_signals,
+                    metadata_df=joined,
+                    features_arr=features_mat,
+                    held_out_fold=int(held_out),
+                    device=device,
+                    epochs=epochs,
+                    batch_size=batch_size,
+                    lr=lr,
+                    seed=seed,
+                    qsvm_per_class=qsvm_per_class,
+                )
+                temporary = checkpoint.with_suffix(".npz.tmp")
+                with temporary.open("wb") as handle:
+                    np.savez_compressed(
+                        handle, fingerprint=expected_fingerprint, val_idx=val_idx,
+                        probability=p_val, latency_ms=latency,
+                        audit_json=json.dumps(audit, sort_keys=True),
+                    )
+                temporary.replace(checkpoint)
             prob_oof[val_idx] = p_val
             total_latency += latency
+            fold_audits.append({"held_out_fold": int(held_out), **audit})
 
         avg_latency = total_latency / 8.0
 
-        # Leave-One-Fold-Out Platt Sigmoid Calibration
-        logits_oof = np.log(np.clip(prob_oof, 1e-7, 1 - 1e-7) / np.clip(1 - prob_oof, 1e-7, 1))
-        calibrator = FoldLocalPlattCalibrator()
-        calibrator.fit_from_oof_logits(logits_oof, labels, folds)
-        calibrated_prob = calibrator.transform(logits_oof, folds)
+        if not np.isfinite(prob_oof).all():
+            raise RuntimeError(f"{model_type} produced incomplete OOF predictions")
+        # QSVM and its matched RBF control are calibrated using only the outer
+        # training data inside each fold.  Neural QML probabilities are kept as
+        # raw development probabilities until a nested calibrator is added.
+        calibrated_prob = prob_oof
+        probabilities_by_model[model_type] = calibrated_prob.copy()
+        (output_dir / f"{model_type}_fold_diagnostics.json").write_text(
+            json.dumps(fold_audits, indent=2)
+        )
 
         metrics = evaluate_probabilities(
             labels, calibrated_prob, model_type, avg_latency, hard_negative=hard_neg,
         )
 
         metrics_dict = asdict(metrics)
-        metrics_dict["model_family"] = f"quantum_{model_type}"
-        metrics_dict["feature_subset"] = "quantum_top8_multimodal"
+        metrics_dict["model_family"] = (
+            f"quantum_{model_type}" if model_type in {"qsvm", "vqc", "hqnn"}
+            else f"matched_classical_{model_type}"
+        )
+        metrics_dict["feature_subset"] = "fold_local_pca_z8"
+        metrics_dict["calibration"] = (
+            "inner_5fold_platt" if model_type in {"qsvm", "rbf_svc_z8"}
+            else "none_development_only"
+        )
         metrics_dict["mean_latency_ms"] = round(avg_latency, 4)
         all_metrics.append(metrics_dict)
 
         print(f"[{model_type.upper()} OOF RESULTS]")
         print(f"  AUPRC: {metrics.auprc:.4f}")
         print(f"  AUROC: {metrics.auroc:.4f}")
-        print(f"  Sensitivity @ 90% Spec: {metrics.sens_at_90_spec:.4f}")
-        print(f"  F1 Score: {metrics.f1_optimal:.4f}")
-        print(f"  ECE: {metrics.expected_calibration_error:.4f}")
-        print(f"  Hard-Neg AUROC: {metrics.hard_neg_auroc:.4f}")
+        print(f"  Sensitivity @ 90% Spec: {metrics.sensitivity_at_90_specificity:.4f}")
+        print(f"  F1 Score @ 0.5: {metrics.f1_at_05:.4f}")
+        print(f"  ECE: {metrics.calibration_error:.4f}")
+        print(f"  MI vs hard-negative AUROC: {metrics.mi_vs_hard_neg_auroc:.4f}")
         print(f"  Latency: {avg_latency:.3f} ms/rec")
 
         for idx, (rec_id, pat_id, fold, raw_p, cal_p, y, hn) in enumerate(
@@ -326,8 +563,12 @@ def run_quantum_baselines(
                 "ecg_id": int(rec_id),
                 "patient_id": int(pat_id),
                 "strat_fold": int(fold),
-                "model_family": f"quantum_{model_type}",
-                "feature_subset": "quantum_top8_multimodal",
+                "model_family": (
+                    f"quantum_{model_type}"
+                    if model_type in {"qsvm", "vqc", "hqnn"}
+                    else f"matched_classical_{model_type}"
+                ),
+                "feature_subset": "fold_local_pca_z8",
                 "y_true": int(y),
                 "raw_probability": float(raw_p),
                 "calibrated_probability": float(cal_p),
@@ -345,10 +586,26 @@ def run_quantum_baselines(
     preds_df.to_csv(preds_csv, index=False)
     print(f"Saved OOF predictions to: {preds_csv}")
 
+    if {"qsvm", "rbf_svc_z8"}.issubset(probabilities_by_model):
+        comparison = _paired_patient_bootstrap(
+            labels=labels,
+            patient_ids=patient_ids,
+            quantum_probability=probabilities_by_model["qsvm"],
+            classical_probability=probabilities_by_model["rbf_svc_z8"],
+            iterations=bootstrap_iterations,
+            seed=seed,
+        )
+        comparison_path = output_dir / "paired_qsvm_vs_rbf_bootstrap.json"
+        comparison_path.write_text(json.dumps(comparison, indent=2))
+        print(
+            f"Paired utility gate: {comparison['utility_gate']} -> {comparison_path}",
+            flush=True,
+        )
+
 
 if __name__ == "__main__":
     parser = argparse.ArgumentParser(description="Run Phase 6Q Quantum ML Baselines")
-    parser.add_argument("--h5-path", type=Path, required=True)
+    parser.add_argument("--h5-path", type=Path)
     parser.add_argument("--metadata-path", type=Path, required=True)
     parser.add_argument("--features-csv", type=Path, required=True)
     parser.add_argument("--manifest-path", type=Path, required=True)
@@ -357,6 +614,13 @@ if __name__ == "__main__":
     parser.add_argument("--batch-size", type=int, default=64)
     parser.add_argument("--lr", type=float, default=1e-3)
     parser.add_argument("--seed", type=int, default=42)
+    parser.add_argument(
+        "--models", nargs="+", choices=SUPPORTED_MODELS,
+        default=["qsvm", "rbf_svc_z8"],
+    )
+    parser.add_argument("--qsvm-per-class", type=int, default=500)
+    parser.add_argument("--bootstrap-iterations", type=int, default=2000)
+    parser.add_argument("--no-resume", action="store_true")
 
     args = parser.parse_args()
     run_quantum_baselines(
@@ -369,4 +633,8 @@ if __name__ == "__main__":
         batch_size=args.batch_size,
         lr=args.lr,
         seed=args.seed,
+        models=tuple(args.models),
+        qsvm_per_class=args.qsvm_per_class,
+        resume=not args.no_resume,
+        bootstrap_iterations=args.bootstrap_iterations,
     )

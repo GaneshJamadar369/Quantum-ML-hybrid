@@ -65,10 +65,25 @@ This file is the operational source of truth. A checked **implementation** item 
 
 ## Phase 6 — blocked until G0–G5 pass
 
-- [ ] Generate 8-fold patient-safe OOF predictions on folds 1–8 using the G5.5 conditioned feature matrix.
-- [ ] Compare logistic regression, RBF-SVC, random forest, XGBoost, small MLP and 1D ResNet.
-- [ ] Compare waveform, deployable-feature and fused branches.
+- [x] Generate 8-fold patient-safe classical OOF predictions on folds 1–8 using the G5.5 conditioned feature matrix. **Artifact winner:** HistGradientBoosting, AUPRC 0.719802.
+- [ ] Complete the promised classical comparison. Logistic regression, random forest, HistGradientBoosting, XGBoost and MLP ran; **RBF-SVC is missing from `_models()`**.
+- [x] Run the provisional waveform ResNet benchmark. **Development result:** AUPRC 0.791308 from one seed; uncertainty/repeated-seed validation remains open.
+- [ ] Rerun multimodal fusion. The 2026-09-21 audit proved the original one-key attention ignored the tabular query, so its 0.797322 result is invalid as fusion evidence.
 - [ ] Keep 12SL/Uni-G reference performance in a separate oracle table.
 - [ ] Select the provisional champion using pooled OOF AUPRC, then Brier score and latency when within 0.005 AUPRC.
 - [ ] **BLOCK:** Champion selection is blocked until Stage 9 SHAP attribution audit passes clinical plausibility checks.
 - [ ] Freeze the classical champion and OOF residuals before any `z4/z8` or quantum experiment.
+
+## G6R — modeling repair gate added after research audit (2026-09-21)
+
+- [x] Record the exact 12-hour timeout and latest metric-print failure in `docs/research_code_audit_2026-09-21.md`.
+- [x] Correct multimodal fusion so both tabular and waveform inputs affect predictions; add modality-dependence regression tests.
+- [x] Replace the ineffective fixed-unitary kernel with a data-dependent IQP feature map and kernel PSD diagnostics.
+- [x] Define fold-local training-only PCA `z8` and a matched RBF-SVC comparator.
+- [x] Add per-fold atomic checkpoints, resume support and a real quantum preflight test.
+- [x] Remove automatic Fold 9/10 evaluation from the quantum Kaggle runner.
+- [ ] Run Phase 6Q-A (IQP-QSVM versus matched RBF-SVC) and download complete artifacts.
+- [ ] Compute paired patient-cluster bootstrap confidence intervals for delta AUPRC, delta Brier and subgroup differences.
+- [ ] Proceed to VQC/HQNN only if the Phase 6Q-A utility gate passes; otherwise retain QML as a negative, scientifically valid result.
+- [ ] Rerun corrected fusion with tabular-only, waveform-only and modality-shuffle ablations over at least three seeds.
+- [ ] Replace the invalid development-fold conformal claim with Fold-9 calibration and one-time Fold-10 coverage evaluation after champion freeze.

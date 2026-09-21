@@ -1,4 +1,11 @@
 # AQUIRE-Med — Phase 6B & 6C Deep Learning and Multimodal Hybrid Fusion Report
+
+> **SUPERSEDED DEVELOPMENT REPORT (2026-09-21):** Code audit found that the
+> original one-query/one-key attention output was independent of the tabular
+> query. The 0.7973 result is retained for provenance but is not evidence of
+> multimodal fusion or state-of-the-art performance. See
+> [research_code_audit_2026-09-21.md](research_code_audit_2026-09-21.md).
+
 **Date:** September 20, 2026 | **Commit:** `b95acfd` | **Execution Environment:** Kaggle GPU T4 x2 / CUDA PyTorch 2.6.0
 
 ---

@@ -40,3 +40,7 @@ Primary and quarantine records are written separately to chunked HDF5. Each row 
 ## Scientific limits
 
 This repository does not establish clinical deployment, future cardiovascular event prediction or quantum advantage. It implements the data and classical-baseline evidence needed before `z4/z8` or quantum experiments are allowed.
+
+The later modeling prototype was independently audited on 2026-09-21. Read
+[the research code audit](docs/research_code_audit_2026-09-21.md) before using
+the classical, fusion, conformal, or QML results.

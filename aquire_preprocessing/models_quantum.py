@@ -21,7 +21,13 @@ except ImportError:
 
 
 def get_quantum_device(n_qubits: int):
-    """Select best available PennyLane device."""
+    """Select a deterministic analytic state-vector simulator.
+
+    ``lightning.qubit`` is a CPU simulator.  Its presence must never be
+    reported as quantum-hardware or GPU execution.
+    """
+    if qml is None:
+        raise ImportError("PennyLane is required for quantum models")
     try:
         return qml.device("lightning.qubit", wires=n_qubits)
     except Exception:
@@ -50,19 +56,28 @@ class QuantumKernelEstimator:
     def _build_circuit(self):
         @qml.qnode(self.dev)
         def state_circuit(x):
-            qml.AngleEmbedding(x, wires=range(self.n_qubits))
-            for layer in range(self.n_layers):
-                for i in range(self.n_qubits - 1):
-                    qml.CNOT(wires=[i, i + 1])
-                if self.n_qubits > 2:
-                    qml.CNOT(wires=[self.n_qubits - 1, 0])
+            # IQPEmbedding contains data-dependent one- and two-qubit phase
+            # terms.  The former implementation appended a fixed CNOT ring
+            # after AngleEmbedding; a shared data-independent unitary cancels
+            # from <psi(x)|psi(y)> and therefore added no kernel structure.
+            qml.IQPEmbedding(
+                features=x,
+                wires=range(self.n_qubits),
+                n_repeats=self.n_layers,
+                pattern=None,
+            )
             return qml.state()
 
         self.state_circuit = state_circuit
 
     def get_statevectors(self, X: np.ndarray) -> np.ndarray:
         """Compute statevector for each sample in X."""
-        X_scaled = np.clip(X[:, :self.n_qubits], -np.pi, np.pi)
+        X = np.asarray(X, dtype=float)
+        if X.ndim != 2 or X.shape[1] != self.n_qubits:
+            raise ValueError(
+                f"Quantum kernel expects shape (n, {self.n_qubits}), got {X.shape}"
+            )
+        X_scaled = np.clip(X, -np.pi, np.pi)
         states = []
         for row in X_scaled:
             states.append(self.state_circuit(row))
@@ -76,26 +91,54 @@ class QuantumKernelEstimator:
         psi1 = self.get_statevectors(X1)
         if X2 is None or X2 is X1:
             overlap = np.abs(np.dot(psi1, psi1.conj().T)) ** 2
+            overlap = (overlap + overlap.T) / 2.0
             np.fill_diagonal(overlap, 1.0)
-            return overlap.astype(np.float32)
+            return overlap.astype(np.float64)
         else:
             psi2 = self.get_statevectors(X2)
             overlap = np.abs(np.dot(psi1, psi2.conj().T)) ** 2
-            return overlap.astype(np.float32)
+            return overlap.astype(np.float64)
+
+    @staticmethod
+    def diagnostics(kernel: np.ndarray) -> Dict[str, float]:
+        """Return numerical checks required before fitting an SVM."""
+        matrix = np.asarray(kernel, dtype=float)
+        if matrix.ndim != 2 or matrix.shape[0] != matrix.shape[1]:
+            raise ValueError("Kernel diagnostics require a square matrix")
+        symmetric = (matrix + matrix.T) / 2.0
+        eigenvalues = np.linalg.eigvalsh(symmetric)
+        return {
+            "max_asymmetry": float(np.max(np.abs(matrix - matrix.T))),
+            "max_diagonal_error": float(np.max(np.abs(np.diag(matrix) - 1.0))),
+            "minimum_eigenvalue": float(eigenvalues.min()),
+            "negative_eigenvalue_count": int((eigenvalues < -1e-8).sum()),
+            "condition_number": float(np.linalg.cond(symmetric + 1e-8 * np.eye(len(matrix)))),
+        }
 
 
 class QSVMClassifier(BaseEstimator, ClassifierMixin):
     """
     Quantum Support Vector Classifier wrapping QuantumKernelEstimator with scikit-learn SVC.
     """
-    def __init__(self, n_qubits: int = 8, n_layers: int = 2, C: float = 1.0):
+    def __init__(
+        self,
+        n_qubits: int = 8,
+        n_layers: int = 2,
+        C: float = 1.0,
+        calibration_splits: int = 5,
+        seed: int = 42,
+    ):
         self.n_qubits = n_qubits
         self.n_layers = n_layers
         self.C = C
+        self.calibration_splits = calibration_splits
+        self.seed = seed
         self.qke = None
         self.scaler = StandardScaler()
-        self.svm = SVC(kernel="precomputed", C=self.C, probability=True)
+        self.svm = SVC(kernel="precomputed", C=self.C, class_weight="balanced")
         self.X_train_ = None
+        self.calibrator_ = None
+        self.kernel_diagnostics_ = None
 
     def fit(self, X: np.ndarray, y: np.ndarray):
         if self.qke is None:
@@ -107,16 +150,56 @@ class QSVMClassifier(BaseEstimator, ClassifierMixin):
         self.X_train_ = X_scaled
 
         K_train = self.qke.compute_kernel_matrix(self.X_train_)
+        self.kernel_diagnostics_ = self.qke.diagnostics(K_train)
+        if self.kernel_diagnostics_["negative_eigenvalue_count"]:
+            raise ValueError(
+                "Quantum training kernel is not positive semidefinite within tolerance: "
+                f"{self.kernel_diagnostics_}"
+            )
+
+        # Train-only, cross-fitted Platt calibration.  This avoids both the
+        # deprecated SVC(probability=True) path and the former second layer of
+        # calibration applied after outer-fold prediction.
+        from sklearn.linear_model import LogisticRegression
+        from sklearn.model_selection import StratifiedKFold
+
+        y = np.asarray(y, dtype=int)
+        class_counts = np.bincount(y, minlength=2)
+        splits = min(int(self.calibration_splits), int(class_counts.min()))
+        if splits < 2:
+            raise ValueError("At least two examples per class are needed for calibration")
+        calibration_score = np.full(len(y), np.nan, dtype=float)
+        cv = StratifiedKFold(n_splits=splits, shuffle=True, random_state=self.seed)
+        for inner_train, inner_cal in cv.split(K_train, y):
+            inner_svm = SVC(
+                kernel="precomputed", C=self.C, class_weight="balanced"
+            )
+            inner_svm.fit(K_train[np.ix_(inner_train, inner_train)], y[inner_train])
+            calibration_score[inner_cal] = inner_svm.decision_function(
+                K_train[np.ix_(inner_cal, inner_train)]
+            )
+        if not np.isfinite(calibration_score).all():
+            raise RuntimeError("Incomplete train-only calibration scores")
+        self.calibrator_ = LogisticRegression(solver="lbfgs", max_iter=500)
+        self.calibrator_.fit(calibration_score.reshape(-1, 1), y)
         self.svm.fit(K_train, y)
         self.classes_ = self.svm.classes_
         return self
 
-    def predict_proba(self, X: np.ndarray) -> np.ndarray:
+    def decision_function(self, X: np.ndarray) -> np.ndarray:
+        if self.qke is None or self.X_train_ is None:
+            raise RuntimeError("QSVMClassifier is not fitted")
         X_sub = X[:, :self.n_qubits]
         X_scaled = self.scaler.transform(X_sub)
         X_scaled = np.tanh(X_scaled) * np.pi
         K_test = self.qke.compute_kernel_matrix(X_scaled, self.X_train_)
-        return self.svm.predict_proba(K_test)
+        return np.asarray(self.svm.decision_function(K_test), dtype=float)
+
+    def predict_proba(self, X: np.ndarray) -> np.ndarray:
+        if self.calibrator_ is None:
+            raise RuntimeError("QSVMClassifier is not fitted")
+        score = self.decision_function(X)
+        return self.calibrator_.predict_proba(score.reshape(-1, 1))
 
     def predict(self, X: np.ndarray) -> np.ndarray:
         proba = self.predict_proba(X)

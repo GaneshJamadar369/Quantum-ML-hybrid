@@ -1,4 +1,12 @@
 # AQUIRE-Med — Phase 6A Classical Baselines, SHAP Audit & Conformal Prediction Report
+
+> **ARTIFACT CORRECTION (2026-09-21):** The locally downloaded immutable CSV
+> identifies HistGradientBoosting at 0.719802 AUPRC / 0.872210 AUROC as the
+> classical champion. Values in this earlier narrative were handwritten from a
+> different run and are not authoritative. The conformal output is exploratory
+> because it reports coverage on its calibration fold. See
+> [research_code_audit_2026-09-21.md](research_code_audit_2026-09-21.md).
+
 **Date:** September 20, 2026 | **Commit:** `d739ba0` | **Execution Environment:** Kaggle GPU T4 x2 / macOS
 
 ---

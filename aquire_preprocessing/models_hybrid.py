@@ -10,9 +10,13 @@ from .models_1d import ECGResNet1D
 
 
 class GatedCrossAttentionFusion(nn.Module):
-    """Gated multimodal cross-attention fusion block.
-    
-    Dynamically weights tabular clinical features with continuous waveform latents.
+    """Two-token self-attention followed by gated multimodal fusion.
+
+    The previous implementation used one tabular query and exactly one waveform
+    key/value.  Attention over a single key always has weight one, so its output
+    was independent of the tabular query.  That made the alleged multimodal
+    model a waveform-only model.  Here both projected modalities are tokens in
+    the attention context, and the final gate directly receives both tokens.
     """
 
     def __init__(self, tabular_dim: int = 64, waveform_dim: int = 128, fused_dim: int = 128):
@@ -20,30 +24,28 @@ class GatedCrossAttentionFusion(nn.Module):
         self.proj_tabular = nn.Linear(tabular_dim, fused_dim)
         self.proj_waveform = nn.Linear(waveform_dim, fused_dim)
 
-        # Multi-head attention between tabular (queries) and waveform (keys/values)
-        self.cross_attn = nn.MultiheadAttention(embed_dim=fused_dim, num_heads=4, batch_first=True)
+        self.cross_attn = nn.MultiheadAttention(
+            embed_dim=fused_dim, num_heads=4, batch_first=True
+        )
         
         # Gating network
-        self.gate = nn.Sequential(
-            nn.Linear(fused_dim * 2, fused_dim),
-            nn.Sigmoid(),
-        )
+        self.gate = nn.Sequential(nn.Linear(fused_dim * 2, fused_dim), nn.Sigmoid())
         self.norm = nn.LayerNorm(fused_dim)
 
     def forward(self, tab_emb: torch.Tensor, wave_emb: torch.Tensor) -> torch.Tensor:
-        # tab_emb: (B, D_tab) -> (B, 1, D_fused)
-        # wave_emb: (B, D_wave) -> (B, 1, D_fused)
-        t_proj = self.proj_tabular(tab_emb).unsqueeze(1)
-        w_proj = self.proj_waveform(wave_emb).unsqueeze(1)
+        t_proj = self.proj_tabular(tab_emb)
+        w_proj = self.proj_waveform(wave_emb)
 
-        # Cross attention: tabular queries attend over waveform context
-        attn_out, _ = self.cross_attn(query=t_proj, key=w_proj, value=w_proj)
-        attn_out = attn_out.squeeze(1)
-        w_squeezed = w_proj.squeeze(1)
+        # (B, 2, D): each modality can now attend to the other and itself.
+        tokens = torch.stack([t_proj, w_proj], dim=1)
+        attended, _ = self.cross_attn(tokens, tokens, tokens, need_weights=False)
+        t_context = attended[:, 0]
+        w_context = attended[:, 1]
 
-        # Gated combination
-        gate_coeff = self.gate(torch.cat([attn_out, w_squeezed], dim=-1))
-        fused = gate_coeff * attn_out + (1.0 - gate_coeff) * w_squeezed
+        # The direct projected tokens in the gate provide an explicit gradient
+        # path from each modality even if attention initially becomes diffuse.
+        gate_coeff = self.gate(torch.cat([t_proj, w_proj], dim=-1))
+        fused = gate_coeff * t_context + (1.0 - gate_coeff) * w_context
         return self.norm(fused)
 
 
