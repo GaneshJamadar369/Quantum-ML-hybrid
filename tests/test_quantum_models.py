@@ -5,6 +5,7 @@ pytest.importorskip("torch")
 pytest.importorskip("pennylane")
 
 from aquire_preprocessing.models_quantum import (
+    CompactFusionHQNN,
     DirectQuantumClassifier,
     HybridQuantumNeuralNetwork,
     ProjectedIQPFeatureMap,
@@ -108,6 +109,24 @@ def test_hqnn_batched_backward_pass():
     assert model.waveform_stem[0].weight.grad is not None
     assert model.tabular_encoder[1].weight.grad is not None
     assert model.quantum_layer.weights.grad is not None
+
+
+def test_compact_fusion_hqnn_uses_both_modalities_and_quantum_gradients():
+    import torch
+
+    torch.manual_seed(7)
+    model = CompactFusionHQNN(n_qubits=4, n_layers=1)
+    waveform = torch.randn(4, 2)
+    clinical = torch.randn(4, 2)
+    output = model(waveform, clinical)
+    output.square().mean().backward()
+    assert output.shape == (4,)
+    assert torch.isfinite(output).all()
+    assert model.mixer.weight.grad is not None
+    assert model.quantum.quantum_layer.rotations.grad is not None
+    assert model.quantum.quantum_layer.interactions.grad is not None
+    assert not torch.allclose(output.detach(), model(torch.zeros_like(waveform), clinical).detach())
+    assert not torch.allclose(output.detach(), model(waveform, torch.zeros_like(clinical)).detach())
 
 
 def test_projected_iqp_features_and_kernel_are_finite_psd():

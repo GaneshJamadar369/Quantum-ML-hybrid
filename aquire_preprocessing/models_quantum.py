@@ -466,6 +466,35 @@ class DirectQuantumClassifier(nn.Module):
         return self.readout(q_out).squeeze(-1)
 
 
+class CompactFusionHQNN(nn.Module):
+    """Small trainable fusion layer followed by the direct quantum predictor.
+
+    The input is a pair of *fold-local* two-coordinate waveform and clinical
+    representations.  The quantum layer, not the classical mixer, produces the
+    nonlinear decision features.  This is an experimental HQNN head; upstream
+    supervised representation learning must be disclosed separately.
+    """
+
+    def __init__(self, n_qubits: int = 4, n_layers: int = 2):
+        super().__init__()
+        if n_qubits != 4:
+            raise ValueError("CompactFusionHQNN currently expects two coordinates per modality")
+        self.mixer = nn.Linear(4, 4)
+        with torch.no_grad():
+            self.mixer.weight.copy_(torch.eye(4))
+            self.mixer.bias.zero_()
+        self.quantum = DirectQuantumClassifier(n_qubits=4, n_layers=n_layers)
+
+    def forward(self, waveform: torch.Tensor, clinical: torch.Tensor) -> torch.Tensor:
+        if waveform.ndim != 2 or clinical.ndim != 2 or waveform.shape[1] != 2 or clinical.shape[1] != 2:
+            raise ValueError("Expected paired (batch, 2) waveform and clinical coordinates")
+        if waveform.shape[0] != clinical.shape[0]:
+            raise ValueError("Modality batch sizes differ")
+        joined = torch.cat([waveform, clinical], dim=1)
+        angles = torch.pi * torch.tanh(self.mixer(joined) / torch.pi)
+        return self.quantum(angles)
+
+
 # =====================================================================
 # 3. Hybrid Quantum-Classical Deep Neural Network (HQNN)
 # =====================================================================
