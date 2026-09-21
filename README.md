@@ -43,4 +43,6 @@ This repository does not establish clinical deployment, future cardiovascular ev
 
 The later modeling prototype was independently audited on 2026-09-21. Read
 [the research code audit](docs/research_code_audit_2026-09-21.md) before using
-the classical, fusion, conformal, or QML results.
+the classical, fusion, conformal, or QML results. The completed CPU benchmark
+and its restricted interpretation are recorded in the
+[Phase 6Q-A matched-kernel report](docs/phase6q_a_matched_kernel_result.md).

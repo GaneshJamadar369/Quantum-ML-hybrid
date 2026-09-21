@@ -181,12 +181,16 @@ def _paired_patient_bootstrap(
         "delta_auprc": auprc,
         "delta_auroc": summary(delta_auroc),
         "delta_brier": summary(delta_brier),
-        "utility_gate": (
-            "PASS_QML_UTILITY"
+        "matched_kernel_accuracy_gate": (
+            "PASS_MATCHED_KERNEL_ACCURACY_DELTA"
             if auprc["ci95_low"] > 0.0
-            else "NO_QML_UTILITY_DEMONSTRATED"
+            else "NO_MATCHED_KERNEL_ACCURACY_DELTA"
         ),
         "gate_rule": "95% patient-bootstrap CI for delta AUPRC must be entirely above zero",
+        "claim_boundary": (
+            "This gate compares predictive accuracy against one matched RBF-SVC on a "
+            "classical simulator. It does not establish computational quantum advantage."
+        ),
     }
 
 
@@ -598,7 +602,8 @@ def run_quantum_baselines(
         comparison_path = output_dir / "paired_qsvm_vs_rbf_bootstrap.json"
         comparison_path.write_text(json.dumps(comparison, indent=2))
         print(
-            f"Paired utility gate: {comparison['utility_gate']} -> {comparison_path}",
+            "Paired matched-kernel accuracy gate: "
+            f"{comparison['matched_kernel_accuracy_gate']} -> {comparison_path}",
             flush=True,
         )
 

@@ -49,4 +49,5 @@ def test_paired_patient_bootstrap_detects_better_scores():
         labels, patients, quantum, classical, iterations=100, seed=5
     )
     assert report["delta_auprc"]["ci95_low"] > 0
-    assert report["utility_gate"] == "PASS_QML_UTILITY"
+    assert report["matched_kernel_accuracy_gate"] == "PASS_MATCHED_KERNEL_ACCURACY_DELTA"
+    assert "does not establish computational quantum advantage" in report["claim_boundary"]

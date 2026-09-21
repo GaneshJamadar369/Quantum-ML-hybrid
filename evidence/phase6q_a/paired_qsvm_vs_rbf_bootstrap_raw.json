@@ -1,0 +1,23 @@
+{
+  "comparison": "qsvm_minus_rbf_svc_z8",
+  "bootstrap_unit": "patient",
+  "iterations_requested": 2000,
+  "iterations_valid": 2000,
+  "delta_auprc": {
+    "mean": 0.0931426390094631,
+    "ci95_low": 0.07794298997234293,
+    "ci95_high": 0.10826630814429537
+  },
+  "delta_auroc": {
+    "mean": 0.09118968866132403,
+    "ci95_low": 0.08006985134075985,
+    "ci95_high": 0.10233151584504963
+  },
+  "delta_brier": {
+    "mean": -0.019702489698172294,
+    "ci95_low": -0.022003209264418983,
+    "ci95_high": -0.0173192304412094
+  },
+  "utility_gate": "PASS_QML_UTILITY",
+  "gate_rule": "95% patient-bootstrap CI for delta AUPRC must be entirely above zero"
+}

@@ -118,8 +118,10 @@ training-only feature processing -> z8
 ```
 
 Only if the IQP kernel improves pooled OOF AUPRC with a patient-bootstrap
-confidence interval above zero should VQC or a quantum residual model proceed.
-Simulation accuracy alone cannot establish computational quantum advantage.
+confidence interval above zero should stronger matched-kernel controls be run.
+VQC or a quantum residual model should proceed only after those controls and
+kernel-conditioning checks pass. Simulation accuracy alone cannot establish
+computational quantum advantage.
 The practical QML literature requires comparison with strong classical models
 and classical approximations of the quantum model.
 
@@ -127,8 +129,9 @@ and classical approximations of the quantum model.
 
 1. Run the new Phase 6Q-A preflight and eight-fold QSVM/RBF benchmark.
 2. Report paired patient-bootstrap delta AUPRC, delta Brier, kernel diagnostics,
-   runtime, and memory. A quantum win requires the 95% CI of delta AUPRC to be
-   above zero and no clinically material subgroup regression.
+   runtime, and memory. Call a positive result a matched-kernel accuracy delta;
+   do not call it quantum advantage. It requires the 95% CI of delta AUPRC to
+   be above zero and no clinically material subgroup regression.
 3. Rerun corrected fusion with a ResNet-only control, tabular-only control,
    modality-shuffle tests, at least three seeds, and paired patient bootstrap.
 4. Add xResNet1D101/InceptionTime or a pretrained ECG encoder as the strong
