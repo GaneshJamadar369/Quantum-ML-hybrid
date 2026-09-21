@@ -54,7 +54,7 @@ def train_and_eval_fold(
     batch_size: int = 64,
     lr: float = 5e-4,
     seed: int = 42,
-) -> tuple[np.ndarray, np.ndarray, float]:
+) -> tuple[np.ndarray, np.ndarray, np.ndarray, float]:
     import torch
     from torch.utils.data import DataLoader, TensorDataset
     from aquire_preprocessing.models_1d import ECGResNet1D
@@ -137,7 +137,8 @@ def train_and_eval_fold(
 
     # Validation evaluation
     model.eval()
-    val_preds = []
+    val_logits = []
+    val_embeddings = []
     val_loader = DataLoader(
         TensorDataset(X_val_sig, X_val_tab) if model_type == "hybrid" else TensorDataset(X_val_sig),
         batch_size=batch_size, shuffle=False,
@@ -147,15 +148,17 @@ def train_and_eval_fold(
         for batch in val_loader:
             if model_type == "hybrid":
                 b_sig, b_tab = [t.to(device) for t in batch]
-                logits, _ = model(b_sig, b_tab)
+                logits, emb = model(b_sig, b_tab)
             else:
                 b_sig = batch[0].to(device)
-                logits, _ = model(b_sig)
-            val_preds.append(torch.sigmoid(logits).cpu().numpy())
+                logits, emb = model(b_sig)
+            val_logits.append(logits.cpu().numpy())
+            val_embeddings.append(emb.cpu().numpy())
     total_val_time = (time.perf_counter() - start_time) * 1000.0 / len(val_indices)
 
-    p_val = np.concatenate(val_preds, axis=0)
-    return val_indices, p_val, total_val_time
+    l_val = np.concatenate(val_logits, axis=0).squeeze()
+    e_val = np.concatenate(val_embeddings, axis=0)
+    return val_indices, l_val, e_val, total_val_time
 
 
 def run_deep_learning_baselines(
@@ -224,6 +227,8 @@ def run_deep_learning_baselines(
         print(f"==========================================", flush=True)
 
         prob_oof = np.full(len(joined), np.nan, dtype=float)
+        logits_oof = np.full(len(joined), np.nan, dtype=float)
+        embeddings_oof = np.full((len(joined), 128), np.nan, dtype=float)
         total_latency = 0.0
 
         for held_out in sorted(np.unique(folds)):
@@ -240,13 +245,15 @@ def run_deep_learning_baselines(
                 lr=lr,
                 seed=seed,
             )
-            prob_oof[val_idx] = p_val
+            logits_oof[val_idx] = l_val
+            embeddings_oof[val_idx] = e_val
+            prob_oof[val_idx] = 1.0 / (1.0 + np.exp(-l_val))  # sigmoid
             total_latency += latency
 
         avg_latency = total_latency / 8.0
 
         # Leave-One-Fold-Out Platt Sigmoid Calibration
-        logits_oof = np.log(np.clip(prob_oof, 1e-7, 1 - 1e-7) / np.clip(1 - prob_oof, 1e-7, 1))
+        # We already have raw logits, but Platt scales them.
         calibrator = FoldLocalPlattCalibrator()
         calibrator.fit_from_oof_logits(logits_oof, labels, folds)
         calibrated_prob = calibrator.transform(logits_oof, folds)
@@ -255,6 +262,20 @@ def run_deep_learning_baselines(
             labels, calibrated_prob, model_type, avg_latency, hard_negative=hard_neg,
         )
         all_metrics.append(asdict(metrics))
+
+        # Save artifact with embeddings
+        np.savez_compressed(
+            output_dir / f"{model_type}_oof.npz",
+            record_ids=record_ids,
+            patient_ids=patient_ids,
+            folds=folds,
+            labels=labels,
+            hard_negative=hard_neg,
+            logits=logits_oof,
+            calibrated_prob=calibrated_prob,
+            embeddings=embeddings_oof,
+            metrics=json.dumps(asdict(metrics)),
+        )
 
         all_predictions.append(pd.DataFrame({
             "ecg_id": record_ids,
