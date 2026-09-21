@@ -11,6 +11,8 @@ specified in
 The completed direct VQC and fold-coherent waveform q4 screens, including
 their negative overall comparison and next decision gate, are recorded in
 [`docs/quantum_core_screen_2026-09-22.md`](docs/quantum_core_screen_2026-09-22.md).
+The subsequent QSVC and fusion HQNN screens are recorded in
+[`docs/qsvc_hqnn_screen_2026-09-22.md`](docs/qsvc_hqnn_screen_2026-09-22.md).
 
 ## Implementation complete
 
@@ -101,6 +103,8 @@ their negative overall comparison and next decision gate, are recorded in
 - [x] Repair VQC/HQNN simulator gradients with adjoint/backprop differentiation and add batched forward/backward regression tests.
 - [x] Export fold-coherent waveform embeddings using one encoder per outer fold; verify patient isolation and complete 17,348-record OOF coverage. **Representation OOF AUPRC 0.7878; supervised-encoder ablation.**
 - [x] Run two direct q4 VQC screens on Kaggle: approved clinical features and fold-coherent waveform embeddings, each against matched-input MLP and RBF controls. **Clinical VQC 0.5087 vs RBF 0.5133; waveform VQC 0.7325 vs MLP 0.7583. No overall quantum win.**
+- [x] Run fold-coherent q4 IQP-QSVC with RBF and Laplacian controls. **IQP-QSVC AUPRC 0.6572 vs RBF 0.7433 and Laplacian 0.7244; negative result with patient-bootstrap intervals below zero.**
+- [x] Run q4 fusion HQNN with waveform and approved clinical features against same-input fusion MLP. **HQNN AUPRC 0.7424 vs MLP 0.7526; finite gradients, but no primary-metric win.**
 - [ ] Repeat the quantum-head experiment with inner-fold-selected representations, patient-unique sample-size/regularization ablations and at least five seeds; add exact parameter-count and circuit-removal controls. Do not expand to q8 based on the narrow waveform VQC–RBF comparison alone.
 - [ ] Run Phase 6C-R: corrected ResNet/fusion with modality controls and five prespecified seeds on GPU.
 - [ ] Screen xResNet/Inception and reproducible pretrained ECG encoders under the same patient-safe protocol.
