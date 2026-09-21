@@ -5,6 +5,9 @@ This file is the operational source of truth. A checked **implementation** item 
 The final research protocol, model ladder, quantum stop rule and definition of
 completion are frozen in
 [`docs/research_completion_roadmap.md`](docs/research_completion_roadmap.md).
+The nested representation/circuit search for any further quantum-kernel work is
+specified in
+[`docs/quantum_kernel_optimization_plan.md`](docs/quantum_kernel_optimization_plan.md).
 
 ## Implementation complete
 
@@ -96,5 +99,6 @@ completion are frozen in
 - [ ] Run Phase 6C-R: corrected ResNet/fusion with modality controls and five prespecified seeds on GPU.
 - [ ] Screen xResNet/Inception and reproducible pretrained ECG encoders under the same patient-safe protocol.
 - [ ] Run VQC/HQNN only as matched frozen-embedding ablations after the classical development champion is selected.
+- [ ] Implement the projected-quantum-kernel and trainable sparse-IQP search only under the nested protocol; do not tune against pooled outer-fold labels.
 - [ ] Rerun corrected fusion with tabular-only, waveform-only and modality-shuffle ablations over at least three seeds.
 - [ ] Replace the invalid development-fold conformal claim with Fold-9 calibration and one-time Fold-10 coverage evaluation after champion freeze.
