@@ -21,6 +21,7 @@ from run_quantum_core_screen import (
     _json_default,
     _matched_mlp,
     _patient_unique_sample,
+    _seed_torch,
     _train_torch_head,
 )
 
@@ -130,6 +131,7 @@ def run_screen(
                 f"val={len(val_labels)}",
                 flush=True,
             )
+            _seed_torch(seed + held_out)
             vqc = DirectQuantumClassifier(n_qubits=n_qubits, n_layers=2, topology="ring")
             vqc_logits, vqc_audit = _train_torch_head(
                 vqc,
@@ -141,6 +143,7 @@ def run_screen(
                 learning_rate=0.01,
                 seed=seed + held_out,
             )
+            _seed_torch(seed + 1000 + held_out)
             mlp_logits, mlp_audit = _train_torch_head(
                 _matched_mlp(n_qubits),
                 q_train,

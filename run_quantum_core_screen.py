@@ -273,6 +273,7 @@ def run_screen(
             flush=True,
         )
 
+        _seed_torch(seed + int(held_out))
         vqc = DirectQuantumClassifier(n_qubits=n_qubits, n_layers=2, topology="ring")
         vqc_logits, vqc_audit = _train_torch_head(
             vqc,
@@ -284,6 +285,7 @@ def run_screen(
             learning_rate=0.01,
             seed=seed + int(held_out),
         )
+        _seed_torch(seed + 1000 + int(held_out))
         mlp = _matched_mlp(n_qubits)
         mlp_logits, mlp_audit = _train_torch_head(
             mlp,

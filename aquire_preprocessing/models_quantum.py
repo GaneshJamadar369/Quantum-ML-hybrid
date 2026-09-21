@@ -444,7 +444,17 @@ class DirectQuantumClassifier(nn.Module):
             "interactions": (self.n_layers, len(self.edges)),
             "feature_scales": (self.n_qubits,),
         }
-        self.quantum_layer = qml.qnn.TorchLayer(circuit, weight_shapes)
+        # Near-identity initialization avoids beginning the search in a highly
+        # random circuit where gradients can be weak.  A zero feature-scale
+        # parameter corresponds to a unit multiplier because 2*sigmoid(0)=1.
+        init_method = {
+            "rotations": lambda tensor: nn.init.normal_(tensor, mean=0.0, std=0.1),
+            "interactions": lambda tensor: nn.init.normal_(tensor, mean=0.0, std=0.1),
+            "feature_scales": nn.init.zeros_,
+        }
+        self.quantum_layer = qml.qnn.TorchLayer(
+            circuit, weight_shapes, init_method=init_method
+        )
         self.readout = nn.Linear(self.n_qubits + len(self.edges), 1)
 
     def forward(self, x: torch.Tensor) -> torch.Tensor:
