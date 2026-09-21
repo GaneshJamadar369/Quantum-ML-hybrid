@@ -8,6 +8,9 @@ completion are frozen in
 The nested representation/circuit search for any further quantum-kernel work is
 specified in
 [`docs/quantum_kernel_optimization_plan.md`](docs/quantum_kernel_optimization_plan.md).
+The completed direct VQC and fold-coherent waveform q4 screens, including
+their negative overall comparison and next decision gate, are recorded in
+[`docs/quantum_core_screen_2026-09-22.md`](docs/quantum_core_screen_2026-09-22.md).
 
 ## Implementation complete
 
@@ -93,9 +96,12 @@ specified in
 - [x] Compute paired patient-cluster bootstrap confidence intervals for delta AUPRC and delta Brier. **Delta AUPRC +0.0931 [0.0779, 0.1083]; delta Brier -0.0197 [-0.0220, -0.0173].** Subgroup uncertainty remains open.
 - [x] Compare the IQP kernel against stronger matched classical kernels on identical angle coordinates. **Phase 6Q-B reverses the apparent Phase 6Q-A win:** Laplacian AUPRC 0.4933, angle-RBF 0.4743, product-cosine 0.4615, IQP-QSVM 0.4357, polynomial 0.4010.
 - [x] Evaluate polynomial, Laplacian and product-cosine controls on identical fold-local `z8`, records, sample budget and calibration. **QSVM minus Laplacian ΔAUPRC -0.0577 [-0.0702, -0.0448].**
-- [ ] Record the Phase 6Q kernel branch as a valid negative result. Do not launch VQC/HQNN as the next performance experiment; prioritize the repeated-seed waveform encoder and corrected fusion.
+- [x] Record the Phase 6Q kernel branch as a valid negative result against stronger classical kernels. Subsequent direct-q4 VQC screens are separately marked exploratory; prioritize repeated-seed waveform encoders and corrected fusion before champion selection.
 - [x] Audit VQC/HQNN execution truth. Neither model has a real-data OOF result; both previously failed batched backpropagation under parameter-shift.
 - [x] Repair VQC/HQNN simulator gradients with adjoint/backprop differentiation and add batched forward/backward regression tests.
+- [x] Export fold-coherent waveform embeddings using one encoder per outer fold; verify patient isolation and complete 17,348-record OOF coverage. **Representation OOF AUPRC 0.7878; supervised-encoder ablation.**
+- [x] Run two direct q4 VQC screens on Kaggle: approved clinical features and fold-coherent waveform embeddings, each against matched-input MLP and RBF controls. **Clinical VQC 0.5087 vs RBF 0.5133; waveform VQC 0.7325 vs MLP 0.7583. No overall quantum win.**
+- [ ] Repeat the quantum-head experiment with inner-fold-selected representations, patient-unique sample-size/regularization ablations and at least five seeds; add exact parameter-count and circuit-removal controls. Do not expand to q8 based on the narrow waveform VQC–RBF comparison alone.
 - [ ] Run Phase 6C-R: corrected ResNet/fusion with modality controls and five prespecified seeds on GPU.
 - [ ] Screen xResNet/Inception and reproducible pretrained ECG encoders under the same patient-safe protocol.
 - [ ] Run VQC/HQNN only as matched frozen-embedding ablations after the classical development champion is selected.

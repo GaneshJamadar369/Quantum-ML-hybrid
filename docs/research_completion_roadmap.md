@@ -1,6 +1,7 @@
 # AQUIRE-Med research completion roadmap
 
-**Checkpoint date:** 2026-09-21
+**Checkpoint date:** 2026-09-22. The later q4 execution is detailed in
+[`quantum_core_screen_2026-09-22.md`](quantum_core_screen_2026-09-22.md).
 
 ## Scientific scope
 
@@ -25,13 +26,13 @@ are references, not directly comparable leaderboard entries.
 | ECGResNet1D | Executed once | Pooled OOF AUPRC 0.7913, one seed | Promising, not a frozen champion |
 | Original multimodal fusion | Executed but invalid as fusion evidence | AUPRC 0.7973; one-key attention ignored the tabular query | Discard result; corrected architecture must be rerun |
 | IQP-QSVM | Fully executed | Eight-fold OOF plus patient bootstrap | Negative result against stronger matched kernels |
-| VQC | Prototype only | No real-data OOF run; batched backpropagation was broken before the 2026-09-21 repair | Smoke-testable now; scientifically unvalidated |
+| Direct q4 VQC | Exploratory eight-fold OOF on two inputs | Clinical AUPRC 0.5087; fold-coherent supervised waveform AUPRC 0.7325. Waveform MLP reaches 0.7583 | Trainable, but no overall win; keep as bounded ablation and redesign representation/training |
 | HQNN | Prototype only | No real-data OOF run; same prior gradient defect; waveform stem is not the validated ResNet champion | Smoke-testable now; scientifically unvalidated |
 | Fold 9 | Sealed calibration set | Not used by valid model-selection jobs | Keep sealed until one champion is frozen |
 | Fold 10 | Sealed final test | Not used | Open exactly once after Fold-9 calibration |
 | External validation | Not done | No independent labeled cohort result | Required before strong generalization claims |
 
-## Why VQC and HQNN were halted
+## Why the original VQC and HQNN branch was halted
 
 They were excluded from the Phase 6Q jobs by design after the matched-kernel
 gate failed. Running slower quantum models after IQP-QSVM lost to Laplacian,
@@ -45,10 +46,11 @@ uses adjoint differentiation on `lightning.qubit` and backpropagation on
 This proves software trainability only. It does not provide medical performance,
 scalability, noise robustness or quantum-utility evidence.
 
-VQC and HQNN remain in the study as bounded ablations. They will run only after
-the classical waveform representation is frozen, against parameter- and
-data-matched classical heads. They cannot become the clinical champion unless
-they pass the same uncertainty, subgroup, calibration and latency gates.
+The newer direct q4 VQC completed as a bounded screen on 2026-09-22; it is a
+different, smaller head from the original high-capacity VQC/HQNN classes. Its
+waveform representation is fold-coherent but supervised rather than label-free.
+HQNN still lacks a real-data OOF result. Neither can become the clinical
+champion without the same uncertainty, subgroup, calibration and latency gates.
 
 ## Final model-development protocol
 
