@@ -233,7 +233,7 @@ def run_deep_learning_baselines(
 
         for held_out in sorted(np.unique(folds)):
             print(f"  [Fold {held_out}/8] Training on folds {[f for f in DEV_FOLDS if f != held_out]} ...", flush=True)
-            val_idx, p_val, latency = train_and_eval_fold(
+            val_idx, l_val, e_val, latency = train_and_eval_fold(
                 model_type=model_type,
                 signals_arr=raw_signals,
                 metadata_df=joined,
