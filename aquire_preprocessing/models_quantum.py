@@ -1,9 +1,9 @@
 """
 AQUIRE-Med Quantum Machine Learning Models (Phase 6Q).
-Implements:
-1. QuantumKernelClassifier: Computes quantum fidelity kernel K(x_i, x_j) with dual SVM.
-2. VariationalQuantumClassifier: Parameterized quantum circuit (PQC) with trainable variational angles.
-3. HybridQuantumNeuralNetwork: End-to-end 1D-ResNet/MLP backbone + PennyLane QNode bottleneck + Readout.
+Optimized Vectorized & Batched PennyLane + PyTorch Implementation:
+1. QuantumKernelClassifier (QSVM / QKE): Batch-computed statevector overlap for ultra-fast kernel matrix generation.
+2. VariationalQuantumClassifier (VQC): Parameterized quantum circuit (PQC) with StronglyEntanglingLayers.
+3. HybridQuantumNeuralNetwork (HQNN): Multimodal 1D-ResNet + MLP + Quantum Bottleneck + Readout.
 """
 
 from typing import Dict, List, Optional, Tuple, Union
@@ -12,6 +12,7 @@ import torch
 import torch.nn as nn
 from sklearn.base import BaseEstimator, ClassifierMixin
 from sklearn.svm import SVC
+from sklearn.calibration import CalibratedClassifierCV
 from sklearn.preprocessing import StandardScaler
 
 try:
@@ -29,18 +30,19 @@ def get_quantum_device(n_qubits: int):
 
 
 # =====================================================================
-# 1. Quantum Feature Mapping & Kernel Estimation (QSVM / QKE)
+# 1. Quantum Feature Mapping & Fast Vectorized Kernel Estimation (QSVM)
 # =====================================================================
 
 class QuantumKernelEstimator:
     """
-    Quantum Kernel Estimator using PennyLane.
-    Maps clinical feature vectors into a 2^n Hilbert space using Angle + Entanglement embedding
-    and calculates fidelity |<psi(x_i)|psi(x_j)>|^2.
+    Vectorized Quantum Kernel Estimator using PennyLane.
+    Maps clinical feature vectors into statevectors in 2^n Hilbert space
+    and calculates fidelity matrix via batch matrix multiplication:
+    K(x_i, x_j) = |<psi(x_i)|psi(x_j)>|^2 = |Psi_1 @ Psi_2^H|^2
     """
     def __init__(self, n_qubits: int = 8, n_layers: int = 2):
         if qml is None:
-            raise ImportError("PennyLane is required for QuantumKernelEstimator. Please install pennylane.")
+            raise ImportError("PennyLane is required for QuantumKernelEstimator.")
         self.n_qubits = n_qubits
         self.n_layers = n_layers
         self.dev = get_quantum_device(n_qubits)
@@ -48,66 +50,47 @@ class QuantumKernelEstimator:
 
     def _build_circuit(self):
         @qml.qnode(self.dev)
-        def kernel_circuit(x1, x2):
-            # Encode x1
+        def state_circuit(x):
             for layer in range(self.n_layers):
                 for i in range(self.n_qubits):
-                    qml.RY(x1[i], wires=i)
-                    qml.RZ(x1[i], wires=i)
+                    qml.RY(x[i], wires=i)
+                    qml.RZ(x[i], wires=i)
                 for i in range(self.n_qubits - 1):
                     qml.CNOT(wires=[i, i + 1])
                 if self.n_qubits > 2:
                     qml.CNOT(wires=[self.n_qubits - 1, 0])
+            return qml.state()
 
-            # Invert encoding for x2 (adjoint)
-            for layer in reversed(range(self.n_layers)):
-                if self.n_qubits > 2:
-                    qml.CNOT(wires=[self.n_qubits - 1, 0])
-                for i in reversed(range(self.n_qubits - 1)):
-                    qml.CNOT(wires=[i, i + 1])
-                for i in reversed(range(self.n_qubits)):
-                    qml.RZ(-x2[i], wires=i)
-                    qml.RY(-x2[i], wires=i)
+        self.state_circuit = state_circuit
 
-            return qml.probs(wires=range(self.n_qubits))
-
-        self.kernel_circuit = kernel_circuit
+    def get_statevectors(self, X: np.ndarray) -> np.ndarray:
+        """Compute statevector for each sample in X."""
+        X_scaled = np.clip(X[:, :self.n_qubits], -np.pi, np.pi)
+        states = []
+        for row in X_scaled:
+            states.append(self.state_circuit(row))
+        return np.array(states, dtype=np.complex128)
 
     def compute_kernel_matrix(self, X1: np.ndarray, X2: Optional[np.ndarray] = None) -> np.ndarray:
         """
-        Computes pairwise quantum kernel matrix.
-        If X2 is None, computes symmetric self-kernel K(X1, X1).
+        Computes pairwise quantum kernel matrix using vectorized state overlaps.
+        Runs in seconds instead of hours.
         """
-        is_symmetric = X2 is None
-        if is_symmetric:
-            X2 = X1
-
-        n1, n2 = len(X1), len(X2)
-        K = np.zeros((n1, n2), dtype=np.float32)
-
-        # Scale features to [-pi, pi] for angle embedding
-        X1_scaled = np.clip(X1[:, :self.n_qubits], -np.pi, np.pi)
-        X2_scaled = np.clip(X2[:, :self.n_qubits], -np.pi, np.pi)
-
-        if is_symmetric:
-            for i in range(n1):
-                K[i, i] = 1.0
-                for j in range(i + 1, n1):
-                    prob = float(self.kernel_circuit(X1_scaled[i], X2_scaled[j])[0])
-                    K[i, j] = prob
-                    K[j, i] = prob
+        psi1 = self.get_statevectors(X1)
+        if X2 is None or X2 is X1:
+            # Symmetric self-overlap
+            overlap = np.abs(np.dot(psi1, psi1.conj().T)) ** 2
+            np.fill_diagonal(overlap, 1.0)
+            return overlap.astype(np.float32)
         else:
-            for i in range(n1):
-                for j in range(n2):
-                    prob = float(self.kernel_circuit(X1_scaled[i], X2_scaled[j])[0])
-                    K[i, j] = prob
-
-        return K
+            psi2 = self.get_statevectors(X2)
+            overlap = np.abs(np.dot(psi1, psi2.conj().T)) ** 2
+            return overlap.astype(np.float32)
 
 
 class QSVMClassifier(BaseEstimator, ClassifierMixin):
     """
-    Quantum Support Vector Classifier wrapping QuantumKernelEstimator with scikit-learn SVC.
+    Quantum Support Vector Classifier wrapping QuantumKernelEstimator with CalibratedClassifierCV.
     """
     def __init__(self, n_qubits: int = 8, n_layers: int = 2, C: float = 1.0):
         self.n_qubits = n_qubits
@@ -115,22 +98,23 @@ class QSVMClassifier(BaseEstimator, ClassifierMixin):
         self.C = C
         self.qke = None
         self.scaler = StandardScaler()
-        self.svm = SVC(kernel="precomputed", C=self.C, probability=True)
+        self.svm = SVC(kernel="precomputed", C=self.C)
+        self.clf = CalibratedClassifierCV(self.svm, cv="prefit")
         self.X_train_ = None
 
     def fit(self, X: np.ndarray, y: np.ndarray):
         if self.qke is None:
             self.qke = QuantumKernelEstimator(n_qubits=self.n_qubits, n_layers=self.n_layers)
         
-        # Select top features and scale to [-pi, pi]
         X_sub = X[:, :self.n_qubits]
         X_scaled = self.scaler.fit_transform(X_sub)
-        X_scaled = np.tanh(X_scaled) * np.pi  # non-linear bounding to [-pi, pi]
+        X_scaled = np.tanh(X_scaled) * np.pi
         self.X_train_ = X_scaled
 
         K_train = self.qke.compute_kernel_matrix(self.X_train_)
         self.svm.fit(K_train, y)
-        self.classes_ = self.svm.classes_
+        self.clf.fit(K_train, y)
+        self.classes_ = self.clf.classes_
         return self
 
     def predict_proba(self, X: np.ndarray) -> np.ndarray:
@@ -138,7 +122,7 @@ class QSVMClassifier(BaseEstimator, ClassifierMixin):
         X_scaled = self.scaler.transform(X_sub)
         X_scaled = np.tanh(X_scaled) * np.pi
         K_test = self.qke.compute_kernel_matrix(X_scaled, self.X_train_)
-        return self.svm.predict_proba(K_test)
+        return self.clf.predict_proba(K_test)
 
     def predict(self, X: np.ndarray) -> np.ndarray:
         proba = self.predict_proba(X)
@@ -152,8 +136,6 @@ class QSVMClassifier(BaseEstimator, ClassifierMixin):
 class VariationalQuantumClassifier(nn.Module):
     """
     Variational Quantum Classifier using PyTorch + PennyLane.
-    Architecture:
-    Input (Features) -> Linear Encoder -> AngleEmbedding -> StronglyEntanglingLayers -> Expectation Values (PauliZ) -> Linear Readout
     """
     def __init__(self, in_features: int = 106, n_qubits: int = 8, n_layers: int = 3):
         super().__init__()
@@ -164,36 +146,26 @@ class VariationalQuantumClassifier(nn.Module):
         self.n_qubits = n_qubits
         self.n_layers = n_layers
 
-        # Pre-encoder to project input features to n_qubits
         self.encoder = nn.Sequential(
             nn.BatchNorm1d(in_features),
             nn.Linear(in_features, 32),
             nn.SiLU(),
             nn.Linear(32, n_qubits),
-            nn.Tanh()  # Output range [-1, 1], scaled by pi in quantum circuit
+            nn.Tanh()
         )
 
-        # Quantum Device & Circuit
         self.dev = get_quantum_device(n_qubits)
 
         @qml.qnode(self.dev, interface="torch", diff_method="parameter-shift" if self.dev.name == "lightning.qubit" else "backprop")
         def quantum_circuit(inputs, weights):
-            # inputs shape: (n_qubits,)
-            # Angle embedding
             for i in range(self.n_qubits):
                 qml.RY(inputs[i] * np.pi, wires=i)
-            
-            # Parameterized Entangling layers
             qml.StronglyEntanglingLayers(weights, wires=range(self.n_qubits))
-
-            # Readout PauliZ expectation values
             return [qml.expval(qml.PauliZ(i)) for i in range(self.n_qubits)]
 
-        # Variational parameters shape: (n_layers, n_qubits, 3)
         weight_shapes = {"weights": (n_layers, n_qubits, 3)}
         self.qnode = qml.qnn.TorchLayer(quantum_circuit, weight_shapes)
 
-        # Readout classification head
         self.classifier = nn.Sequential(
             nn.Linear(n_qubits, 16),
             nn.SiLU(),
@@ -201,10 +173,9 @@ class VariationalQuantumClassifier(nn.Module):
         )
 
     def forward(self, x: torch.Tensor) -> torch.Tensor:
-        # x: (Batch, in_features)
-        z = self.encoder(x)  # (Batch, n_qubits)
-        q_out = self.qnode(z)  # (Batch, n_qubits)
-        logits = self.classifier(q_out)  # (Batch, 1)
+        z = self.encoder(x)
+        q_out = self.qnode(z)
+        logits = self.classifier(q_out)
         return logits.squeeze(-1)
 
 
@@ -215,8 +186,6 @@ class VariationalQuantumClassifier(nn.Module):
 class HybridQuantumNeuralNetwork(nn.Module):
     """
     Multimodal Hybrid Quantum Neural Network.
-    Fuses raw 12-lead ECG waveforms (via 1D-ResNet) with handcrafted clinical features (via MLP),
-    processes the joint representation through a Quantum Bottleneck circuit, and predicts MI probability.
     """
     def __init__(
         self,
@@ -233,7 +202,6 @@ class HybridQuantumNeuralNetwork(nn.Module):
         self.n_qubits = n_qubits
         self.n_quantum_layers = n_quantum_layers
 
-        # 1. Classical 1D Waveform Stream (Lightweight ResNet Encoder)
         self.waveform_stem = nn.Sequential(
             nn.Conv1d(raw_channels, resnet_base_filters, kernel_size=7, stride=2, padding=3, bias=False),
             nn.BatchNorm1d(resnet_base_filters),
@@ -248,7 +216,6 @@ class HybridQuantumNeuralNetwork(nn.Module):
         )
         self.waveform_fc = nn.Linear(resnet_base_filters * 2, n_qubits // 2)
 
-        # 2. Classical Tabular Feature Stream (MLP Encoder)
         self.tabular_encoder = nn.Sequential(
             nn.BatchNorm1d(tabular_dim),
             nn.Linear(tabular_dim, 64),
@@ -257,23 +224,18 @@ class HybridQuantumNeuralNetwork(nn.Module):
             nn.Linear(64, n_qubits // 2)
         )
 
-        # 3. Quantum Bottleneck Circuit
         self.dev = get_quantum_device(n_qubits)
 
         @qml.qnode(self.dev, interface="torch", diff_method="parameter-shift" if self.dev.name == "lightning.qubit" else "backprop")
         def hybrid_quantum_circuit(inputs, weights):
-            # inputs shape: (n_qubits,)
             for i in range(self.n_qubits):
                 qml.RY(inputs[i] * np.pi, wires=i)
-            
             qml.StronglyEntanglingLayers(weights, wires=range(self.n_qubits))
-
             return [qml.expval(qml.PauliZ(i)) for i in range(self.n_qubits)]
 
         weight_shapes = {"weights": (n_quantum_layers, n_qubits, 3)}
         self.quantum_layer = qml.qnn.TorchLayer(hybrid_quantum_circuit, weight_shapes)
 
-        # 4. Final Classification Head
         self.head = nn.Sequential(
             nn.Linear(n_qubits, 16),
             nn.SiLU(),
@@ -282,20 +244,13 @@ class HybridQuantumNeuralNetwork(nn.Module):
         )
 
     def forward(self, x_signal: torch.Tensor, x_tab: torch.Tensor) -> torch.Tensor:
-        # Waveform stream
         wf = self.waveform_stem(x_signal)
         wf = self.waveform_conv(wf).flatten(1)
-        wf_lat = torch.tanh(self.waveform_fc(wf))  # (Batch, n_qubits/2)
+        wf_lat = torch.tanh(self.waveform_fc(wf))
 
-        # Tabular stream
-        tab_lat = torch.tanh(self.tabular_encoder(x_tab))  # (Batch, n_qubits/2)
+        tab_lat = torch.tanh(self.tabular_encoder(x_tab))
+        joint_lat = torch.cat([wf_lat, tab_lat], dim=1)
 
-        # Concatenate joint latent representation
-        joint_lat = torch.cat([wf_lat, tab_lat], dim=1)  # (Batch, n_qubits)
-
-        # Pass through quantum bottleneck
-        q_out = self.quantum_layer(joint_lat)  # (Batch, n_qubits)
-
-        # Readout head
+        q_out = self.quantum_layer(joint_lat)
         logits = self.head(q_out)
         return logits.squeeze(-1)
