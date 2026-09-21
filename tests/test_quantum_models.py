@@ -51,3 +51,19 @@ def test_paired_patient_bootstrap_detects_better_scores():
     assert report["delta_auprc"]["ci95_low"] > 0
     assert report["matched_kernel_accuracy_gate"] == "PASS_MATCHED_KERNEL_ACCURACY_DELTA"
     assert "does not establish computational quantum advantage" in report["claim_boundary"]
+
+
+def test_angle_controls_are_finite_and_product_cosine_is_psd():
+    from run_quantum_baselines import _classical_kernel, _quantum_angle_coordinates
+
+    rng = np.random.default_rng(17)
+    train = rng.normal(size=(20, 8))
+    val = rng.normal(size=(5, 8))
+    angle_train, angle_val = _quantum_angle_coordinates(train, val)
+    assert angle_train.shape == train.shape
+    assert angle_val.shape == val.shape
+    assert np.isfinite(angle_train).all()
+    kernel = _classical_kernel("product_cosine")(angle_train, angle_train)
+    assert np.allclose(kernel, kernel.T)
+    assert np.allclose(np.diag(kernel), 1.0)
+    assert np.linalg.eigvalsh(kernel).min() > -1e-8

@@ -34,7 +34,23 @@ from aquire_preprocessing.models_quantum import (
 )
 
 
-SUPPORTED_MODELS = ("qsvm", "rbf_svc_z8", "vqc", "hqnn")
+SUPPORTED_MODELS = (
+    "qsvm",
+    "rbf_svc_z8",
+    "rbf_svc_angle_z8",
+    "polynomial_svc_angle_z8",
+    "laplacian_svc_angle_z8",
+    "product_cosine_svc_angle_z8",
+    "vqc",
+    "hqnn",
+)
+
+ANGLE_KERNEL_CONTROLS = {
+    "rbf_svc_angle_z8": "rbf",
+    "polynomial_svc_angle_z8": "poly",
+    "laplacian_svc_angle_z8": "laplacian",
+    "product_cosine_svc_angle_z8": "product_cosine",
+}
 
 
 def _fold_local_z8(
@@ -84,7 +100,7 @@ def _calibrated_classical_svc(
     x_train: np.ndarray,
     y_train: np.ndarray,
     x_val: np.ndarray,
-    kernel: str,
+    kernel,
     seed: int,
 ) -> np.ndarray:
     """Train-only cross-fitted sigmoid calibration for a matched SVC control."""
@@ -104,6 +120,38 @@ def _calibrated_classical_svc(
     model.fit(x_train, y_train)
     score = model.decision_function(x_val)
     return calibrator.predict_proba(score.reshape(-1, 1))[:, 1]
+
+
+def _quantum_angle_coordinates(
+    x_train: np.ndarray,
+    x_val: np.ndarray,
+) -> tuple[np.ndarray, np.ndarray]:
+    """Reproduce the QSVM's train-fitted coordinate map for fair controls."""
+    from sklearn.preprocessing import StandardScaler
+
+    scaler = StandardScaler()
+    train = np.tanh(scaler.fit_transform(x_train)) * np.pi
+    val = np.tanh(scaler.transform(x_val)) * np.pi
+    return train, val
+
+
+def _classical_kernel(name: str):
+    """Return a fixed classical kernel evaluated in the IQP angle coordinates."""
+    if name in {"rbf", "poly"}:
+        return name
+    if name == "laplacian":
+        from sklearn.metrics.pairwise import laplacian_kernel
+
+        return lambda left, right: laplacian_kernel(
+            left, right, gamma=1.0 / left.shape[1]
+        )
+    if name == "product_cosine":
+        def product_cosine(left, right):
+            delta = left[:, None, :] - right[None, :, :]
+            return np.prod(np.cos(delta / 2.0) ** 2, axis=2)
+
+        return product_cosine
+    raise ValueError(f"Unknown classical kernel: {name}")
 
 
 def _fingerprint(
@@ -129,6 +177,7 @@ def _paired_patient_bootstrap(
     classical_probability: np.ndarray,
     iterations: int,
     seed: int,
+    comparison: str = "qsvm_minus_rbf_svc_z8",
 ) -> dict:
     """Paired uncertainty for QML minus classical control, clustered by patient."""
     from sklearn.metrics import average_precision_score, brier_score_loss, roc_auc_score
@@ -174,7 +223,7 @@ def _paired_patient_bootstrap(
 
     auprc = summary(delta_auprc)
     return {
-        "comparison": "qsvm_minus_rbf_svc_z8",
+        "comparison": comparison,
         "bootstrap_unit": "patient",
         "iterations_requested": int(iterations),
         "iterations_valid": len(delta_auprc),
@@ -273,6 +322,29 @@ def train_and_eval_quantum_fold(
             "z8": z8_audit,
             "training_records": int(len(sub_train)),
             "kernel": "rbf",
+        }
+
+    elif model_type in ANGLE_KERNEL_CONTROLS:
+        sub_train = _balanced_training_positions(
+            labels[train_indices], qsvm_per_class, seed + held_out_fold
+        )
+        angle_train, angle_val = _quantum_angle_coordinates(
+            X_train_tab_norm[sub_train], X_val_tab_norm
+        )
+        kernel_name = ANGLE_KERNEL_CONTROLS[model_type]
+        p_val = _calibrated_classical_svc(
+            angle_train,
+            labels[train_indices][sub_train],
+            angle_val,
+            kernel=_classical_kernel(kernel_name),
+            seed=seed + held_out_fold,
+        )
+        eval_time = (time.perf_counter() - start_time) * 1000.0 / len(val_indices)
+        return val_indices, p_val, eval_time, {
+            "z8": z8_audit,
+            "training_records": int(len(sub_train)),
+            "kernel": kernel_name,
+            "coordinate_map": "training-only StandardScaler -> tanh -> pi",
         }
 
     elif model_type == "vqc":
@@ -545,7 +617,7 @@ def run_quantum_baselines(
         )
         metrics_dict["feature_subset"] = "fold_local_pca_z8"
         metrics_dict["calibration"] = (
-            "inner_5fold_platt" if model_type in {"qsvm", "rbf_svc_z8"}
+            "inner_5fold_platt" if model_type == "qsvm" or model_type.endswith("_z8")
             else "none_development_only"
         )
         metrics_dict["mean_latency_ms"] = round(avg_latency, 4)
@@ -590,22 +662,26 @@ def run_quantum_baselines(
     preds_df.to_csv(preds_csv, index=False)
     print(f"Saved OOF predictions to: {preds_csv}")
 
-    if {"qsvm", "rbf_svc_z8"}.issubset(probabilities_by_model):
-        comparison = _paired_patient_bootstrap(
-            labels=labels,
-            patient_ids=patient_ids,
-            quantum_probability=probabilities_by_model["qsvm"],
-            classical_probability=probabilities_by_model["rbf_svc_z8"],
-            iterations=bootstrap_iterations,
-            seed=seed,
-        )
-        comparison_path = output_dir / "paired_qsvm_vs_rbf_bootstrap.json"
-        comparison_path.write_text(json.dumps(comparison, indent=2))
-        print(
-            "Paired matched-kernel accuracy gate: "
-            f"{comparison['matched_kernel_accuracy_gate']} -> {comparison_path}",
-            flush=True,
-        )
+    if "qsvm" in probabilities_by_model:
+        for control_name, control_probability in probabilities_by_model.items():
+            if control_name == "qsvm" or control_name in {"vqc", "hqnn"}:
+                continue
+            comparison = _paired_patient_bootstrap(
+                labels=labels,
+                patient_ids=patient_ids,
+                quantum_probability=probabilities_by_model["qsvm"],
+                classical_probability=control_probability,
+                iterations=bootstrap_iterations,
+                seed=seed,
+                comparison=f"qsvm_minus_{control_name}",
+            )
+            comparison_path = output_dir / f"paired_qsvm_vs_{control_name}_bootstrap.json"
+            comparison_path.write_text(json.dumps(comparison, indent=2))
+            print(
+                "Paired matched-kernel accuracy gate: "
+                f"{comparison['matched_kernel_accuracy_gate']} -> {comparison_path}",
+                flush=True,
+            )
 
 
 if __name__ == "__main__":

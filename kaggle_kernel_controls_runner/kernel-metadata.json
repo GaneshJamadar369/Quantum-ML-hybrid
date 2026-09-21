@@ -1,0 +1,16 @@
+{
+  "id": "swayamjeetbhagat4/aquire-med-phase-6q-b-kernel-controls",
+  "title": "AQUIRE-Med Phase 6Q-B Matched Kernel Controls",
+  "code_file": "kernel_controls_runner.py",
+  "language": "python",
+  "kernel_type": "script",
+  "is_private": true,
+  "enable_gpu": false,
+  "enable_internet": true,
+  "dataset_sources": [],
+  "competition_sources": [],
+  "kernel_sources": [
+    "swayamjeetbhagat4/aquire-med-preprocessing-pipeline",
+    "swayamjeetbhagat4/aquire-med-full-feature-repair"
+  ]
+}
