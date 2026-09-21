@@ -5,6 +5,7 @@ pytest.importorskip("torch")
 pytest.importorskip("pennylane")
 
 from aquire_preprocessing.models_quantum import (
+    DirectQuantumClassifier,
     HybridQuantumNeuralNetwork,
     ProjectedIQPFeatureMap,
     QSVMClassifier,
@@ -128,3 +129,18 @@ def test_projected_iqp_features_and_kernel_are_finite_psd():
     assert np.allclose(kernel, kernel.T)
     assert np.allclose(np.diag(kernel), 1.0)
     assert np.linalg.eigvalsh(kernel).min() > -1e-8
+
+
+def test_direct_vqc_uses_quantum_head_and_backpropagates():
+    import torch
+
+    model = DirectQuantumClassifier(n_qubits=4, n_layers=1, topology="ring")
+    features = torch.empty(3, 4).uniform_(-np.pi, np.pi)
+    output = model(features)
+    output.square().mean().backward()
+    assert output.shape == (3,)
+    assert torch.isfinite(output).all()
+    assert model.quantum_layer.rotations.grad is not None
+    assert model.quantum_layer.interactions.grad is not None
+    assert model.quantum_layer.feature_scales.grad is not None
+    assert model.readout.weight.grad is not None

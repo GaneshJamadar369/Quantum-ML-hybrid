@@ -375,6 +375,87 @@ class VariationalQuantumClassifier(nn.Module):
         return logits.squeeze(-1)
 
 
+class DirectQuantumClassifier(nn.Module):
+    """Direct-input VQC for an already conditioned ``q_d`` representation.
+
+    Unlike :class:`VariationalQuantumClassifier`, this model does not place a
+    high-capacity classical MLP before the circuit.  The input is expected to
+    be the fold-local quantum representation in ``[-pi, pi]``.  Trainable
+    feature scales, data re-uploading, sparse Ising interactions and local
+    observables provide the expressive part of the predictive head.  The
+    classical readout is deliberately linear so the quantum transformation is
+    identifiable in matched ablations.
+    """
+
+    def __init__(
+        self,
+        n_qubits: int,
+        n_layers: int = 2,
+        topology: str = "ring",
+    ):
+        super().__init__()
+        if qml is None:
+            raise ImportError("PennyLane is required for DirectQuantumClassifier")
+        if n_qubits < 2:
+            raise ValueError("DirectQuantumClassifier requires at least two qubits")
+        if n_layers < 1:
+            raise ValueError("n_layers must be positive")
+        if topology == "ring":
+            edges = [(index, (index + 1) % n_qubits) for index in range(n_qubits)]
+        elif topology == "ladder":
+            edge_set = {(index, index + 1) for index in range(n_qubits - 1)}
+            edge_set.update((index, index + 2) for index in range(n_qubits - 2))
+            edges = sorted(edge_set)
+        else:
+            raise ValueError("topology must be 'ring' or 'ladder'")
+
+        self.n_qubits = int(n_qubits)
+        self.n_layers = int(n_layers)
+        self.topology = topology
+        self.edges = edges
+        self.dev = get_quantum_device(self.n_qubits)
+        diff_method = "adjoint" if self.dev.name == "lightning.qubit" else "backprop"
+
+        @qml.qnode(self.dev, interface="torch", diff_method=diff_method)
+        def circuit(inputs, rotations, interactions, feature_scales):
+            # Bounded trainable bandwidth.  Re-uploading lets shallow circuits
+            # build nonlinear feature interactions without a classical encoder.
+            scaled = inputs * (2.0 * torch.sigmoid(feature_scales))
+            for layer in range(self.n_layers):
+                qml.AngleEmbedding(scaled, wires=range(self.n_qubits), rotation="Y")
+                for wire in range(self.n_qubits):
+                    qml.Rot(
+                        rotations[layer, wire, 0],
+                        rotations[layer, wire, 1],
+                        rotations[layer, wire, 2],
+                        wires=wire,
+                    )
+                for edge_index, (left, right) in enumerate(self.edges):
+                    qml.IsingZZ(interactions[layer, edge_index], wires=[left, right])
+            observables = [qml.expval(qml.PauliZ(wire)) for wire in range(self.n_qubits)]
+            observables.extend(
+                qml.expval(qml.PauliZ(left) @ qml.PauliZ(right))
+                for left, right in self.edges
+            )
+            return observables
+
+        weight_shapes = {
+            "rotations": (self.n_layers, self.n_qubits, 3),
+            "interactions": (self.n_layers, len(self.edges)),
+            "feature_scales": (self.n_qubits,),
+        }
+        self.quantum_layer = qml.qnn.TorchLayer(circuit, weight_shapes)
+        self.readout = nn.Linear(self.n_qubits + len(self.edges), 1)
+
+    def forward(self, x: torch.Tensor) -> torch.Tensor:
+        if x.ndim != 2 or x.shape[1] != self.n_qubits:
+            raise ValueError(
+                f"Expected (batch, {self.n_qubits}) quantum input, got {tuple(x.shape)}"
+            )
+        q_out = self.quantum_layer(x)
+        return self.readout(q_out).squeeze(-1)
+
+
 # =====================================================================
 # 3. Hybrid Quantum-Classical Deep Neural Network (HQNN)
 # =====================================================================

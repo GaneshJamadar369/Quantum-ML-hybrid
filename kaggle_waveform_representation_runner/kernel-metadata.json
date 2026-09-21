@@ -1,0 +1,15 @@
+{
+  "id": "swayamjeetbhagat4/aquire-med-waveform-representation-v1",
+  "title": "AQUIRE-Med Waveform Representation V1",
+  "code_file": "waveform_representation_runner.py",
+  "language": "python",
+  "kernel_type": "script",
+  "is_private": true,
+  "enable_gpu": true,
+  "enable_internet": true,
+  "dataset_sources": [],
+  "competition_sources": [],
+  "kernel_sources": [
+    "swayamjeetbhagat4/aquire-med-preprocessing-pipeline"
+  ]
+}

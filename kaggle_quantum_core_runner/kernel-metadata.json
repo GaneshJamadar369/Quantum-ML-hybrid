@@ -1,0 +1,16 @@
+{
+  "id": "swayamjeetbhagat4/aquire-med-phase-6q-d-direct-vqc",
+  "title": "AQUIRE-Med Phase 6Q-D Direct VQC",
+  "code_file": "quantum_core_runner.py",
+  "language": "python",
+  "kernel_type": "script",
+  "is_private": true,
+  "enable_gpu": false,
+  "enable_internet": true,
+  "dataset_sources": [],
+  "competition_sources": [],
+  "kernel_sources": [
+    "swayamjeetbhagat4/aquire-med-preprocessing-pipeline",
+    "swayamjeetbhagat4/aquire-med-full-feature-repair"
+  ]
+}
