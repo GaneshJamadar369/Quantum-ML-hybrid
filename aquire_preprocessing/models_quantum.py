@@ -2,8 +2,8 @@
 AQUIRE-Med Quantum Machine Learning Models (Phase 6Q).
 Optimized Vectorized & Batched PennyLane + PyTorch Implementation:
 1. QuantumKernelClassifier (QSVM / QKE): Batch-computed statevector overlap for ultra-fast kernel matrix generation.
-2. VariationalQuantumClassifier (VQC): Parameterized quantum circuit (PQC) with StronglyEntanglingLayers.
-3. HybridQuantumNeuralNetwork (HQNN): Multimodal 1D-ResNet + MLP + Quantum Bottleneck + Readout.
+2. VariationalQuantumClassifier (VQC): Parameterized quantum circuit (PQC) with AngleEmbedding + StronglyEntanglingLayers.
+3. HybridQuantumNeuralNetwork (HQNN): Multimodal 1D-ResNet + MLP + Quantum Bottleneck (AngleEmbedding + Entanglement) + Readout.
 """
 
 from typing import Dict, List, Optional, Tuple, Union
@@ -50,10 +50,8 @@ class QuantumKernelEstimator:
     def _build_circuit(self):
         @qml.qnode(self.dev)
         def state_circuit(x):
+            qml.AngleEmbedding(x, wires=range(self.n_qubits))
             for layer in range(self.n_layers):
-                for i in range(self.n_qubits):
-                    qml.RY(x[i], wires=i)
-                    qml.RZ(x[i], wires=i)
                 for i in range(self.n_qubits - 1):
                     qml.CNOT(wires=[i, i + 1])
                 if self.n_qubits > 2:
@@ -132,6 +130,7 @@ class QSVMClassifier(BaseEstimator, ClassifierMixin):
 class VariationalQuantumClassifier(nn.Module):
     """
     Variational Quantum Classifier using PyTorch + PennyLane.
+    Uses AngleEmbedding for native multi-sample batch support.
     """
     def __init__(self, in_features: int = 106, n_qubits: int = 8, n_layers: int = 3):
         super().__init__()
@@ -154,10 +153,9 @@ class VariationalQuantumClassifier(nn.Module):
 
         @qml.qnode(self.dev, interface="torch", diff_method="parameter-shift" if self.dev.name == "lightning.qubit" else "backprop")
         def quantum_circuit(inputs, weights):
-            for i in range(self.n_qubits):
-                qml.RY(inputs[i] * np.pi, wires=i)
-            qml.StronglyEntanglingLayers(weights, wires=range(self.n_qubits))
-            return [qml.expval(qml.PauliZ(i)) for i in range(self.n_qubits)]
+            qml.AngleEmbedding(inputs * np.pi, wires=range(n_qubits))
+            qml.StronglyEntanglingLayers(weights, wires=range(n_qubits))
+            return [qml.expval(qml.PauliZ(i)) for i in range(n_qubits)]
 
         weight_shapes = {"weights": (n_layers, n_qubits, 3)}
         self.qnode = qml.qnn.TorchLayer(quantum_circuit, weight_shapes)
@@ -182,6 +180,8 @@ class VariationalQuantumClassifier(nn.Module):
 class HybridQuantumNeuralNetwork(nn.Module):
     """
     Multimodal Hybrid Quantum Neural Network.
+    Fuses raw 12-lead ECG waveforms (via 1D-ResNet) with handcrafted clinical features (via MLP),
+    processes joint representation through an 8-qubit quantum bottleneck with AngleEmbedding.
     """
     def __init__(
         self,
@@ -224,10 +224,9 @@ class HybridQuantumNeuralNetwork(nn.Module):
 
         @qml.qnode(self.dev, interface="torch", diff_method="parameter-shift" if self.dev.name == "lightning.qubit" else "backprop")
         def hybrid_quantum_circuit(inputs, weights):
-            for i in range(self.n_qubits):
-                qml.RY(inputs[i] * np.pi, wires=i)
-            qml.StronglyEntanglingLayers(weights, wires=range(self.n_qubits))
-            return [qml.expval(qml.PauliZ(i)) for i in range(self.n_qubits)]
+            qml.AngleEmbedding(inputs * np.pi, wires=range(n_qubits))
+            qml.StronglyEntanglingLayers(weights, wires=range(n_qubits))
+            return [qml.expval(qml.PauliZ(i)) for i in range(n_qubits)]
 
         weight_shapes = {"weights": (n_quantum_layers, n_qubits, 3)}
         self.quantum_layer = qml.qnn.TorchLayer(hybrid_quantum_circuit, weight_shapes)
