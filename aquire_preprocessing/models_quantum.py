@@ -12,7 +12,6 @@ import torch
 import torch.nn as nn
 from sklearn.base import BaseEstimator, ClassifierMixin
 from sklearn.svm import SVC
-from sklearn.calibration import CalibratedClassifierCV
 from sklearn.preprocessing import StandardScaler
 
 try:
@@ -78,7 +77,6 @@ class QuantumKernelEstimator:
         """
         psi1 = self.get_statevectors(X1)
         if X2 is None or X2 is X1:
-            # Symmetric self-overlap
             overlap = np.abs(np.dot(psi1, psi1.conj().T)) ** 2
             np.fill_diagonal(overlap, 1.0)
             return overlap.astype(np.float32)
@@ -90,7 +88,7 @@ class QuantumKernelEstimator:
 
 class QSVMClassifier(BaseEstimator, ClassifierMixin):
     """
-    Quantum Support Vector Classifier wrapping QuantumKernelEstimator with CalibratedClassifierCV.
+    Quantum Support Vector Classifier wrapping QuantumKernelEstimator with scikit-learn SVC.
     """
     def __init__(self, n_qubits: int = 8, n_layers: int = 2, C: float = 1.0):
         self.n_qubits = n_qubits
@@ -98,8 +96,7 @@ class QSVMClassifier(BaseEstimator, ClassifierMixin):
         self.C = C
         self.qke = None
         self.scaler = StandardScaler()
-        self.svm = SVC(kernel="precomputed", C=self.C)
-        self.clf = CalibratedClassifierCV(self.svm, cv="prefit")
+        self.svm = SVC(kernel="precomputed", C=self.C, probability=True)
         self.X_train_ = None
 
     def fit(self, X: np.ndarray, y: np.ndarray):
@@ -113,8 +110,7 @@ class QSVMClassifier(BaseEstimator, ClassifierMixin):
 
         K_train = self.qke.compute_kernel_matrix(self.X_train_)
         self.svm.fit(K_train, y)
-        self.clf.fit(K_train, y)
-        self.classes_ = self.clf.classes_
+        self.classes_ = self.svm.classes_
         return self
 
     def predict_proba(self, X: np.ndarray) -> np.ndarray:
@@ -122,7 +118,7 @@ class QSVMClassifier(BaseEstimator, ClassifierMixin):
         X_scaled = self.scaler.transform(X_sub)
         X_scaled = np.tanh(X_scaled) * np.pi
         K_test = self.qke.compute_kernel_matrix(X_scaled, self.X_train_)
-        return self.clf.predict_proba(K_test)
+        return self.svm.predict_proba(K_test)
 
     def predict(self, X: np.ndarray) -> np.ndarray:
         proba = self.predict_proba(X)
