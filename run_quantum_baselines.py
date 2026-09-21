@@ -93,11 +93,8 @@ def train_and_eval_quantum_fold(
     start_time = time.perf_counter()
 
     if model_type == "qsvm":
-        # QSVM on top 8 SHAP features (subsampled training for kernel tractable computation)
-        # Using 8 qubits
         qsvm = QSVMClassifier(n_qubits=8, n_layers=2, C=1.0)
         
-        # Subsample train for kernel efficiency (e.g. 1000 balanced samples per fold)
         pos_idx = np.where(labels[train_indices] == 1)[0]
         neg_idx = np.where(labels[train_indices] == 0)[0]
         n_sub = min(len(pos_idx), 500)
@@ -300,14 +297,11 @@ def run_quantum_baselines(
         # Leave-One-Fold-Out Platt Sigmoid Calibration
         logits_oof = np.log(np.clip(prob_oof, 1e-7, 1 - 1e-7) / np.clip(1 - prob_oof, 1e-7, 1))
         calibrator = FoldLocalPlattCalibrator()
-        calibrated_prob, cal_models = calibrator.fit_predict(logits_oof, labels, folds)
+        calibrator.fit_from_oof_logits(logits_oof, labels, folds)
+        calibrated_prob = calibrator.transform(logits_oof, folds)
 
         metrics = evaluate_probabilities(
-            y_true=labels,
-            y_prob=calibrated_prob,
-            folds=folds,
-            patient_ids=patient_ids,
-            hard_negatives=hard_neg,
+            labels, calibrated_prob, model_type, avg_latency, hard_negative=hard_neg,
         )
 
         metrics_dict = asdict(metrics)

@@ -22,10 +22,7 @@ import pandas as pd
 import torch
 import h5py
 
-from aquire_preprocessing.baselines import (
-    evaluate_probabilities,
-    FoldLocalPlattCalibrator,
-)
+from aquire_preprocessing.baselines import evaluate_probabilities
 from aquire_preprocessing.config import DEV_FOLDS, CALIBRATION_FOLD, LOCKED_TEST_FOLD
 from aquire_preprocessing.feature_manifest import load_feature_manifest
 from aquire_preprocessing.models_1d import ECGResNet1D
@@ -127,7 +124,7 @@ def run_sealed_holdout_evaluation(
     xgb_preds = xgb.predict_proba(X_test_tab_norm)[:, 1]
     xgb_latency = (time.perf_counter() - t0) * 1000.0 / len(y_test)
 
-    m_xgb = evaluate_probabilities(y_test, xgb_preds, test_folds, test_pids, test_hn)
+    m_xgb = evaluate_probabilities(y_test, xgb_preds, "xgboost_classical", xgb_latency, hard_negative=test_hn)
     d_xgb = asdict(m_xgb)
     d_xgb["model_family"] = "xgboost_classical"
     d_xgb["mean_latency_ms"] = round(xgb_latency, 4)
@@ -138,7 +135,6 @@ def run_sealed_holdout_evaluation(
     print("\n--- Evaluating Champion 2: ECGResNet1D ---", flush=True)
     device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
     resnet = ECGResNet1D(in_channels=12, base_filters=32, embedding_dim=128).to(device)
-    # Quick fit on dev
     opt = torch.optim.AdamW(resnet.parameters(), lr=5e-4, weight_decay=1e-2)
     sig_dev_t = torch.tensor(sig_dev, dtype=torch.float32)
     y_dev_t = torch.tensor(y_dev, dtype=torch.float32)
@@ -166,7 +162,7 @@ def run_sealed_holdout_evaluation(
     res_preds = np.concatenate(res_preds, axis=0)
     res_latency = (time.perf_counter() - t0) * 1000.0 / len(y_test)
 
-    m_res = evaluate_probabilities(y_test, res_preds, test_folds, test_pids, test_hn)
+    m_res = evaluate_probabilities(y_test, res_preds, "ecg_resnet1d", res_latency, hard_negative=test_hn)
     d_res = asdict(m_res)
     d_res["model_family"] = "ecg_resnet1d"
     d_res["mean_latency_ms"] = round(res_latency, 4)
@@ -207,7 +203,7 @@ def run_sealed_holdout_evaluation(
     hyb_preds = np.concatenate(hyb_preds, axis=0)
     hyb_latency = (time.perf_counter() - t0) * 1000.0 / len(y_test)
 
-    m_hyb = evaluate_probabilities(y_test, hyb_preds, test_folds, test_pids, test_hn)
+    m_hyb = evaluate_probabilities(y_test, hyb_preds, "ecg_multimodal_hybrid", hyb_latency, hard_negative=test_hn)
     d_hyb = asdict(m_hyb)
     d_hyb["model_family"] = "ecg_multimodal_hybrid"
     d_hyb["mean_latency_ms"] = round(hyb_latency, 4)
@@ -245,7 +241,7 @@ def run_sealed_holdout_evaluation(
     hqnn_preds = np.concatenate(hqnn_preds, axis=0)
     hqnn_latency = (time.perf_counter() - t0) * 1000.0 / len(y_test)
 
-    m_hqnn = evaluate_probabilities(y_test, hqnn_preds, test_folds, test_pids, test_hn)
+    m_hqnn = evaluate_probabilities(y_test, hqnn_preds, "quantum_hqnn", hqnn_latency, hard_negative=test_hn)
     d_hqnn = asdict(m_hqnn)
     d_hqnn["model_family"] = "quantum_hqnn"
     d_hqnn["mean_latency_ms"] = round(hqnn_latency, 4)
