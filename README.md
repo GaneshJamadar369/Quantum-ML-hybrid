@@ -45,4 +45,4 @@ The later modeling prototype was independently audited on 2026-09-21. Read
 [the research code audit](docs/research_code_audit_2026-09-21.md) before using
 the classical, fusion, conformal, or QML results. The completed CPU benchmark
 and its restricted interpretation are recorded in the
-[Phase 6Q-A matched-kernel report](docs/phase6q_a_matched_kernel_result.md).
+[Phase 6Q-B matched-kernel controls report](docs/phase6q_b_kernel_controls_result.md).

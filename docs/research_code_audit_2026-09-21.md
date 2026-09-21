@@ -125,6 +125,12 @@ computational quantum advantage.
 The practical QML literature requires comparison with strong classical models
 and classical approximations of the quantum model.
 
+Phase 6Q-B completed this immediate control gate. Once all models received the
+QSVM's train-fitted angle coordinates, Laplacian, RBF and product-cosine SVCs
+outperformed IQP-QSVM. The QML performance branch therefore stops here as a
+valid negative result; the repeated-seed waveform encoder and repaired fusion
+are the next performance experiments.
+
 ## Acceptance sequence
 
 1. Run the new Phase 6Q-A preflight and eight-fold QSVM/RBF benchmark.

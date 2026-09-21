@@ -1,5 +1,11 @@
 # Phase 6Q-A matched-kernel result
 
+> **Superseded by Phase 6Q-B.** Phase 6Q-B discovered that the original RBF
+> control did not receive the QSVM's additional train-fitted angle-coordinate
+> transformation. With identical coordinates, RBF, Laplacian and
+> product-cosine classical kernels all outperformed IQP-QSVM. See the
+> [Phase 6Q-B result](phase6q_b_kernel_controls_result.md).
+
 **Run date:** 2026-09-21
 
 **Execution:** Kaggle CPU, eight patient-safe development folds 1–8

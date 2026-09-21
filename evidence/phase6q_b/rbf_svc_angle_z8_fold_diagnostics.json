@@ -1,0 +1,162 @@
+[
+  {
+    "held_out_fold": 1,
+    "z8": {
+      "method": "training-fold median imputation + robust scaling + PCA whitening",
+      "explained_variance_ratio": [
+        0.8952882885932922,
+        0.08326064050197601,
+        0.008546353317797184,
+        0.007248974405229092,
+        0.004405651707202196,
+        0.0007388594094663858,
+        0.0004847685631830245,
+        2.602269705676008e-05
+      ],
+      "explained_variance_total": 0.9999995827674866
+    },
+    "training_records": 1000,
+    "kernel": "rbf",
+    "coordinate_map": "training-only StandardScaler -> tanh -> pi"
+  },
+  {
+    "held_out_fold": 2,
+    "z8": {
+      "method": "training-fold median imputation + robust scaling + PCA whitening",
+      "explained_variance_ratio": [
+        0.8996220827102661,
+        0.08232437074184418,
+        0.008622255176305771,
+        0.007674139458686113,
+        0.0010230218758806586,
+        0.0006078561418689787,
+        9.939345909515396e-05,
+        2.6361682103015482e-05
+      ],
+      "explained_variance_total": 0.999999463558197
+    },
+    "training_records": 1000,
+    "kernel": "rbf",
+    "coordinate_map": "training-only StandardScaler -> tanh -> pi"
+  },
+  {
+    "held_out_fold": 3,
+    "z8": {
+      "method": "training-fold median imputation + robust scaling + PCA whitening",
+      "explained_variance_ratio": [
+        0.8930681347846985,
+        0.0845501720905304,
+        0.009044302627444267,
+        0.007583728991448879,
+        0.004485562909394503,
+        0.0007491895812563598,
+        0.0004913490265607834,
+        2.709969339775853e-05
+      ],
+      "explained_variance_total": 0.9999995827674866
+    },
+    "training_records": 1000,
+    "kernel": "rbf",
+    "coordinate_map": "training-only StandardScaler -> tanh -> pi"
+  },
+  {
+    "held_out_fold": 4,
+    "z8": {
+      "method": "training-fold median imputation + robust scaling + PCA whitening",
+      "explained_variance_ratio": [
+        0.8935351967811584,
+        0.0844196155667305,
+        0.00877344235777855,
+        0.007747323252260685,
+        0.004362879320979118,
+        0.0006932795513421297,
+        0.0004413398855831474,
+        2.647155815793667e-05
+      ],
+      "explained_variance_total": 0.9999995231628418
+    },
+    "training_records": 1000,
+    "kernel": "rbf",
+    "coordinate_map": "training-only StandardScaler -> tanh -> pi"
+  },
+  {
+    "held_out_fold": 5,
+    "z8": {
+      "method": "training-fold median imputation + robust scaling + PCA whitening",
+      "explained_variance_ratio": [
+        0.9763390421867371,
+        0.009184238500893116,
+        0.008137527853250504,
+        0.0049824886955320835,
+        0.0008014444028958678,
+        0.0005275147850625217,
+        2.7251013307250105e-05,
+        1.334939412345193e-07
+      ],
+      "explained_variance_total": 0.9999996423721313
+    },
+    "training_records": 1000,
+    "kernel": "rbf",
+    "coordinate_map": "training-only StandardScaler -> tanh -> pi"
+  },
+  {
+    "held_out_fold": 6,
+    "z8": {
+      "method": "training-fold median imputation + robust scaling + PCA whitening",
+      "explained_variance_ratio": [
+        0.8998613357543945,
+        0.08573968708515167,
+        0.009015193209052086,
+        0.00471637025475502,
+        0.0006406782777048647,
+        2.6146515665459447e-05,
+        1.7729456658344134e-07,
+        9.330714334510049e-08
+      ],
+      "explained_variance_total": 0.9999996423721313
+    },
+    "training_records": 1000,
+    "kernel": "rbf",
+    "coordinate_map": "training-only StandardScaler -> tanh -> pi"
+  },
+  {
+    "held_out_fold": 7,
+    "z8": {
+      "method": "training-fold median imputation + robust scaling + PCA whitening",
+      "explained_variance_ratio": [
+        0.9037786722183228,
+        0.08307266980409622,
+        0.007635256741195917,
+        0.004275376442819834,
+        0.0007310105138458312,
+        0.0004804068594239652,
+        2.6140209229197353e-05,
+        1.7410120278782415e-07
+      ],
+      "explained_variance_total": 0.9999997019767761
+    },
+    "training_records": 1000,
+    "kernel": "rbf",
+    "coordinate_map": "training-only StandardScaler -> tanh -> pi"
+  },
+  {
+    "held_out_fold": 8,
+    "z8": {
+      "method": "training-fold median imputation + robust scaling + PCA whitening",
+      "explained_variance_ratio": [
+        0.7978506684303284,
+        0.08252357691526413,
+        0.07159031182527542,
+        0.03629034385085106,
+        0.007091265171766281,
+        0.0046469285152852535,
+        1.8830573935701977e-06,
+        1.5695907222834649e-06
+      ],
+      "explained_variance_total": 0.999996542930603
+    },
+    "training_records": 1000,
+    "kernel": "rbf",
+    "coordinate_map": "training-only StandardScaler -> tanh -> pi"
+  }
+]

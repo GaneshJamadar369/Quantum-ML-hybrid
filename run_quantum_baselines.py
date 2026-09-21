@@ -237,8 +237,9 @@ def _paired_patient_bootstrap(
         ),
         "gate_rule": "95% patient-bootstrap CI for delta AUPRC must be entirely above zero",
         "claim_boundary": (
-            "This gate compares predictive accuracy against one matched RBF-SVC on a "
-            "classical simulator. It does not establish computational quantum advantage."
+            "This gate compares predictive accuracy against a named matched classical "
+            "kernel control on a classical simulator. It does not establish "
+            "computational quantum advantage."
         ),
     }
 

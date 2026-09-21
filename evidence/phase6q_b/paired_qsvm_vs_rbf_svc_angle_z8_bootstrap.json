@@ -1,0 +1,24 @@
+{
+  "comparison": "qsvm_minus_rbf_svc_angle_z8",
+  "bootstrap_unit": "patient",
+  "iterations_requested": 2000,
+  "iterations_valid": 2000,
+  "delta_auprc": {
+    "mean": -0.03852009401911484,
+    "ci95_low": -0.051330437861774846,
+    "ci95_high": -0.025852428326708643
+  },
+  "delta_auroc": {
+    "mean": -0.034737875024226796,
+    "ci95_low": -0.04153290235352064,
+    "ci95_high": -0.02829805441990394
+  },
+  "delta_brier": {
+    "mean": 0.010947632949677152,
+    "ci95_low": 0.009028715670270419,
+    "ci95_high": 0.01290701140939624
+  },
+  "matched_kernel_accuracy_gate": "NO_MATCHED_KERNEL_ACCURACY_DELTA",
+  "gate_rule": "95% patient-bootstrap CI for delta AUPRC must be entirely above zero",
+  "claim_boundary": "This gate compares predictive accuracy against one matched RBF-SVC on a classical simulator. It does not establish computational quantum advantage."
+}

@@ -84,7 +84,8 @@ This file is the operational source of truth. A checked **implementation** item 
 - [x] Remove automatic Fold 9/10 evaluation from the quantum Kaggle runner.
 - [x] Run Phase 6Q-A (IQP-QSVM versus matched RBF-SVC) and download complete artifacts. **Completed on Kaggle in 4.8 minutes:** IQP-QSVM AUPRC 0.4357 versus RBF-SVC 0.3426.
 - [x] Compute paired patient-cluster bootstrap confidence intervals for delta AUPRC and delta Brier. **Delta AUPRC +0.0931 [0.0779, 0.1083]; delta Brier -0.0197 [-0.0220, -0.0173].** Subgroup uncertainty remains open.
-- [ ] Before VQC/HQNN, compare the IQP kernel against stronger matched classical kernels and approximations and resolve its extreme condition numbers (8.9e7–3.7e10). The current result passes a matched RBF accuracy gate; it does not establish quantum advantage.
-- [ ] Evaluate polynomial, Laplacian, product-cosine and approximate-kernel controls on the identical fold-local `z8`, records and calibration protocol.
+- [x] Compare the IQP kernel against stronger matched classical kernels on identical angle coordinates. **Phase 6Q-B reverses the apparent Phase 6Q-A win:** Laplacian AUPRC 0.4933, angle-RBF 0.4743, product-cosine 0.4615, IQP-QSVM 0.4357, polynomial 0.4010.
+- [x] Evaluate polynomial, Laplacian and product-cosine controls on identical fold-local `z8`, records, sample budget and calibration. **QSVM minus Laplacian ΔAUPRC -0.0577 [-0.0702, -0.0448].**
+- [ ] Record the Phase 6Q kernel branch as a valid negative result. Do not launch VQC/HQNN as the next performance experiment; prioritize the repeated-seed waveform encoder and corrected fusion.
 - [ ] Rerun corrected fusion with tabular-only, waveform-only and modality-shuffle ablations over at least three seeds.
 - [ ] Replace the invalid development-fold conformal claim with Fold-9 calibration and one-time Fold-10 coverage evaluation after champion freeze.
