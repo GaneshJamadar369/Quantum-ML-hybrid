@@ -1,0 +1,16 @@
+{
+  "id": "swayamjeetbhagat4/aquire-med-phase-6q-c1-projected-iqp",
+  "title": "AQUIRE-Med Phase 6Q-C1 Projected IQP",
+  "code_file": "projected_quantum_runner.py",
+  "language": "python",
+  "kernel_type": "script",
+  "is_private": true,
+  "enable_gpu": false,
+  "enable_internet": true,
+  "dataset_sources": [],
+  "competition_sources": [],
+  "kernel_sources": [
+    "swayamjeetbhagat4/aquire-med-preprocessing-pipeline",
+    "swayamjeetbhagat4/aquire-med-full-feature-repair"
+  ]
+}

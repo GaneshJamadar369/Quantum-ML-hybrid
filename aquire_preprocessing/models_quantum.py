@@ -116,6 +116,119 @@ class QuantumKernelEstimator:
         }
 
 
+class ProjectedIQPFeatureMap:
+    """Shallow sparse IQP map exposing local quantum observables.
+
+    The returned feature vector contains one-qubit X/Y/Z expectations and ZZ
+    expectations on the selected entanglement edges.  A classical kernel may
+    then be applied to these locally projected quantum features.  This avoids
+    relying exclusively on a global state-fidelity measurement.
+    """
+
+    def __init__(
+        self,
+        n_qubits: int,
+        n_layers: int = 1,
+        feature_scale: Union[float, np.ndarray] = 0.5,
+        interaction_scale: float = 0.5,
+        topology: str = "ring",
+        mixing_seed: int = 42,
+    ):
+        if qml is None:
+            raise ImportError("PennyLane is required for ProjectedIQPFeatureMap")
+        if n_qubits < 2:
+            raise ValueError("Projected IQP map requires at least two qubits")
+        if n_layers < 1:
+            raise ValueError("n_layers must be positive")
+        self.n_qubits = int(n_qubits)
+        self.n_layers = int(n_layers)
+        scale = np.asarray(feature_scale, dtype=float)
+        if scale.ndim == 0:
+            scale = np.repeat(scale, self.n_qubits)
+        if scale.shape != (self.n_qubits,) or not np.isfinite(scale).all():
+            raise ValueError(f"feature_scale must be finite shape ({self.n_qubits},)")
+        self.feature_scale = scale
+        self.interaction_scale = float(interaction_scale)
+        self.topology = topology
+        self.edges = self._make_edges(topology)
+        rng = np.random.default_rng(mixing_seed)
+        # Small non-commuting rotations prevent repeated diagonal layers from
+        # collapsing into one rescaled layer while keeping the circuit shallow.
+        self.mixing_angles = rng.uniform(-np.pi / 4, np.pi / 4, (self.n_layers, self.n_qubits))
+        self.dev = get_quantum_device(self.n_qubits)
+        self._build_circuit()
+
+    def _make_edges(self, topology: str) -> list[tuple[int, int]]:
+        if topology == "ring":
+            return [(idx, (idx + 1) % self.n_qubits) for idx in range(self.n_qubits)]
+        if topology == "ladder":
+            edges = {(idx, idx + 1) for idx in range(self.n_qubits - 1)}
+            edges.update((idx, idx + 2) for idx in range(self.n_qubits - 2))
+            return sorted(edges)
+        raise ValueError("topology must be 'ring' or 'ladder'")
+
+    def _build_circuit(self) -> None:
+        @qml.qnode(self.dev)
+        def projected_circuit(x):
+            for wire in range(self.n_qubits):
+                qml.Hadamard(wires=wire)
+            for layer in range(self.n_layers):
+                for wire in range(self.n_qubits):
+                    angle = self.feature_scale[wire] * x[wire]
+                    qml.RZ(angle, wires=wire)
+                    qml.RX(0.5 * angle, wires=wire)
+                for left, right in self.edges:
+                    angle = self.interaction_scale * x[left] * x[right]
+                    qml.IsingZZ(angle, wires=[left, right])
+                for wire in range(self.n_qubits):
+                    qml.RY(self.mixing_angles[layer, wire], wires=wire)
+            observables = []
+            for wire in range(self.n_qubits):
+                observables.extend(
+                    [
+                        qml.expval(qml.PauliX(wire)),
+                        qml.expval(qml.PauliY(wire)),
+                        qml.expval(qml.PauliZ(wire)),
+                    ]
+                )
+            observables.extend(
+                qml.expval(qml.PauliZ(left) @ qml.PauliZ(right))
+                for left, right in self.edges
+            )
+            return observables
+
+        self.projected_circuit = projected_circuit
+
+    def transform(self, X: np.ndarray) -> np.ndarray:
+        array = np.asarray(X, dtype=float)
+        if array.ndim != 2 or array.shape[1] != self.n_qubits:
+            raise ValueError(
+                f"Projected IQP map expects shape (n, {self.n_qubits}), got {array.shape}"
+            )
+        if not np.isfinite(array).all():
+            raise ValueError("Projected IQP inputs must be finite")
+        return np.asarray([self.projected_circuit(row) for row in array], dtype=float)
+
+    @staticmethod
+    def rbf_kernel(
+        left_features: np.ndarray,
+        right_features: Optional[np.ndarray] = None,
+        gamma: Optional[float] = None,
+    ) -> tuple[np.ndarray, float]:
+        from sklearn.metrics import pairwise_distances
+
+        left = np.asarray(left_features, dtype=float)
+        right = left if right_features is None else np.asarray(right_features, dtype=float)
+        distances = pairwise_distances(left, right, metric="sqeuclidean")
+        if gamma is None:
+            reference = distances[np.triu_indices_from(distances, k=1)] if right_features is None else distances.ravel()
+            positive = reference[reference > 1e-12]
+            median = float(np.median(positive)) if len(positive) else 1.0
+            gamma = 1.0 / median
+        kernel = np.exp(-float(gamma) * distances)
+        return kernel, float(gamma)
+
+
 class QSVMClassifier(BaseEstimator, ClassifierMixin):
     """
     Quantum Support Vector Classifier wrapping QuantumKernelEstimator with scikit-learn SVC.

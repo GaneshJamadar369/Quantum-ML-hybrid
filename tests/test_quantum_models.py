@@ -6,6 +6,7 @@ pytest.importorskip("pennylane")
 
 from aquire_preprocessing.models_quantum import (
     HybridQuantumNeuralNetwork,
+    ProjectedIQPFeatureMap,
     QSVMClassifier,
     QuantumKernelEstimator,
     VariationalQuantumClassifier,
@@ -106,3 +107,24 @@ def test_hqnn_batched_backward_pass():
     assert model.waveform_stem[0].weight.grad is not None
     assert model.tabular_encoder[1].weight.grad is not None
     assert model.quantum_layer.weights.grad is not None
+
+
+def test_projected_iqp_features_and_kernel_are_finite_psd():
+    rng = np.random.default_rng(23)
+    x = rng.uniform(-1.0, 1.0, size=(12, 4))
+    feature_map = ProjectedIQPFeatureMap(
+        n_qubits=4,
+        n_layers=2,
+        feature_scale=0.5,
+        interaction_scale=0.25,
+        topology="ring",
+        mixing_seed=23,
+    )
+    projected = feature_map.transform(x)
+    kernel, gamma = feature_map.rbf_kernel(projected)
+    assert projected.shape == (12, 16)
+    assert np.isfinite(projected).all()
+    assert gamma > 0
+    assert np.allclose(kernel, kernel.T)
+    assert np.allclose(np.diag(kernel), 1.0)
+    assert np.linalg.eigvalsh(kernel).min() > -1e-8
