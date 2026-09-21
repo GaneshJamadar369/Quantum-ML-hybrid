@@ -2,6 +2,10 @@
 
 This file is the operational source of truth. A checked **implementation** item means the code exists and is covered by local tests. A data gate remains unchecked until the named artifact has been generated from verified PTB-XL v1.0.3 data and reviewed.
 
+The final research protocol, model ladder, quantum stop rule and definition of
+completion are frozen in
+[`docs/research_completion_roadmap.md`](docs/research_completion_roadmap.md).
+
 ## Implementation complete
 
 - [x] Git baseline preserved before research hardening.
@@ -87,5 +91,10 @@ This file is the operational source of truth. A checked **implementation** item 
 - [x] Compare the IQP kernel against stronger matched classical kernels on identical angle coordinates. **Phase 6Q-B reverses the apparent Phase 6Q-A win:** Laplacian AUPRC 0.4933, angle-RBF 0.4743, product-cosine 0.4615, IQP-QSVM 0.4357, polynomial 0.4010.
 - [x] Evaluate polynomial, Laplacian and product-cosine controls on identical fold-local `z8`, records, sample budget and calibration. **QSVM minus Laplacian ΔAUPRC -0.0577 [-0.0702, -0.0448].**
 - [ ] Record the Phase 6Q kernel branch as a valid negative result. Do not launch VQC/HQNN as the next performance experiment; prioritize the repeated-seed waveform encoder and corrected fusion.
+- [x] Audit VQC/HQNN execution truth. Neither model has a real-data OOF result; both previously failed batched backpropagation under parameter-shift.
+- [x] Repair VQC/HQNN simulator gradients with adjoint/backprop differentiation and add batched forward/backward regression tests.
+- [ ] Run Phase 6C-R: corrected ResNet/fusion with modality controls and five prespecified seeds on GPU.
+- [ ] Screen xResNet/Inception and reproducible pretrained ECG encoders under the same patient-safe protocol.
+- [ ] Run VQC/HQNN only as matched frozen-embedding ablations after the classical development champion is selected.
 - [ ] Rerun corrected fusion with tabular-only, waveform-only and modality-shuffle ablations over at least three seeds.
 - [ ] Replace the invalid development-fold conformal claim with Fold-9 calibration and one-time Fold-10 coverage evaluation after champion freeze.

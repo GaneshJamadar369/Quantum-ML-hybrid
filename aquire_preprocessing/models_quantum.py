@@ -234,7 +234,13 @@ class VariationalQuantumClassifier(nn.Module):
 
         self.dev = get_quantum_device(n_qubits)
 
-        @qml.qnode(self.dev, interface="torch", diff_method="parameter-shift" if self.dev.name == "lightning.qubit" else "backprop")
+        # ``parameter-shift`` cannot differentiate the broadcasted trainable
+        # inputs produced by TorchLayer.  Adjoint differentiation on
+        # lightning.qubit supports batched inputs and is substantially cheaper
+        # for this analytic simulator; default.qubit uses backpropagation.
+        diff_method = "adjoint" if self.dev.name == "lightning.qubit" else "backprop"
+
+        @qml.qnode(self.dev, interface="torch", diff_method=diff_method)
         def quantum_circuit(inputs, weights):
             qml.AngleEmbedding(inputs * np.pi, wires=range(n_qubits))
             qml.StronglyEntanglingLayers(weights, wires=range(n_qubits))
@@ -305,7 +311,9 @@ class HybridQuantumNeuralNetwork(nn.Module):
 
         self.dev = get_quantum_device(n_qubits)
 
-        @qml.qnode(self.dev, interface="torch", diff_method="parameter-shift" if self.dev.name == "lightning.qubit" else "backprop")
+        diff_method = "adjoint" if self.dev.name == "lightning.qubit" else "backprop"
+
+        @qml.qnode(self.dev, interface="torch", diff_method=diff_method)
         def hybrid_quantum_circuit(inputs, weights):
             qml.AngleEmbedding(inputs * np.pi, wires=range(n_qubits))
             qml.StronglyEntanglingLayers(weights, wires=range(n_qubits))

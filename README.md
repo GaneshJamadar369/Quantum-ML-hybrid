@@ -46,3 +46,6 @@ The later modeling prototype was independently audited on 2026-09-21. Read
 the classical, fusion, conformal, or QML results. The completed CPU benchmark
 and its restricted interpretation are recorded in the
 [Phase 6Q-B matched-kernel controls report](docs/phase6q_b_kernel_controls_result.md).
+The gated path from the present checkpoint to a one-time holdout and external
+validation is in the
+[research completion roadmap](docs/research_completion_roadmap.md).

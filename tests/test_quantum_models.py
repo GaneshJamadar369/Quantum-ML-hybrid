@@ -4,7 +4,12 @@ import pytest
 pytest.importorskip("torch")
 pytest.importorskip("pennylane")
 
-from aquire_preprocessing.models_quantum import QuantumKernelEstimator, QSVMClassifier
+from aquire_preprocessing.models_quantum import (
+    HybridQuantumNeuralNetwork,
+    QSVMClassifier,
+    QuantumKernelEstimator,
+    VariationalQuantumClassifier,
+)
 from run_quantum_baselines import _paired_patient_bootstrap
 
 
@@ -67,3 +72,37 @@ def test_angle_controls_are_finite_and_product_cosine_is_psd():
     assert np.allclose(kernel, kernel.T)
     assert np.allclose(np.diag(kernel), 1.0)
     assert np.linalg.eigvalsh(kernel).min() > -1e-8
+
+
+def test_vqc_batched_backward_pass():
+    import torch
+
+    model = VariationalQuantumClassifier(in_features=8, n_qubits=4, n_layers=1)
+    features = torch.randn(2, 8)
+    output = model(features)
+    output.square().mean().backward()
+    assert output.shape == (2,)
+    assert torch.isfinite(output).all()
+    assert model.encoder[1].weight.grad is not None
+    assert model.qnode.weights.grad is not None
+
+
+def test_hqnn_batched_backward_pass():
+    import torch
+
+    model = HybridQuantumNeuralNetwork(
+        tabular_dim=8,
+        raw_channels=12,
+        n_qubits=4,
+        n_quantum_layers=1,
+        resnet_base_filters=4,
+    )
+    signal = torch.randn(2, 12, 128)
+    tabular = torch.randn(2, 8)
+    output = model(signal, tabular)
+    output.square().mean().backward()
+    assert output.shape == (2,)
+    assert torch.isfinite(output).all()
+    assert model.waveform_stem[0].weight.grad is not None
+    assert model.tabular_encoder[1].weight.grad is not None
+    assert model.quantum_layer.weights.grad is not None
