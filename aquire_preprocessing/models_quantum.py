@@ -547,6 +547,140 @@ class ReuploadingQuantumClassifier(nn.Module):
         return self.readout(self.quantum_layer(x)).squeeze(-1)
 
 
+class TorchStatevectorQuantumClassifier(nn.Module):
+    """GPU-vectorized exact statevector VQC for 8--16 qubit screens.
+
+    PennyLane's CPU Lightning simulator is efficient for small circuits, but
+    training a batched 16-qubit model over eight outer folds is unnecessarily
+    slow.  This module evaluates the same gate family directly with PyTorch:
+    repeated ``RY`` data encoding, trainable ``Rot`` gates, sparse ``IsingZZ``
+    interactions and local Z/ZZ measurements.  It remains an exact analytic
+    quantum-circuit simulation; the implementation only changes the simulator
+    backend so batches can run on a Kaggle GPU.
+
+    The classical readout is linear and receives quantum expectation values
+    only.  Input coordinates must already be fold-local angles in [-pi, pi].
+    """
+
+    def __init__(
+        self,
+        n_qubits: int,
+        n_layers: int = 2,
+        topology: str = "ring",
+    ):
+        super().__init__()
+        if not 3 <= n_qubits <= 20:
+            raise ValueError("Torch statevector VQC supports 3 to 20 qubits")
+        if n_layers < 1:
+            raise ValueError("n_layers must be positive")
+        if topology == "ring":
+            edges = [(index, (index + 1) % n_qubits) for index in range(n_qubits)]
+        elif topology == "ladder":
+            edge_set = {(index, index + 1) for index in range(n_qubits - 1)}
+            edge_set.update((index, index + 2) for index in range(n_qubits - 2))
+            edges = sorted(edge_set)
+        else:
+            raise ValueError("topology must be 'ring' or 'ladder'")
+
+        self.n_qubits = int(n_qubits)
+        self.n_layers = int(n_layers)
+        self.topology = topology
+        self.edges = edges
+        self.rotations = nn.Parameter(torch.empty(n_layers, n_qubits, 3))
+        self.interactions = nn.Parameter(torch.empty(n_layers, len(edges)))
+        self.feature_scales = nn.Parameter(torch.zeros(n_qubits))
+        nn.init.normal_(self.rotations, mean=0.0, std=0.1)
+        nn.init.normal_(self.interactions, mean=0.0, std=0.1)
+
+        basis = torch.arange(1 << n_qubits, dtype=torch.long)
+        z_signs = []
+        zero_indices = []
+        one_indices = []
+        for wire in range(n_qubits):
+            bit = n_qubits - wire - 1
+            mask = 1 << bit
+            zero = basis[(basis & mask) == 0]
+            zero_indices.append(zero)
+            one_indices.append(zero | mask)
+            z_signs.append(1.0 - 2.0 * ((basis >> bit) & 1).to(torch.float32))
+        observable_signs = list(z_signs)
+        observable_signs.extend(z_signs[left] * z_signs[right] for left, right in edges)
+        edge_signs = torch.stack(
+            [z_signs[left] * z_signs[right] for left, right in edges], dim=0
+        )
+        self.register_buffer("zero_indices", torch.stack(zero_indices, dim=0))
+        self.register_buffer("one_indices", torch.stack(one_indices, dim=0))
+        self.register_buffer("edge_signs", edge_signs)
+        self.register_buffer("observable_signs", torch.stack(observable_signs, dim=0))
+        self.readout = nn.Linear(n_qubits + len(edges), 1)
+
+    @staticmethod
+    def _complex_dtype(real_dtype: torch.dtype) -> torch.dtype:
+        return torch.complex128 if real_dtype == torch.float64 else torch.complex64
+
+    def _apply_ry(
+        self, state: torch.Tensor, angle: torch.Tensor, wire: int
+    ) -> torch.Tensor:
+        zero = self.zero_indices[wire]
+        one = self.one_indices[wire]
+        left, right = state.index_select(1, zero), state.index_select(1, one)
+        cosine = torch.cos(angle / 2.0).to(state.dtype).reshape(-1, 1)
+        sine = torch.sin(angle / 2.0).to(state.dtype).reshape(-1, 1)
+        updated = torch.empty_like(state)
+        updated[:, zero] = cosine * left - sine * right
+        updated[:, one] = sine * left + cosine * right
+        return updated
+
+    def _apply_rz(
+        self, state: torch.Tensor, angle: torch.Tensor, wire: int
+    ) -> torch.Tensor:
+        zero = self.zero_indices[wire]
+        one = self.one_indices[wire]
+        angle = angle.reshape(-1, 1)
+        phase_zero = torch.exp((-0.5j * angle).to(state.dtype))
+        phase_one = torch.exp((0.5j * angle).to(state.dtype))
+        updated = torch.empty_like(state)
+        updated[:, zero] = phase_zero * state.index_select(1, zero)
+        updated[:, one] = phase_one * state.index_select(1, one)
+        return updated
+
+    def quantum_observables(self, x: torch.Tensor) -> torch.Tensor:
+        if x.ndim != 2 or x.shape[1] != self.n_qubits:
+            raise ValueError(
+                f"Expected (batch, {self.n_qubits}) quantum input, got {tuple(x.shape)}"
+            )
+        if not torch.isfinite(x).all():
+            raise ValueError("Quantum input contains NaN or infinity")
+        batch = x.shape[0]
+        state = torch.zeros(
+            batch,
+            1 << self.n_qubits,
+            dtype=self._complex_dtype(x.dtype),
+            device=x.device,
+        )
+        state[:, 0] = 1.0
+        scaled = x * (2.0 * torch.sigmoid(self.feature_scales))
+        for layer in range(self.n_layers):
+            for wire in range(self.n_qubits):
+                state = self._apply_ry(state, scaled[:, wire], wire)
+                # qml.Rot(phi, theta, omega) applies these gates in order.
+                state = self._apply_rz(state, self.rotations[layer, wire, 0], wire)
+                state = self._apply_ry(state, self.rotations[layer, wire, 1], wire)
+                state = self._apply_rz(state, self.rotations[layer, wire, 2], wire)
+            for edge_index in range(len(self.edges)):
+                angle = self.interactions[layer, edge_index]
+                phase = torch.exp(
+                    (-0.5j * angle * self.edge_signs[edge_index]).to(state.dtype)
+                )
+                state = state * phase
+        probabilities = state.real.square() + state.imag.square()
+        observables = probabilities @ self.observable_signs.T.to(probabilities.dtype)
+        return observables
+
+    def forward(self, x: torch.Tensor) -> torch.Tensor:
+        return self.readout(self.quantum_observables(x)).squeeze(-1)
+
+
 class CompactFusionHQNN(nn.Module):
     """Small trainable fusion layer followed by the direct quantum predictor.
 

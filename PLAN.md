@@ -22,6 +22,8 @@ frozen in
 [`docs/jepa_ssm_quantum_representation_plan_2026-09-22.md`](docs/jepa_ssm_quantum_representation_plan_2026-09-22.md).
 Its completed negative result and stop decision are recorded in
 [`docs/jepa_quantum_result_2026-09-23.md`](docs/jepa_quantum_result_2026-09-23.md).
+The supervised h128→q8/q12/q16 direct-qubit experiment is frozen in
+[`docs/supervised_qubit_scaling_plan_2026-09-23.md`](docs/supervised_qubit_scaling_plan_2026-09-23.md).
 
 ## Implementation complete
 
@@ -130,5 +132,8 @@ Its completed negative result and stop decision are recorded in
 - [x] Complete the eight-fold label-free Transformer-JEPA Kaggle export and pass the J1 acceptance gate. **17,348 ECGs/14,958 patients; zero overlap; finite full-rank h128; eight distinct encoders; folds 9/10 sealed.**
 - [x] Compare unsupervised PCA/quantile q4 and q8 using VQC, logistic, matched MLP and RBF controls on identical patients. **Negative: q4 VQC 0.3865; q8 VQC 0.3835; q8 matched MLP 0.4412. q8 helped classical heads but not VQC.**
 - [x] Apply the frozen stop rule to Conv-S4D-JEPA and Conv-Mamba-JEPA. **Not launched: label-free VQC fell by about 0.428 AUPRC versus the supervised VQC reference and failed both representation gates.**
+- [x] Implement the controlled supervised Transformer qubit-scaling screen: fold-local PLS q8/q12/q16, matching 8/12/16-qubit exact VQCs, identical-input controls and GPU statevector execution.
+- [ ] Complete and audit the independent q8, q12 and q16 Kaggle jobs; promote a width only if it improves q4 by ≥0.005 AUPRC with a positive patient-bootstrap interval.
+- [ ] Run full-h128 16-qubit re-uploading and seven-qubit amplitude encoding only if the direct-width gate passes.
 - [ ] Rerun corrected fusion with tabular-only, waveform-only and modality-shuffle ablations over at least three seeds.
 - [ ] Replace the invalid development-fold conformal claim with Fold-9 calibration and one-time Fold-10 coverage evaluation after champion freeze.
