@@ -13,6 +13,8 @@ their negative overall comparison and next decision gate, are recorded in
 [`docs/quantum_core_screen_2026-09-22.md`](docs/quantum_core_screen_2026-09-22.md).
 The subsequent QSVC and fusion HQNN screens are recorded in
 [`docs/qsvc_hqnn_screen_2026-09-22.md`](docs/qsvc_hqnn_screen_2026-09-22.md).
+The compact Transformer experiment and its anti-overfit protocol are frozen in
+[`docs/transformer_quantum_plan_2026-09-22.md`](docs/transformer_quantum_plan_2026-09-22.md).
 
 ## Implementation complete
 
@@ -107,6 +109,8 @@ The subsequent QSVC and fusion HQNN screens are recorded in
 - [x] Run q4 fusion HQNN with waveform and approved clinical features against same-input fusion MLP. **HQNN AUPRC 0.7424 vs MLP 0.7526; finite gradients, but no primary-metric win.**
 - [ ] Repeat the quantum-head experiment with inner-fold-selected representations, patient-unique sample-size/regularization ablations and at least five seeds; add exact parameter-count and circuit-removal controls. Do not expand to q8 based on the narrow waveform VQC–RBF comparison alone.
 - [ ] Run Phase 6C-R: corrected ResNet/fusion with modality controls and five prespecified seeds on GPU.
+- [x] Implement a 271,041-parameter patch Transformer with 100 time tokens, width 96, four heads, three pre-norm blocks, patient-separated inner early stopping and full-outer-training retrain. Synthetic shape, gradient, patient-split and training smoke tests pass.
+- [ ] Complete the eight-fold Kaggle GPU Transformer representation export, audit selected epochs and train/inner/outer gaps, then run the same q4 VQC/MLP/RBF head screen as the CNN study.
 - [ ] Screen xResNet/Inception and reproducible pretrained ECG encoders under the same patient-safe protocol.
 - [ ] Run VQC/HQNN only as matched frozen-embedding ablations after the classical development champion is selected.
 - [ ] Implement the projected-quantum-kernel and trainable sparse-IQP search only under the nested protocol; do not tune against pooled outer-fold labels.

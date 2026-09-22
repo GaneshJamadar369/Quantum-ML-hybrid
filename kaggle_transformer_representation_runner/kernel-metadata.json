@@ -1,0 +1,15 @@
+{
+  "id": "swayamjeetbhagat4/aquire-med-transformer-representation-v1",
+  "title": "AQUIRE-Med Compact ECG Transformer Representation",
+  "code_file": "transformer_representation_runner.py",
+  "language": "python",
+  "kernel_type": "script",
+  "is_private": true,
+  "enable_gpu": true,
+  "enable_internet": true,
+  "dataset_sources": [],
+  "competition_sources": [],
+  "kernel_sources": [
+    "swayamjeetbhagat4/aquire-med-preprocessing-pipeline"
+  ]
+}

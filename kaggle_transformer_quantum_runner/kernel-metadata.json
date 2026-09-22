@@ -1,0 +1,16 @@
+{
+  "id": "swayamjeetbhagat4/aquire-med-phase-6q-h-transformer-vqc",
+  "title": "AQUIRE-Med Phase 6Q-H Transformer VQC",
+  "code_file": "transformer_quantum_runner.py",
+  "language": "python",
+  "kernel_type": "script",
+  "is_private": true,
+  "enable_gpu": false,
+  "enable_internet": true,
+  "dataset_sources": [],
+  "competition_sources": [],
+  "kernel_sources": [
+    "swayamjeetbhagat4/aquire-med-transformer-representation-v1",
+    "swayamjeetbhagat4/aquire-med-preprocessing-pipeline"
+  ]
+}
