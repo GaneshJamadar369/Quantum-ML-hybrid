@@ -5,7 +5,7 @@ import subprocess
 import sys
 
 REPO = "https://github.com/GaneshJamadar369/Quantum-ML-hybrid.git"
-REVISION = "REVISION_TO_PIN"
+REVISION = "faa80ea"
 
 
 def run(command, cwd=None):
