@@ -133,7 +133,7 @@ The supervised h128→q8/q12/q16 direct-qubit experiment is frozen in
 - [x] Compare unsupervised PCA/quantile q4 and q8 using VQC, logistic, matched MLP and RBF controls on identical patients. **Negative: q4 VQC 0.3865; q8 VQC 0.3835; q8 matched MLP 0.4412. q8 helped classical heads but not VQC.**
 - [x] Apply the frozen stop rule to Conv-S4D-JEPA and Conv-Mamba-JEPA. **Not launched: label-free VQC fell by about 0.428 AUPRC versus the supervised VQC reference and failed both representation gates.**
 - [x] Implement the controlled supervised Transformer qubit-scaling screen: fold-local PLS q8/q12/q16, matching 8/12/16-qubit exact VQCs, identical-input controls and GPU statevector execution.
-- [ ] Complete and audit the independent q8, q12 and q16 Kaggle jobs; promote a width only if it improves q4 by ≥0.005 AUPRC with a positive patient-bootstrap interval. **q8 and q12 are running; q16 is pinned and waits for one of the two Kaggle GPU slots.**
+- [ ] Complete and audit the independent q8, q12 and q16 Kaggle jobs; promote a width only if it improves q4 by ≥0.005 AUPRC with a positive patient-bootstrap interval. **q8 VQC 0.7532 and q12 VQC 0.7939 both remain below q4 VQC 0.8148; q16 is running.**
 - [ ] Run full-h128 16-qubit re-uploading and seven-qubit amplitude encoding only if the direct-width gate passes.
 - [ ] Rerun corrected fusion with tabular-only, waveform-only and modality-shuffle ablations over at least three seeds.
 - [ ] Replace the invalid development-fold conformal claim with Fold-9 calibration and one-time Fold-10 coverage evaluation after champion freeze.
