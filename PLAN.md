@@ -114,6 +114,8 @@ The completed eight-fold encoder and quantum-head results are in
 - [x] Implement a 271,041-parameter patch Transformer with 100 time tokens, width 96, four heads, three pre-norm blocks, patient-separated inner early stopping and full-outer-training retrain. Synthetic shape, gradient, patient-split and training smoke tests pass.
 - [x] Complete the eight-fold Kaggle GPU Transformer representation export and audit selected epochs and train/inner/outer gaps. **Raw OOF AUPRC 0.8325 versus CNN 0.7878; mean train/outer AUPRC gap 0.0684 versus CNN 0.2109.**
 - [x] Run the same q4 VQC/MLP/RBF head screen as the CNN study. **Transformer-input VQC 0.8148, MLP 0.8112, RBF 0.7747. VQC–MLP 95% patient-bootstrap interval crosses zero; no established quantum win.**
+- [x] Compare Transformer q4 against stronger classical and quantum heads on identical patients and coordinates. **q4 logistic 0.8224 beat VQC 0.8148 (VQC minus logistic ΔAUPRC -0.0075 [-0.0125, -0.0030]); IQP-QSVC 0.3190 failed; h128 logistic ceiling 0.8247.**
+- [x] Run Transformer-input fusion HQNN against its identical-input MLP. **HQNN 0.8049 vs MLP 0.8164; ΔAUPRC -0.0114 [-0.0167, -0.0061]. Trained negative result with finite gradients.**
 - [ ] Repeat the Transformer quantum-head result with five seeds and stronger matched classical controls, including exact parameter-count and classical circuit-removal ablations; keep all tuning in inner folds.
 - [ ] Screen xResNet/Inception and reproducible pretrained ECG encoders under the same patient-safe protocol.
 - [ ] Run VQC/HQNN only as matched frozen-embedding ablations after the classical development champion is selected.
