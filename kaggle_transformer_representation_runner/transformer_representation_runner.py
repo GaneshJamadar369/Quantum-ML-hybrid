@@ -5,7 +5,7 @@ import subprocess
 import sys
 
 REPO = "https://github.com/GaneshJamadar369/Quantum-ML-hybrid.git"
-REVISION = "REPLACE_WITH_COMMIT"
+REVISION = "9678e1f"
 
 
 def run(command, cwd=None):
