@@ -79,8 +79,8 @@ a large full-h128 circuit from being promoted merely because it is larger.
 - [x] Exact GPU-vectorized 8–16-qubit statevector VQC implemented.
 - [x] PennyLane equivalence, gradient, metric and parameter-match tests pass.
 - [x] End-to-end q8 one-fold smoke execution passes with atomic output.
-- [ ] q8 private Kaggle OOF job completed and audited.
-- [ ] q12 private Kaggle OOF job completed and audited.
-- [ ] q16 private Kaggle OOF job completed and audited.
+- [ ] [q8 private Kaggle OOF job](https://www.kaggle.com/code/swayamjeetbhagat4/aquire-med-supervised-q8-direct-vqc) completed and audited. **Submitted and running.**
+- [ ] [q12 private Kaggle OOF job](https://www.kaggle.com/code/swayamjeetbhagat4/aquire-med-supervised-q12-direct-vqc) completed and audited. **Submitted and running.**
+- [ ] q16 private Kaggle OOF job completed and audited. **Runner validated and pinned; submission waits for one of Kaggle's two GPU-session slots.**
 - [ ] Cross-width paired comparison completed.
 - [ ] Five-seed confirmation or stop decision applied.
