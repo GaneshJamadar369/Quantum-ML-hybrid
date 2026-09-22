@@ -466,6 +466,87 @@ class DirectQuantumClassifier(nn.Module):
         return self.readout(q_out).squeeze(-1)
 
 
+class ReuploadingQuantumClassifier(nn.Module):
+    """Four-qubit VQC for a longer vector uploaded in coordinate blocks.
+
+    For an eight-coordinate input, q1..q4 are uploaded and entangled before
+    q5..q8 are uploaded and entangled. This tests a wider input bottleneck
+    without doubling the qubit count.
+    """
+
+    def __init__(self, input_dim: int = 8, n_qubits: int = 4, topology: str = "ring"):
+        super().__init__()
+        if qml is None:
+            raise ImportError("PennyLane is required for ReuploadingQuantumClassifier")
+        if input_dim < n_qubits or input_dim % n_qubits:
+            raise ValueError("input_dim must be a positive multiple of n_qubits")
+        if n_qubits < 2:
+            raise ValueError("At least two qubits are required")
+        if topology == "ring":
+            edges = [(index, (index + 1) % n_qubits) for index in range(n_qubits)]
+        elif topology == "ladder":
+            edge_set = {(index, index + 1) for index in range(n_qubits - 1)}
+            edge_set.update((index, index + 2) for index in range(n_qubits - 2))
+            edges = sorted(edge_set)
+        else:
+            raise ValueError("topology must be 'ring' or 'ladder'")
+        self.input_dim = int(input_dim)
+        self.n_qubits = int(n_qubits)
+        self.uploads = self.input_dim // self.n_qubits
+        self.edges = edges
+        self.dev = get_quantum_device(self.n_qubits)
+        diff_method = "adjoint" if self.dev.name == "lightning.qubit" else "backprop"
+
+        @qml.qnode(self.dev, interface="torch", diff_method=diff_method)
+        def circuit(inputs, rotations, interactions, feature_scales):
+            scaled = inputs * (2.0 * torch.sigmoid(feature_scales))
+            for upload in range(self.uploads):
+                start = upload * self.n_qubits
+                stop = start + self.n_qubits
+                qml.AngleEmbedding(
+                    scaled[..., start:stop], wires=range(self.n_qubits), rotation="Y"
+                )
+                for wire in range(self.n_qubits):
+                    qml.Rot(
+                        rotations[upload, wire, 0],
+                        rotations[upload, wire, 1],
+                        rotations[upload, wire, 2],
+                        wires=wire,
+                    )
+                for edge_index, (left, right) in enumerate(self.edges):
+                    qml.IsingZZ(
+                        interactions[upload, edge_index], wires=[left, right]
+                    )
+            observables = [qml.expval(qml.PauliZ(wire)) for wire in range(self.n_qubits)]
+            observables.extend(
+                qml.expval(qml.PauliZ(left) @ qml.PauliZ(right))
+                for left, right in self.edges
+            )
+            return observables
+
+        weight_shapes = {
+            "rotations": (self.uploads, self.n_qubits, 3),
+            "interactions": (self.uploads, len(self.edges)),
+            "feature_scales": (self.input_dim,),
+        }
+        init_method = {
+            "rotations": lambda tensor: nn.init.normal_(tensor, mean=0.0, std=0.1),
+            "interactions": lambda tensor: nn.init.normal_(tensor, mean=0.0, std=0.1),
+            "feature_scales": nn.init.zeros_,
+        }
+        self.quantum_layer = qml.qnn.TorchLayer(
+            circuit, weight_shapes, init_method=init_method
+        )
+        self.readout = nn.Linear(self.n_qubits + len(self.edges), 1)
+
+    def forward(self, x: torch.Tensor) -> torch.Tensor:
+        if x.ndim != 2 or x.shape[1] != self.input_dim:
+            raise ValueError(
+                f"Expected (batch, {self.input_dim}) quantum input, got {tuple(x.shape)}"
+            )
+        return self.readout(self.quantum_layer(x)).squeeze(-1)
+
+
 class CompactFusionHQNN(nn.Module):
     """Small trainable fusion layer followed by the direct quantum predictor.
 
