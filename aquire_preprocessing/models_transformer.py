@@ -82,17 +82,46 @@ class ECGPatchTransformer(nn.Module):
         )
         self.classifier = nn.Linear(embedding_dim, 1)
 
-    def forward(self, signal: torch.Tensor) -> tuple[torch.Tensor, torch.Tensor]:
+    def tokenize(self, signal: torch.Tensor) -> torch.Tensor:
+        """Project a waveform to position-aware patch tokens."""
         if signal.ndim != 3 or tuple(signal.shape[1:]) != (self.in_channels, self.signal_length):
             raise ValueError(f"Expected (batch, 12, 1000), received {tuple(signal.shape)}")
         if not torch.isfinite(signal).all():
             raise ValueError("ECG input contains NaN or infinity")
         patches = signal.unfold(-1, self.patch_size, self.patch_size)
         patches = patches.permute(0, 2, 1, 3).reshape(signal.shape[0], self.tokens, -1)
-        tokens = self.patch_projection(patches) + self.position_embedding
-        tokens = self.token_dropout(self.token_norm(tokens))
-        encoded = self.final_norm(self.encoder(tokens))
+        return self.token_dropout(
+            self.token_norm(self.patch_projection(patches) + self.position_embedding)
+        )
+
+    def encode_tokens(
+        self,
+        signal: torch.Tensor,
+        *,
+        token_mask: torch.Tensor | None = None,
+        mask_token: torch.Tensor | None = None,
+    ) -> torch.Tensor:
+        """Encode patches, optionally replacing selected tokens before attention."""
+        tokens = self.tokenize(signal)
+        if token_mask is not None:
+            if token_mask.shape != tokens.shape[:2] or token_mask.dtype != torch.bool:
+                raise ValueError("token_mask must be boolean with shape (batch, tokens)")
+            if mask_token is None or mask_token.shape != (1, 1, self.width):
+                raise ValueError(f"mask_token must have shape (1, 1, {self.width})")
+            tokens = torch.where(token_mask.unsqueeze(-1), mask_token.expand_as(tokens), tokens)
+        return self.final_norm(self.encoder(tokens))
+
+    def pool_encoded(self, encoded: torch.Tensor) -> torch.Tensor:
+        if encoded.ndim != 3 or tuple(encoded.shape[1:]) != (self.tokens, self.width):
+            raise ValueError(
+                f"Expected encoded tokens (batch, {self.tokens}, {self.width}), "
+                f"received {tuple(encoded.shape)}"
+            )
         pooled = torch.cat((encoded.mean(dim=1), encoded.amax(dim=1)), dim=1)
-        representation = self.embedding(pooled)
+        return self.embedding(pooled)
+
+    def forward(self, signal: torch.Tensor) -> tuple[torch.Tensor, torch.Tensor]:
+        encoded = self.encode_tokens(signal)
+        representation = self.pool_encoded(encoded)
         logits = self.classifier(representation).squeeze(-1)
         return logits, representation
