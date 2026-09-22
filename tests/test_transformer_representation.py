@@ -26,7 +26,11 @@ def test_patch_transformer_contract_and_gradient():
     assert torch.isfinite(logits).all() and torch.isfinite(embedding).all()
     logits.square().mean().backward()
     assert model.patch_projection.weight.grad is not None
-    assert model.encoder.layers[-1].self_attn.in_proj_weight.grad is not None
+    assert model.position_embedding.grad is not None
+    for block in model.encoder.layers:
+        assert block.self_attn.in_proj_weight.grad is not None
+        assert torch.isfinite(block.self_attn.in_proj_weight.grad).all()
+        assert block.linear1.weight.grad is not None
     assert model.classifier.weight.grad is not None
 
 

@@ -38,6 +38,7 @@ def compare(
     cnn = pd.read_csv(cnn_predictions)
     model_names = ("waveform_direct_vqc", "waveform_matched_mlp", "waveform_rbf_svc")
     results = {}
+    aligned = {}
     for model in model_names:
         left = _one_model(transformer, model)
         right = _one_model(cnn, model)
@@ -52,12 +53,42 @@ def compare(
             left.label.to_numpy(), left.patient_id.to_numpy(),
             left.score.to_numpy(), right.score.to_numpy(),
             iterations=iterations, seed=seed,
+            comparison=f"transformer_minus_cnn_for_{model}",
         )
+        # The shared helper also reports a kernel-specific gate and Brier
+        # difference.  Neither is a valid claim for two uncalibrated encoders.
+        for field in ("delta_brier", "matched_kernel_accuracy_gate", "gate_rule", "claim_boundary"):
+            paired.pop(field)
+        aligned[model] = (left, right)
         results[model] = {
             "transformer_auprc": float(average_precision_score(left.label, left.score)),
             "cnn_auprc": float(average_precision_score(right.label, right.score)),
             "paired_transformer_minus_cnn": paired,
         }
+    vqc_t, vqc_c = aligned["waveform_direct_vqc"]
+    mlp_t, mlp_c = aligned["waveform_matched_mlp"]
+    unique_patients, inverse = np.unique(vqc_t.patient_id.to_numpy(), return_inverse=True)
+    rng = np.random.default_rng(seed + 1)
+    interaction = []
+    labels = vqc_t.label.to_numpy()
+    for _ in range(iterations):
+        counts = np.bincount(
+            rng.integers(0, len(unique_patients), size=len(unique_patients)),
+            minlength=len(unique_patients),
+        )
+        weights = counts[inverse]
+        if np.unique(labels[weights > 0]).size < 2:
+            continue
+        ap = lambda frame: average_precision_score(labels, frame.score, sample_weight=weights)
+        interaction.append((ap(vqc_t) - ap(vqc_c)) - (ap(mlp_t) - ap(mlp_c)))
+    interaction_array = np.asarray(interaction, dtype=float)
+    interaction_report = {
+        "definition": "(Transformer VQC - CNN VQC) - (Transformer MLP - CNN MLP) in AUPRC",
+        "mean": float(interaction_array.mean()),
+        "ci95_low": float(np.quantile(interaction_array, 0.025)),
+        "ci95_high": float(np.quantile(interaction_array, 0.975)),
+        "exploratory": True,
+    }
     transformer_summary = json.loads(transformer_representation_summary.read_text())
     cnn_summary = json.loads(cnn_representation_summary.read_text())
     result = {
@@ -67,6 +98,7 @@ def compare(
         "transformer_encoder_oof_auprc": transformer_summary["oof_auprc_raw"],
         "cnn_encoder_oof_auprc": cnn_summary["oof_auprc_raw"],
         "heads": results,
+        "quantum_specific_uplift_interaction": interaction_report,
         "interpretation_boundary": (
             "Same held-out patients and head protocols, but independently trained supervised "
             "encoders. Improvements shared by classical and quantum heads are representation "

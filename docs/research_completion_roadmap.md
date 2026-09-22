@@ -26,7 +26,7 @@ are references, not directly comparable leaderboard entries.
 | ECGResNet1D | Executed once | Pooled OOF AUPRC 0.7913, one seed | Promising, not a frozen champion |
 | Original multimodal fusion | Executed but invalid as fusion evidence | AUPRC 0.7973; one-key attention ignored the tabular query | Discard result; corrected architecture must be rerun |
 | IQP-QSVM | Fully executed | Eight-fold OOF plus patient bootstrap | Negative result against stronger matched kernels |
-| Direct q4 VQC | Exploratory eight-fold OOF on two inputs | Clinical AUPRC 0.5087; fold-coherent supervised waveform AUPRC 0.7325. Waveform MLP reaches 0.7583 | Trainable, but no overall win; keep as bounded ablation and redesign representation/training |
+| Direct q4 VQC | Exploratory eight-fold OOF on three inputs | Clinical AUPRC 0.5087; CNN waveform 0.7325; compact Transformer waveform 0.8148. Transformer-input MLP reaches 0.8112, with VQC–MLP CI crossing zero | Representation is promising; no proven quantum win; repeat seeds and strengthen controls |
 | HQNN | Prototype only | No real-data OOF run; same prior gradient defect; waveform stem is not the validated ResNet champion | Smoke-testable now; scientifically unvalidated |
 | Fold 9 | Sealed calibration set | Not used by valid model-selection jobs | Keep sealed until one champion is frozen |
 | Fold 10 | Sealed final test | Not used | Open exactly once after Fold-9 calibration |
