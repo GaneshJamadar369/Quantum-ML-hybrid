@@ -1,5 +1,5 @@
 {
-  "id": "swayamjeetbhagat4/aquire-med-transformer-representation-v1",
+  "id": "swayamjeetbhagat4/aquire-med-compact-ecg-transformer-representation",
   "title": "AQUIRE-Med Compact ECG Transformer Representation",
   "code_file": "transformer_representation_runner.py",
   "language": "python",

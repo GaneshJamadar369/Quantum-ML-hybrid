@@ -15,7 +15,7 @@ def run(command, cwd=None):
 
 def main():
     source = Path("/kaggle/input/notebooks/swayamjeetbhagat4")
-    representations = source / "aquire-med-transformer-representation-v1/transformer-representation-v1"
+    representations = source / "aquire-med-compact-ecg-transformer-representation/transformer-representation-v1"
     metadata = source / "aquire-med-preprocessing-pipeline/aquire-artifacts/processing_metadata_development.csv"
     for path in (representations, metadata):
         if not path.exists():
