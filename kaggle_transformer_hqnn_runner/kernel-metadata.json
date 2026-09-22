@@ -1,0 +1,17 @@
+{
+  "id": "swayamjeetbhagat4/aquire-med-transformer-hqnn-screen",
+  "title": "AQUIRE-Med Transformer HQNN Screen",
+  "code_file": "hqnn_runner.py",
+  "language": "python",
+  "kernel_type": "script",
+  "is_private": true,
+  "enable_gpu": false,
+  "enable_internet": true,
+  "dataset_sources": [],
+  "competition_sources": [],
+  "kernel_sources": [
+    "swayamjeetbhagat4/aquire-med-compact-ecg-transformer-representation",
+    "swayamjeetbhagat4/aquire-med-preprocessing-pipeline",
+    "swayamjeetbhagat4/aquire-med-full-feature-repair"
+  ]
+}
