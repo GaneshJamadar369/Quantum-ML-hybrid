@@ -125,8 +125,8 @@ frozen in
 - [ ] Implement the projected-quantum-kernel and trainable sparse-IQP search only under the nested protocol; do not tune against pooled outer-fold labels.
 - [x] Freeze a label-free Transformer-JEPA experiment that isolates the representation objective before changing the backbone.
 - [x] Implement and locally validate masked token/global latent prediction with an EMA target encoder and explicit collapse monitoring.
-- [ ] Complete the eight-fold label-free Transformer-JEPA Kaggle export and pass the J1 acceptance gate.
-- [ ] Compare unsupervised PCA/quantile q4 and q8 using VQC, logistic, matched MLP and RBF controls on identical patients.
+- [x] Complete the eight-fold label-free Transformer-JEPA Kaggle export and pass the J1 acceptance gate. **17,348 ECGs/14,958 patients; zero overlap; finite full-rank h128; eight distinct encoders; folds 9/10 sealed.**
+- [ ] Compare unsupervised PCA/quantile q4 and q8 using VQC, logistic, matched MLP and RBF controls on identical patients. **Kaggle job submitted and running.**
 - [ ] Run Conv-S4D-JEPA only if the label-free representation gate supports further backbone work; hold Mamba until the S4D decision.
 - [ ] Rerun corrected fusion with tabular-only, waveform-only and modality-shuffle ablations over at least three seeds.
 - [ ] Replace the invalid development-fold conformal claim with Fold-9 calibration and one-time Fold-10 coverage evaluation after champion freeze.

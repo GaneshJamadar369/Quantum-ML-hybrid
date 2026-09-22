@@ -62,3 +62,18 @@ Primary metric is pooled OOF AUPRC. Also report AUROC, hard-negative performance
 - **STOP:** label-free VQC declines materially, representations collapse, or improvements disappear under repeated seeds.
 
 Only after J1–J3 should Conv-S4D-JEPA be implemented. This prevents architecture, supervision and quantum-circuit changes from being mixed into one uninterpretable experiment.
+
+## Execution status — 2026-09-22
+
+Phase J1 completed on the private Kaggle GPU job [AQUIRE-Med Label-Free ECG JEPA](https://www.kaggle.com/code/swayamjeetbhagat4/aquire-med-label-free-ecg-jepa), pinned to source revision `9fdb01a`.
+
+- 17,348 unique OOF ECGs from 14,958 patients across folds 1–8;
+- zero patient overlap in every outer fold;
+- folds 9 and 10 not accessed;
+- eight distinct target-encoder checksums;
+- finite h128 vectors with all 128 coordinates non-collapsed and sample rank 128;
+- median coordinate standard deviation 1.216 (minimum 0.751);
+- masked/global training loss decreased in every fold, from 1.15–1.32 initially to 0.37–0.47 at epoch 12;
+- five Kaggle representation tests passed before training.
+
+The J1 integrity gate therefore passed. A diagnostic performed after freezing the encoders showed h128 logistic AUPRC 0.4986, unsupervised q4 logistic 0.3944 and unsupervised q8 logistic 0.4311 under the same 1,000-record-per-fold budget. These are not quantum results, but they show that PTB-XL-only, 12-epoch label-free pretraining contains much less MI-discriminative information than the supervised reference. Phase J2/J3 is nevertheless running to test whether the nonlinear VQC can recover useful structure. The private job is [AQUIRE-Med JEPA q4 q8 Quantum Screen](https://www.kaggle.com/code/swayamjeetbhagat4/aquire-med-jepa-q4-q8-quantum-screen).
