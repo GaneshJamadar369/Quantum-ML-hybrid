@@ -13,6 +13,17 @@ def run(command, cwd=None):
     subprocess.run(command, cwd=cwd, check=True)
 
 
+def locate_input(preferred: Path, marker: str) -> Path:
+    """Resolve Kaggle's occasional alternate notebook-source mount path."""
+    if preferred.exists():
+        return preferred
+    matches = sorted(Path("/kaggle/input").rglob(marker))
+    print(f"Preferred input missing: {preferred}; marker matches={matches}", flush=True)
+    if len(matches) != 1:
+        raise FileNotFoundError(preferred)
+    return matches[0].parent if preferred.suffix == "" else matches[0]
+
+
 def main():
     import torch
 
@@ -20,11 +31,14 @@ def main():
         raise RuntimeError("This exact-statevector screen requires the configured Kaggle GPU")
     print("GPU:", torch.cuda.get_device_name(0), flush=True)
     source = Path("/kaggle/input/notebooks/swayamjeetbhagat4")
-    representations = source / "aquire-med-compact-ecg-transformer-representation/transformer-representation-v1"
-    metadata = source / "aquire-med-preprocessing-pipeline/aquire-artifacts/processing_metadata_development.csv"
-    for path in (representations, metadata):
-        if not path.exists():
-            raise FileNotFoundError(path)
+    representations = locate_input(
+        source / "aquire-med-compact-ecg-transformer-representation/transformer-representation-v1",
+        "outer_fold_1_representations.npz",
+    )
+    metadata = locate_input(
+        source / "aquire-med-preprocessing-pipeline/aquire-artifacts/processing_metadata_development.csv",
+        "processing_metadata_development.csv",
+    )
     repo = Path("/tmp/Quantum-ML-hybrid")
     run(["git", "clone", REPO, str(repo)])
     run(["git", "checkout", REVISION], cwd=repo)
