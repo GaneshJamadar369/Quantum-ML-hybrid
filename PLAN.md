@@ -152,6 +152,6 @@ Its completed result and stop decision are recorded in
 - [x] Generate pooled development routing hypotheses using measurement validity, marginal stability, classical residual association and quantum/classical loss difference. Treat them as hypotheses, not final feature assignments.
 - [x] Freeze the three residual q4 source banks, matched-MLP control, fixed fusion weights and promotion rule in `docs/feature_routing_quantum_fusion_plan_2026-09-23.md`.
 - [x] Implement and smoke-test the fold-safe residual routing runner with inner official-fold classical OOF predictions and outer patient isolation.
-- [ ] Complete the eight-fold Kaggle GPU screen for h128-residual, clinical-residual and combined-residual q4 VQCs.
-- [ ] Promote a source only if its primary 0.25 fusion beats both classical-only and identical-input MLP fusion with positive patient-bootstrap AUPRC intervals and at least 0.005 gain.
-- [ ] If promoted, run five seeds, quantum-removal/shuffle controls, kernel/observable concentration diagnostics and fully nested learned nonnegative fusion.
+- [x] Complete the eight-fold Kaggle GPU screen for h128-residual, clinical-residual and combined-residual q4 VQCs. **Completed:** 17,348 ECGs/14,958 patients; all eight folds; finite gradients; folds 9/10 sealed.
+- [x] Apply the promotion gate. **STOP:** classical expert AUPRC 0.837996; primary h128/clinical/combined VQC fusions 0.837933/0.837174/0.837544. All paired AUPRC intervals versus classical and matched MLP include or lie below zero.
+- [x] Apply the conditional follow-up rule. **Not launched:** five seeds, learned fusion and hardware/noise expansion require a positive fixed-weight result, which was absent. Result recorded in `docs/feature_routing_quantum_fusion_result_2026-09-23.md`.
