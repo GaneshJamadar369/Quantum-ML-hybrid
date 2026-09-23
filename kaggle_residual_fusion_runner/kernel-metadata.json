@@ -7,7 +7,9 @@
   "is_private": true,
   "enable_gpu": true,
   "enable_internet": true,
-  "dataset_sources": [],
+  "dataset_sources": [
+    "swayamjeetbhagat4/aquire-med-source-edebd85"
+  ],
   "competition_sources": [],
   "kernel_sources": [
     "swayamjeetbhagat4/aquire-med-compact-ecg-transformer-representation",

@@ -3,9 +3,9 @@
 from pathlib import Path
 import subprocess
 import sys
+import zipfile
 
 
-REPO = "https://github.com/GaneshJamadar369/Quantum-ML-hybrid.git"
 REVISION = "edebd85155599d7a587d1b58c5f9d6dce5976b52"
 
 
@@ -45,9 +45,17 @@ def main():
         "deployable_features_with_clinical_composites.csv",
     )
 
+    source_zip = locate_input(
+        Path("/kaggle/input/aquire-med-source-edebd85/source.zip"),
+        "source.zip",
+    )
+    revision_file = source_zip.parent / "SOURCE_REVISION.txt"
+    if not revision_file.exists() or revision_file.read_text().strip() != REVISION:
+        raise RuntimeError("Kaggle source snapshot revision mismatch")
     repo = Path("/tmp/Quantum-ML-hybrid")
-    run(["git", "clone", REPO, str(repo)])
-    run(["git", "checkout", REVISION], cwd=repo)
+    repo.mkdir(parents=True, exist_ok=False)
+    with zipfile.ZipFile(source_zip) as archive:
+        archive.extractall(repo)
     run([sys.executable, "-m", "pip", "install", "-q", "--no-deps", "-e", str(repo)])
     run([
         sys.executable, "-m", "pytest", "-q",
