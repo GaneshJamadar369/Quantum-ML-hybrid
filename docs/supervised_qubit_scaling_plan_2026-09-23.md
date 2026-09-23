@@ -81,6 +81,9 @@ a large full-h128 circuit from being promoted merely because it is larger.
 - [x] End-to-end q8 one-fold smoke execution passes with atomic output.
 - [x] [q8 private Kaggle OOF job](https://www.kaggle.com/code/swayamjeetbhagat4/aquire-med-supervised-q8-direct-vqc) completed and audited. **VQC AUPRC 0.7532 versus logistic 0.8133 and matched MLP 0.8028; width and quantum gates failed.**
 - [x] [q12 private Kaggle OOF job](https://www.kaggle.com/code/swayamjeetbhagat4/aquire-med-supervised-q12-direct-vqc) completed and audited. **VQC AUPRC 0.7939 versus logistic 0.8079, matched MLP 0.7877 and RBF 0.7750. VQC beat RBF, but its interval versus MLP crossed zero and it lost to logistic.**
-- [ ] [q16 private Kaggle OOF job](https://www.kaggle.com/code/swayamjeetbhagat4/aquire-med-supervised-q16-direct-vqc) completed and audited. **Running on GPU after adding a fallback for Kaggle's alternate notebook-source mount.**
-- [ ] Cross-width paired comparison completed.
-- [ ] Five-seed confirmation or stop decision applied.
+- [x] [q16 private Kaggle OOF job](https://www.kaggle.com/code/swayamjeetbhagat4/aquire-med-supervised-q16-direct-vqc) completed and audited. **VQC AUPRC 0.7805 versus logistic 0.8025, matched MLP 0.7788 and RBF 0.7724.**
+- [x] Cross-width paired comparison completed. **q8, q12 and q16 VQCs were respectively -0.0615, -0.0208 and -0.0342 AUPRC below q4; every 95% interval was entirely negative.**
+- [x] Five-seed confirmation or stop decision applied. **STOP: the prespecified width gate failed, so repeated-seed promotion is not triggered.**
+
+The final analysis is recorded in
+[`supervised_qubit_scaling_result_2026-09-23.md`](supervised_qubit_scaling_result_2026-09-23.md).
