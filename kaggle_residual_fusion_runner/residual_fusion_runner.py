@@ -58,7 +58,6 @@ def main():
         raise RuntimeError("Kaggle source snapshot revision mismatch")
     if not (repo / "pyproject.toml").exists():
         raise FileNotFoundError(repo / "pyproject.toml")
-    run([sys.executable, "-m", "pip", "install", "-q", "--no-deps", "-e", str(repo)])
     run([
         sys.executable, "-m", "pytest", "-q",
         "tests/test_feature_routing.py",
