@@ -3,7 +3,6 @@
 from pathlib import Path
 import subprocess
 import sys
-import zipfile
 
 
 REVISION = "edebd85155599d7a587d1b58c5f9d6dce5976b52"
@@ -45,17 +44,20 @@ def main():
         "deployable_features_with_clinical_composites.csv",
     )
 
-    source_zip = locate_input(
-        Path("/kaggle/input/aquire-med-source-edebd85/source.zip"),
-        "source.zip",
-    )
-    revision_file = source_zip.parent / "SOURCE_REVISION.txt"
+    source_snapshot = Path("/kaggle/input/aquire-med-source-edebd85")
+    repo = source_snapshot / "source"
+    revision_file = source_snapshot / "SOURCE_REVISION.txt"
+    if not repo.exists():
+        matches = sorted(Path("/kaggle/input").rglob("SOURCE_REVISION.txt"))
+        if len(matches) != 1:
+            raise FileNotFoundError(repo)
+        source_snapshot = matches[0].parent
+        repo = source_snapshot / "source"
+        revision_file = matches[0]
     if not revision_file.exists() or revision_file.read_text().strip() != REVISION:
         raise RuntimeError("Kaggle source snapshot revision mismatch")
-    repo = Path("/tmp/Quantum-ML-hybrid")
-    repo.mkdir(parents=True, exist_ok=False)
-    with zipfile.ZipFile(source_zip) as archive:
-        archive.extractall(repo)
+    if not (repo / "pyproject.toml").exists():
+        raise FileNotFoundError(repo / "pyproject.toml")
     run([sys.executable, "-m", "pip", "install", "-q", "--no-deps", "-e", str(repo)])
     run([
         sys.executable, "-m", "pytest", "-q",
