@@ -46,6 +46,6 @@ record circuit widening as a negative capacity result.
 
 - [x] Replicated-input exact 16-qubit VQC implemented.
 - [x] Sixteen-wire mapping, gradient and PennyLane-equivalence tests pass.
-- [ ] Private Kaggle eight-fold job completed.
+- [ ] [Private Kaggle eight-fold job](https://www.kaggle.com/code/swayamjeetbhagat4/aquire-med-q4-on-16-qubit-vqc) completed. **Submitted and running.**
 - [ ] Paired comparison with the existing four-qubit VQC completed.
 - [ ] Promotion or stop decision applied.
