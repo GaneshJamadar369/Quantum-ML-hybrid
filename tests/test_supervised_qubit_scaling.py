@@ -63,6 +63,22 @@ def test_scalable_statevector_contract_and_parameter_matched_control():
     assert abs(mlp_parameters - parameters) <= 8 + 2
 
 
+def test_q4_replication_drives_all_sixteen_qubits_and_backpropagates():
+    model = TorchStatevectorQuantumClassifier(
+        n_qubits=16, input_dim=4, n_layers=1, topology="ring"
+    )
+    assert model.wire_feature_indices.tolist() == [0, 1, 2, 3] * 4
+    inputs = torch.randn(2, 4, requires_grad=True)
+    observables = model.quantum_observables(inputs)
+    output = model(inputs)
+    assert observables.shape == (2, 32) and output.shape == (2,)
+    output.square().mean().backward()
+    assert inputs.grad is not None and torch.isfinite(inputs.grad).all()
+    assert model.feature_scales.grad is not None
+    assert model.feature_scales.grad.shape == (16,)
+    assert torch.isfinite(model.feature_scales.grad).all()
+
+
 def test_metric_row_reports_hard_cohort_and_sensitivity():
     labels = np.array([0, 0, 0, 0, 1, 1, 1, 1])
     scores = np.array([0.1, 0.2, 0.3, 0.4, 0.6, 0.7, 0.8, 0.9])

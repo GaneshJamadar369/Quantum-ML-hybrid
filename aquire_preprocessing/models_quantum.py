@@ -567,12 +567,16 @@ class TorchStatevectorQuantumClassifier(nn.Module):
         n_qubits: int,
         n_layers: int = 2,
         topology: str = "ring",
+        input_dim: Optional[int] = None,
     ):
         super().__init__()
         if not 3 <= n_qubits <= 20:
             raise ValueError("Torch statevector VQC supports 3 to 20 qubits")
         if n_layers < 1:
             raise ValueError("n_layers must be positive")
+        input_dim = n_qubits if input_dim is None else int(input_dim)
+        if input_dim < 1 or n_qubits % input_dim:
+            raise ValueError("input_dim must be a positive divisor of n_qubits")
         if topology == "ring":
             edges = [(index, (index + 1) % n_qubits) for index in range(n_qubits)]
         elif topology == "ladder":
@@ -583,6 +587,7 @@ class TorchStatevectorQuantumClassifier(nn.Module):
             raise ValueError("topology must be 'ring' or 'ladder'")
 
         self.n_qubits = int(n_qubits)
+        self.input_dim = input_dim
         self.n_layers = int(n_layers)
         self.topology = topology
         self.edges = edges
@@ -610,6 +615,12 @@ class TorchStatevectorQuantumClassifier(nn.Module):
         )
         self.register_buffer("zero_indices", torch.stack(zero_indices, dim=0))
         self.register_buffer("one_indices", torch.stack(one_indices, dim=0))
+        # A lower-dimensional classical vector may be replicated across a
+        # wider quantum register. For q4 on 16 qubits the assignment is
+        # [q1,q2,q3,q4] repeated four times around the entangling ring.
+        self.register_buffer(
+            "wire_feature_indices", torch.arange(n_qubits, dtype=torch.long) % input_dim
+        )
         self.register_buffer("edge_signs", edge_signs)
         self.register_buffer("observable_signs", torch.stack(observable_signs, dim=0))
         self.readout = nn.Linear(n_qubits + len(edges), 1)
@@ -645,9 +656,9 @@ class TorchStatevectorQuantumClassifier(nn.Module):
         return updated
 
     def quantum_observables(self, x: torch.Tensor) -> torch.Tensor:
-        if x.ndim != 2 or x.shape[1] != self.n_qubits:
+        if x.ndim != 2 or x.shape[1] != self.input_dim:
             raise ValueError(
-                f"Expected (batch, {self.n_qubits}) quantum input, got {tuple(x.shape)}"
+                f"Expected (batch, {self.input_dim}) quantum input, got {tuple(x.shape)}"
             )
         if not torch.isfinite(x).all():
             raise ValueError("Quantum input contains NaN or infinity")
@@ -659,7 +670,8 @@ class TorchStatevectorQuantumClassifier(nn.Module):
             device=x.device,
         )
         state[:, 0] = 1.0
-        scaled = x * (2.0 * torch.sigmoid(self.feature_scales))
+        wire_inputs = x.index_select(1, self.wire_feature_indices)
+        scaled = wire_inputs * (2.0 * torch.sigmoid(self.feature_scales))
         for layer in range(self.n_layers):
             for wire in range(self.n_qubits):
                 state = self._apply_ry(state, scaled[:, wire], wire)
