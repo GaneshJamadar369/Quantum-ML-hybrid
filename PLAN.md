@@ -145,3 +145,13 @@ Its completed result and stop decision are recorded in
 - [x] Complete the q4-on-16-qubit Kaggle OOF screen and require ≥0.005 AUPRC over the four-qubit VQC with a positive patient-bootstrap interval before promotion. **STOP: 16-qubit VQC 0.7979 versus four-qubit VQC 0.8148; paired Δ -0.0168 [-0.0233, -0.0105].**
 - [ ] Rerun corrected fusion with tabular-only, waveform-only and modality-shuffle ablations over at least three seeds.
 - [ ] Replace the invalid development-fold conformal claim with Fold-9 calibration and one-time Fold-10 coverage evaluation after champion freeze.
+
+## G6Q-R — evidence-routed residual quantum fusion (2026-09-23)
+
+- [x] Audit OOF score complementarity across the Transformer, clinical HistGB and q4 VQC. **Finding:** VQC–Transformer Spearman rho 0.9510; adding VQC to the Transformer+clinical diagnostic stack changes AUPRC only 0.84102→0.84111.
+- [x] Generate pooled development routing hypotheses using measurement validity, marginal stability, classical residual association and quantum/classical loss difference. Treat them as hypotheses, not final feature assignments.
+- [x] Freeze the three residual q4 source banks, matched-MLP control, fixed fusion weights and promotion rule in `docs/feature_routing_quantum_fusion_plan_2026-09-23.md`.
+- [x] Implement and smoke-test the fold-safe residual routing runner with inner official-fold classical OOF predictions and outer patient isolation.
+- [ ] Complete the eight-fold Kaggle GPU screen for h128-residual, clinical-residual and combined-residual q4 VQCs.
+- [ ] Promote a source only if its primary 0.25 fusion beats both classical-only and identical-input MLP fusion with positive patient-bootstrap AUPRC intervals and at least 0.005 gain.
+- [ ] If promoted, run five seeds, quantum-removal/shuffle controls, kernel/observable concentration diagnostics and fully nested learned nonnegative fusion.
