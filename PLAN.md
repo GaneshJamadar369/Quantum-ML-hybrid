@@ -28,6 +28,8 @@ Its completed cross-width result and stop decision are in
 [`docs/supervised_qubit_scaling_result_2026-09-23.md`](docs/supervised_qubit_scaling_result_2026-09-23.md).
 The isolated q4-representation/16-qubit-capacity experiment is frozen in
 [`docs/q4_on_16_qubit_capacity_plan_2026-09-23.md`](docs/q4_on_16_qubit_capacity_plan_2026-09-23.md).
+Its completed result and stop decision are recorded in
+[`docs/q4_on_16_qubit_capacity_result_2026-09-23.md`](docs/q4_on_16_qubit_capacity_result_2026-09-23.md).
 
 ## Implementation complete
 
@@ -140,6 +142,6 @@ The isolated q4-representation/16-qubit-capacity experiment is frozen in
 - [x] Complete and audit the independent q8, q12 and q16 Kaggle jobs; promote a width only if it improves q4 by ≥0.005 AUPRC with a positive patient-bootstrap interval. **STOP: q8 0.7532, q12 0.7939 and q16 0.7805 all fell below q4 VQC 0.8148 with paired intervals entirely below zero.**
 - [x] Apply the gate to full-h128 re-uploading and amplitude encoding. **Not launched because the required positive direct-width trend was absent.**
 - [x] Implement a capacity-isolation VQC that keeps the winning q4 representation and replicates its four angles across a 16-qubit ring, with a parameter-matched q4 MLP control.
-- [ ] Complete the q4-on-16-qubit Kaggle OOF screen and require ≥0.005 AUPRC over the four-qubit VQC with a positive patient-bootstrap interval before promotion. **Private GPU job submitted and running.**
+- [x] Complete the q4-on-16-qubit Kaggle OOF screen and require ≥0.005 AUPRC over the four-qubit VQC with a positive patient-bootstrap interval before promotion. **STOP: 16-qubit VQC 0.7979 versus four-qubit VQC 0.8148; paired Δ -0.0168 [-0.0233, -0.0105].**
 - [ ] Rerun corrected fusion with tabular-only, waveform-only and modality-shuffle ablations over at least three seeds.
 - [ ] Replace the invalid development-fold conformal claim with Fold-9 calibration and one-time Fold-10 coverage evaluation after champion freeze.
