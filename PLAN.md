@@ -260,3 +260,17 @@ Protocol:
   identical-q4 MLP at 0.82884. Concept supervision learned weak physiological
   associations but did not produce a validated AUPRC gain. Result:
   `docs/concept_rationale_distillation_result_2026-09-25.md`.
+
+## G6Q-KD4 — final difficulty-aware distillation screen (2026-09-25)
+
+Protocol:
+[`docs/difficulty_aware_distillation_plan_2026-09-25.md`](docs/difficulty_aware_distillation_plan_2026-09-25.md).
+
+- [x] Freeze a binary-classification adaptation of difficulty-aware KD that
+  never removes records or reweights the hard-label loss.
+- [x] Implement teacher-agreement, dynamic student difficulty, curriculum and
+  prespecified hard-negative soft-loss weighting with bounded influence.
+- [x] Retain equal-budget hard/uniform-JS controls, identical-q4 classical
+  controls, clinical fusion, full OOF exports and patient-bootstrap gates.
+- [ ] Pass the real-data preflight with 17,348 ECGs and folds 9/10 sealed.
+- [ ] Complete the pinned Kaggle GPU screen and apply the final KD stop rule.
