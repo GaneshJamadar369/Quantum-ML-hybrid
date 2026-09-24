@@ -1,5 +1,5 @@
 {
-  "id": "swayamjeetbhagat4/aquire-med-difficulty-kd-q4",
+  "id": "swayamjeetbhagat4/aquire-med-difficulty-aware-kd-q4",
   "title": "AQUIRE-Med Difficulty-Aware KD q4",
   "code_file": "difficulty_distillation_runner.py",
   "language": "python",
