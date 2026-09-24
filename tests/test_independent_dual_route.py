@@ -7,6 +7,7 @@ from run_independent_dual_route_screen import (
     _cross_fitted_fusion,
     _fit_q4_representation,
     _safe_logit,
+    _train_mlp_control,
     load_route_config,
 )
 
@@ -62,3 +63,26 @@ def test_cross_fitted_fusion_is_finite_and_nonnegative():
 def test_safe_logit_remains_finite_at_probability_boundaries():
     values = _safe_logit(np.array([0.0, 0.5, 1.0]))
     assert np.isfinite(values).all()
+
+
+def test_numpy_integer_seed_is_normalized_for_sklearn_stages():
+    rng = np.random.default_rng(31)
+    features = rng.normal(size=(80, 8))
+    labels = np.tile([0, 1], 40)
+    fit = np.arange(60)
+    validation = np.arange(60, 80)
+    train_q, validation_q, _ = _fit_q4_representation(
+        features,
+        labels,
+        fit,
+        validation,
+        seed=np.int64(31),
+    )
+    logits = _train_mlp_control(
+        train_q,
+        labels[fit],
+        validation_q,
+        seed=np.int64(32),
+    )
+    assert logits.shape == (20,)
+    assert np.isfinite(logits).all()

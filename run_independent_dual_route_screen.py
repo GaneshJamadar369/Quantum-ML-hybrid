@@ -90,6 +90,7 @@ def _fit_q4_representation(
     seed: int = 42,
 ) -> tuple[np.ndarray, np.ndarray, dict]:
     """Fold-local supervised PLS + quantile angle mapping."""
+    seed = int(seed)
     imputer = SimpleImputer(strategy="median")
     scaler = RobustScaler(quantile_range=(25.0, 75.0))
     x_fit = scaler.fit_transform(imputer.fit_transform(features[fit_idx]))
@@ -139,6 +140,7 @@ def _train_vqc(
     """Train an exact Torch-statevector VQC and return validation logits."""
     import torch
 
+    seed = int(seed)
     _seed_torch(seed)
     model = TorchStatevectorQuantumClassifier(
         n_qubits=n_qubits, n_layers=2, topology="ring"
@@ -203,6 +205,7 @@ def _train_mlp_control(
     seed: int,
 ) -> np.ndarray:
     """Parameter-count-matched MLP on same q4 coordinates."""
+    seed = int(seed)
     mlp = MLPClassifier(
         # q4 two-layer statevector VQC has 45 trainable parameters; seven
         # hidden units give this 4->7->1 MLP 43 parameters.
@@ -222,6 +225,7 @@ def _kernel_controls(
     seed: int,
 ) -> tuple[np.ndarray, np.ndarray]:
     """RBF and Laplacian SVC controls on the identical q4 coordinates."""
+    seed = int(seed)
     rbf = SVC(C=1.0, kernel="rbf", gamma="scale", class_weight="balanced", random_state=seed)
     rbf.fit(q_train, y_train)
     rbf_score = np.asarray(rbf.decision_function(q_val), dtype=float)
@@ -476,7 +480,8 @@ def run_independent_dual_route_screen(
 
     # A0: Classical reference (all 106 features)
     s_c_a = np.full(len(labels), np.nan)
-    for held_out in sorted(np.unique(folds)):
+    for held_out_value in sorted(np.unique(folds)):
+        held_out = int(held_out_value)
         train_mask = folds != held_out
         val_mask = folds == held_out
         clf = _classical_expert(all_features_mat[train_mask], labels[train_mask], seed)
@@ -492,7 +497,8 @@ def run_independent_dual_route_screen(
     s_q_a_laplacian = np.full(len(labels), np.nan)
     quantum_audits_a = []
 
-    for held_out in sorted(np.unique(folds)):
+    for held_out_value in sorted(np.unique(folds)):
+        held_out = int(held_out_value)
         print(f"\n  Route A Fold {held_out}:", flush=True)
         with np.load(representation_paths[int(held_out)], allow_pickle=False) as rep:
             train_ids = rep["train_record_ids"].astype(int)
@@ -591,7 +597,8 @@ def run_independent_dual_route_screen(
 
     # B0: Classical half (QRS/rhythm only)
     s_c_b = np.full(len(labels), np.nan)
-    for held_out in sorted(np.unique(folds)):
+    for held_out_value in sorted(np.unique(folds)):
+        held_out = int(held_out_value)
         train_mask = folds != held_out
         val_mask = folds == held_out
         clf = _classical_expert(features_b_c[train_mask], labels[train_mask], seed)
@@ -606,7 +613,8 @@ def run_independent_dual_route_screen(
     s_q_b_rbf = np.full(len(labels), np.nan)
     s_q_b_laplacian = np.full(len(labels), np.nan)
 
-    for held_out in sorted(np.unique(folds)):
+    for held_out_value in sorted(np.unique(folds)):
+        held_out = int(held_out_value)
         print(f"\n  Route B Fold {held_out}:", flush=True)
         train_mask = folds != held_out
         val_mask = folds == held_out
@@ -661,7 +669,8 @@ def run_independent_dual_route_screen(
     # B4: Route-swap (ST/T → classical, QRS/rhythm → VQC)
     s_c_b4 = np.full(len(labels), np.nan)
     s_q_b4 = np.full(len(labels), np.nan)
-    for held_out in sorted(np.unique(folds)):
+    for held_out_value in sorted(np.unique(folds)):
+        held_out = int(held_out_value)
         train_mask = folds != held_out
         val_mask = folds == held_out
         train_idx = np.where(train_mask)[0]
