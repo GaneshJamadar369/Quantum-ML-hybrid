@@ -242,6 +242,50 @@ class ClinicalQueryCrossAttentionQuantumInput(_FusionBase):
         return self._finish(fused, return_embedding=return_embedding)
 
 
+class CrossAttentionBilinearQuantumInput(_FusionBase):
+    """Clinical-query patch attention followed by rank-four bilinear pooling."""
+
+    def __init__(
+        self,
+        groups: Sequence[Sequence[int]],
+        width: int = 32,
+        heads: int = 4,
+        rank: int = 4,
+        dropout: float = 0.15,
+    ) -> None:
+        super().__init__(groups, width, dropout)
+        if width % heads or rank < 1:
+            raise ValueError("width must divide heads and rank must be positive")
+        self.rank = int(rank)
+        self.attention = nn.MultiheadAttention(width, heads, dropout=dropout, batch_first=True)
+        self.gate = nn.Sequential(nn.Linear(2 * width, width), nn.Sigmoid())
+        self.attended_factors = nn.Linear(width, rank * width)
+        self.wave_factors = nn.Linear(width, rank * width)
+        self.rank_weights = nn.Parameter(torch.full((rank,), 1.0 / rank))
+        self.output_norm = nn.LayerNorm(2 * width)
+        self.last_attention: torch.Tensor | None = None
+
+    def forward(
+        self, wave_tokens: torch.Tensor, clinical: torch.Tensor, *,
+        observed_mask: torch.Tensor | None = None, return_embedding: bool = False
+    ) -> torch.Tensor:
+        self._check_wave(wave_tokens)
+        wave = self.wave_projection(wave_tokens)
+        queries = self.clinical_tokens(clinical, observed_mask)
+        context, weights = self.attention(
+            queries, wave, wave, need_weights=True, average_attn_weights=False
+        )
+        gate = self.gate(torch.cat([queries, context], dim=-1))
+        attended_pool = (queries + gate * context).mean(dim=1)
+        wave_pool = wave.mean(dim=1)
+        left = self.attended_factors(attended_pool).view(-1, self.rank, wave.shape[-1])
+        right = self.wave_factors(wave_pool).view(-1, self.rank, wave.shape[-1])
+        interaction = (left * right * self.rank_weights.view(1, -1, 1)).sum(dim=1)
+        fused = self.output_norm(torch.cat([interaction, attended_pool + wave_pool], dim=-1))
+        self.last_attention = weights.detach()
+        return self._finish(fused, return_embedding=return_embedding)
+
+
 def build_quantum_input_fusion(
     name: str,
     groups: Sequence[Sequence[int]],
@@ -256,4 +300,8 @@ def build_quantum_input_fusion(
         return LowRankBilinearQuantumInput(groups, width=width, rank=4, dropout=dropout)
     if normalized in {"cross_attention", "crossattn"}:
         return ClinicalQueryCrossAttentionQuantumInput(groups, width=width, heads=4, dropout=dropout)
+    if normalized in {"cross_attention_lmf", "crossattn_lmf"}:
+        return CrossAttentionBilinearQuantumInput(
+            groups, width=width, heads=4, rank=4, dropout=dropout
+        )
     raise ValueError(f"Unknown advanced fusion: {name}")

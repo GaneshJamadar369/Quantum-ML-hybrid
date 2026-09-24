@@ -514,7 +514,11 @@ def main() -> None:
     parser.add_argument("--transformer-dir", type=Path, required=True)
     parser.add_argument("--normalizers", type=Path, required=True)
     parser.add_argument("--output", type=Path, required=True)
-    parser.add_argument("--fusion", choices=["film", "lmf", "cross_attention"], required=True)
+    parser.add_argument(
+        "--fusion",
+        choices=["film", "lmf", "cross_attention", "cross_attention_lmf"],
+        required=True,
+    )
     parser.add_argument("--fusion-per-class", type=int, default=2000)
     parser.add_argument("--quantum-per-class", type=int, default=500)
     parser.add_argument("--fusion-epochs", type=int, default=10)

@@ -22,7 +22,7 @@ def test_groups_are_an_exact_partition():
     assert all(groups)
 
 
-@pytest.mark.parametrize("name", ["film", "lmf", "cross_attention"])
+@pytest.mark.parametrize("name", ["film", "lmf", "cross_attention", "cross_attention_lmf"])
 def test_fusions_produce_bounded_finite_q4_with_gradients(name):
     torch.manual_seed(4)
     groups = clinical_feature_groups(FEATURES)
