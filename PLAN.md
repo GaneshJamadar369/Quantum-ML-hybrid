@@ -179,3 +179,30 @@ classical-error weighting or uncertainty gate.
   [-0.0252, -0.0149]); Route B VQC fusion 0.6792 lost to matched MLP fusion
   0.6863 and the all-feature classical oracle 0.7125. Quantum removal hurt,
   but identical-input classical learners used the same information better.
+
+## G6Q-AF — advanced quantum-input fusion and constrained adapters (completed 2026-09-24)
+
+Protocol and result:
+[`docs/advanced_quantum_input_fusion_protocol_2026-09-24.md`](docs/advanced_quantum_input_fusion_protocol_2026-09-24.md),
+[`docs/advanced_quantum_input_fusion_result_2026-09-24.md`](docs/advanced_quantum_input_fusion_result_2026-09-24.md).
+
+- [x] Implement eight clinically grouped tokens with exact coverage of all 106
+  approved features and preserved missing-value masks.
+- [x] Run FiLM, rank-4 low-rank bilinear, clinical-query patch attention and
+  cross-attention-plus-bilinear q4 screens in parallel with identical-q4
+  logistic/MLP/RBF and no-entanglement controls. **STOP:** VQC AUPRC
+  0.7414/0.7224/0.7287/0.6382; every arm failed its representation and quantum
+  gates.
+- [x] Run zero-initialized residual angle adapters using h128 alone and
+  h128+clinical inputs. **STOP:** adapted VQCs 0.7700/0.7637 versus unchanged
+  two-layer VQC 0.8228.
+- [x] Run six-parameter information-preserving orthogonal q4 mixers with
+  three-layer ring and ladder VQCs. **STOP:** 0.8094/0.8106 versus identical-q4
+  logistic 0.8286/0.8306.
+- [x] Re-evaluate the unchanged q4 VQC at 2,000 patient-unique examples per
+  class and 30 epochs. **Best retained quantum candidate:** VQC 0.82284,
+  logistic 0.82731, matched MLP 0.82426, RBF 0.77560. VQC minus logistic
+  patient-bootstrap interval `[-0.00681, -0.00206]`; no quantum win.
+- [x] Apply the stop rule: no more input-fusion, width, depth or topology
+  searches on pooled development OOF. Proceed only to five-seed confirmation,
+  then frozen fold-9 calibration and one-time fold-10 evaluation.
