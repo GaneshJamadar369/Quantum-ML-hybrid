@@ -1,0 +1,16 @@
+{
+  "id": "swayamjeetbhagat4/aquire-med-orthogonal-q4-ring",
+  "title": "AQUIRE-Med Orthogonal q4 Ring",
+  "code_file": "ring_cloud_runner.py",
+  "language": "python",
+  "kernel_type": "script",
+  "is_private": true,
+  "enable_gpu": true,
+  "enable_internet": true,
+  "dataset_sources": [],
+  "competition_sources": [],
+  "kernel_sources": [
+    "swayamjeetbhagat4/aquire-med-compact-ecg-transformer-representation/1",
+    "swayamjeetbhagat4/aquire-med-preprocessing-pipeline/1"
+  ]
+}
