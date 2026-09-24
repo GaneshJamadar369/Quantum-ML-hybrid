@@ -1,0 +1,17 @@
+{
+  "id": "swayamjeetbhagat4/aquire-med-low-rank-fusion-q4",
+  "title": "AQUIRE-Med Low Rank Fusion q4",
+  "code_file": "lmf_cloud_runner.py",
+  "language": "python",
+  "kernel_type": "script",
+  "is_private": true,
+  "enable_gpu": true,
+  "enable_internet": true,
+  "dataset_sources": [],
+  "competition_sources": [],
+  "kernel_sources": [
+    "swayamjeetbhagat4/aquire-med-compact-ecg-transformer-representation/1",
+    "swayamjeetbhagat4/aquire-med-preprocessing-pipeline/1",
+    "swayamjeetbhagat4/aquire-med-full-feature-repair/1"
+  ]
+}
