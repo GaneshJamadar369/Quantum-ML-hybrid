@@ -1,0 +1,93 @@
+{
+  "protocol": "independent_dual_route_fusion_v1",
+  "protocol_date": "2026-09-24",
+  "target": "mi_label",
+  "fold_policy": "official_ptbxl_1_to_8_development",
+  "sealed_folds": [9, 10],
+  "seeds": [42],
+  "quantum_width": 4,
+  "quantum_epochs": 20,
+  "quantum_batch_size": 128,
+  "quantum_per_class": 500,
+  "source_manifest_hash": "approved_feature_manifest_v0_4",
+
+  "route_a": {
+    "description": "Representation-disjoint: all 106 clinical → classical; Transformer h128 → PLS-q4 → VQC",
+    "classical_features": "all_106_approved",
+    "quantum_representation": "transformer_h128_pls_q4"
+  },
+
+  "route_b": {
+    "description": "Clinically-disjoint: QRS/rhythm → classical; ST/T spatial → PLS-q4 → VQC",
+    "classical_features": [
+      "heart_rate_bpm", "rr_median_ms", "rr_iqr_ms", "rr_cv",
+      "i__range_mv", "i__r_amp_mv", "i__s_amp_mv", "i__rs_ratio",
+      "ii__range_mv", "ii__r_amp_mv", "ii__s_amp_mv", "ii__rs_ratio",
+      "iii__range_mv", "iii__r_amp_mv", "iii__s_amp_mv", "iii__rs_ratio",
+      "avr__range_mv", "avr__r_amp_mv", "avr__s_amp_mv", "avr__rs_ratio",
+      "avl__range_mv", "avl__r_amp_mv", "avl__s_amp_mv", "avl__rs_ratio",
+      "avf__range_mv", "avf__r_amp_mv", "avf__s_amp_mv", "avf__rs_ratio",
+      "v1__range_mv", "v1__r_amp_mv", "v1__s_amp_mv", "v1__rs_ratio",
+      "v2__range_mv", "v2__s_amp_mv", "v2__rs_ratio",
+      "v3__range_mv", "v3__s_amp_mv", "v3__rs_ratio",
+      "v4__range_mv", "v4__r_amp_mv", "v4__s_amp_mv", "v4__rs_ratio",
+      "v5__range_mv", "v5__r_amp_mv", "v5__s_amp_mv", "v5__rs_ratio",
+      "v6__range_mv", "v6__r_amp_mv", "v6__s_amp_mv", "v6__rs_ratio",
+      "clinical__inferior__r_mean_mv", "clinical__inferior__rs_median",
+      "clinical__high_lateral__r_mean_mv", "clinical__high_lateral__rs_median",
+      "clinical__lateral__r_mean_mv", "clinical__lateral__rs_median",
+      "clinical__anterior__r_mean_mv", "clinical__anterior__rs_median",
+      "clinical__precordial_transition_lead", "clinical__frontal_axis_proxy_deg"
+    ],
+    "quantum_features": [
+      "i__st60_mv", "i__t_polarity",
+      "ii__st60_mv", "ii__t_polarity",
+      "iii__st60_mv", "iii__t_polarity",
+      "avr__st60_mv", "avr__t_polarity",
+      "avl__st60_mv", "avl__t_polarity",
+      "avf__st60_mv", "avf__t_polarity",
+      "v1__st60_mv", "v1__t_polarity",
+      "v2__st60_mv", "v2__t_polarity",
+      "v3__st60_mv", "v3__t_polarity",
+      "v4__st60_mv", "v4__t_polarity",
+      "v5__st60_mv", "v5__t_polarity",
+      "v6__st60_mv", "v6__t_polarity",
+      "clinical__inferior__st_mean_mv", "clinical__inferior__st_absmax_mv",
+      "clinical__inferior__st_abnormal_count", "clinical__inferior__t_inversion_fraction",
+      "clinical__high_lateral__st_mean_mv", "clinical__high_lateral__st_absmax_mv",
+      "clinical__high_lateral__st_abnormal_count", "clinical__high_lateral__t_inversion_fraction",
+      "clinical__lateral__st_mean_mv", "clinical__lateral__st_absmax_mv",
+      "clinical__lateral__st_abnormal_count", "clinical__lateral__t_inversion_fraction",
+      "clinical__anterior__st_mean_mv", "clinical__anterior__st_absmax_mv",
+      "clinical__anterior__st_abnormal_count", "clinical__anterior__t_inversion_fraction",
+      "clinical__inferior_high_lateral_st_reciprocity",
+      "clinical__anterior_inferior_st_contrast",
+      "clinical__global_st_rms_mv",
+      "clinical__global_st_positive_count",
+      "clinical__global_st_negative_count",
+      "clinical__global_t_inversion_count"
+    ]
+  },
+
+  "ablation_matrix": {
+    "A0": "all 106 / HistGB, no quantum, no fusion",
+    "A1": "none classical, Transformer PLS-q4 / VQC, no fusion",
+    "A2": "none classical, same q4 / logistic+MLP+RBF+Laplacian, no fusion",
+    "A3": "all 106 / HistGB + Transformer PLS-q4 / VQC, cross-fitted logistic fusion",
+    "A4": "all 106 / HistGB + Transformer PLS-q4 / matched MLP, same fusion",
+    "A5": "all 106 / HistGB + shuffled q4 or shuffled sQ, same fusion",
+    "B0": "QRS/rhythm / HistGB, no quantum, no fusion",
+    "B1": "none classical, ST/T PLS-q4 / VQC, no fusion",
+    "B2": "QRS/rhythm / HistGB + ST/T PLS-q4 / VQC, cross-fitted logistic fusion",
+    "B3": "union all 106 / HistGB, no quantum, no fusion (oracle)",
+    "B4": "ST/T / HistGB + QRS/rhythm PLS-q4 / VQC, cross-fitted logistic (route-swap)",
+    "B5": "QRS/rhythm / HistGB + ST/T PLS-q4 / matched MLP, same fusion"
+  },
+
+  "promotion_gate": {
+    "minimum_delta_auprc": 0.005,
+    "bootstrap_ci_above_zero": true,
+    "quantum_removal_causes_decline": true,
+    "beta_q_positive_in_6_of_8_folds": true
+  }
+}
