@@ -1,8 +1,9 @@
 # Independent classical–quantum feature routing and fusion plan
 
-**Protocol date:** 2026-09-24  
-**Status:** frozen implementation plan; no result has been produced by this protocol  
-**Decision:** PROCEED as a new experiment, while preserving the residual-routing study as a negative ablation
+**Protocol date:** 2026-09-24
+**Status:** completed on Kaggle Version 4; folds 1–8 only
+**Decision:** AVOID promotion; the frozen quantum-value gates failed
+**Result:** [`independent_dual_route_fusion_result_2026-09-24.md`](independent_dual_route_fusion_result_2026-09-24.md)
 
 ## 1. Question this experiment answers
 

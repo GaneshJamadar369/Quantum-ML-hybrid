@@ -30,6 +30,9 @@ The isolated q4-representation/16-qubit-capacity experiment is frozen in
 [`docs/q4_on_16_qubit_capacity_plan_2026-09-23.md`](docs/q4_on_16_qubit_capacity_plan_2026-09-23.md).
 Its completed result and stop decision are recorded in
 [`docs/q4_on_16_qubit_capacity_result_2026-09-23.md`](docs/q4_on_16_qubit_capacity_result_2026-09-23.md).
+The completed independent direct-label dual-route experiment and its negative
+quantum-value decision are recorded in
+[`docs/independent_dual_route_fusion_result_2026-09-24.md`](docs/independent_dual_route_fusion_result_2026-09-24.md).
 
 ## Implementation complete
 
@@ -156,21 +159,23 @@ Its completed result and stop decision are recorded in
 - [x] Apply the promotion gate. **STOP:** classical expert AUPRC 0.837996; primary h128/clinical/combined VQC fusions 0.837933/0.837174/0.837544. All paired AUPRC intervals versus classical and matched MLP include or lie below zero.
 - [x] Apply the conditional follow-up rule. **Not launched:** five seeds, learned fusion and hardware/noise expansion require a positive fixed-weight result, which was absent. Result recorded in `docs/feature_routing_quantum_fusion_result_2026-09-23.md`.
 
-## G6Q-I — independent dual-route fusion (planned 2026-09-24)
+## G6Q-I — independent dual-route fusion (completed 2026-09-24)
 
 Research protocol: `docs/independent_dual_route_fusion_plan_2026-09-24.md`.
 This is a new direct-label experiment and contains no residual target,
 classical-error weighting or uncertainty gate.
 
-- [ ] Freeze Route A: approved clinical measurements to the classical expert;
+- [x] Freeze Route A: approved clinical measurements to the classical expert;
   Transformer h128 → direct-label PLS-q4 to the quantum expert.
-- [ ] Freeze Route B: QRS/rhythm features to the classical expert and disjoint
+- [x] Freeze Route B: QRS/rhythm features to the classical expert and disjoint
   ST/T spatial features to the quantum expert.
-- [ ] Implement fold-local route transforms and prove folds 9/10 remain sealed.
-- [ ] Train both branches independently on MI/non-MI and save raw OOF logits.
-- [ ] Train a one-neuron logistic fusion using meta-fold cross-fitting only.
-- [ ] Run same-input logistic/MLP/RBF/Laplacian, all-classical fusion,
+- [x] Implement fold-local route transforms and prove folds 9/10 remain sealed.
+- [x] Train both branches independently on MI/non-MI and save raw OOF logits.
+- [x] Train a one-neuron logistic fusion using meta-fold cross-fitting only.
+- [x] Run same-input logistic/MLP/RBF/Laplacian, all-classical fusion,
   route-swap, quantum-removal and quantum-shuffle controls.
-- [ ] Promote only if paired patient-bootstrap fusion gain is at least 0.005
-  AUPRC with its 95% interval above zero and quantum removal causes a stable
-  loss of performance.
+- [x] Apply the promotion gate. **STOP/AVOID:** Route A VQC fusion 0.8010 lost
+  to matched classical fusion 0.8212 (paired delta -0.0201
+  [-0.0252, -0.0149]); Route B VQC fusion 0.6792 lost to matched MLP fusion
+  0.6863 and the all-feature classical oracle 0.7125. Quantum removal hurt,
+  but identical-input classical learners used the same information better.

@@ -746,11 +746,11 @@ def run_independent_dual_route_screen(
     all_metrics = []
     for name, logits in [
         ("A0_Classical106", s_c_a),
-        ("A1_VQC_h128", s_q_a_vqc),
-        ("A2_MLP_h128", s_q_a_mlp),
-        ("A2_Logistic_h128", s_q_a_logistic),
-        ("A2_RBF_h128", s_q_a_rbf),
-        ("A2_Laplacian_h128", s_q_a_laplacian),
+        ("A1_VQC_transformer_q4", s_q_a_vqc),
+        ("A2_MLP_transformer_q4", s_q_a_mlp),
+        ("A2_Logistic_transformer_q4", s_q_a_logistic),
+        ("A2_RBF_transformer_q4", s_q_a_rbf),
+        ("A2_Laplacian_transformer_q4", s_q_a_laplacian),
         ("A3_Fusion_C_VQC", a3_logits),
         ("A4_Fusion_C_MLP", a4_logits),
         ("A5_Fusion_Shuffled", a5_logits),
