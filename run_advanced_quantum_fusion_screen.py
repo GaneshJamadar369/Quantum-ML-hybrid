@@ -69,7 +69,10 @@ def _encode_tokens(
     import torch
 
     model = ECGPatchTransformer().to(device)
-    payload = torch.load(checkpoint_path, map_location="cpu", weights_only=False)
+    try:
+        payload = torch.load(checkpoint_path, map_location="cpu", weights_only=False)
+    except TypeError:  # PyTorch < 2.6
+        payload = torch.load(checkpoint_path, map_location="cpu")
     model.load_state_dict(payload["state_dict"])
     model.eval()
     normalized = _normalise(signals.astype(np.float32), medians, iqrs)
