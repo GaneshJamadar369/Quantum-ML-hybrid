@@ -1,0 +1,17 @@
+{
+  "id": "swayamjeetbhagat4/aquire-med-crossattn-bilinear-q4",
+  "title": "AQUIRE-Med Cross Attention Bilinear q4",
+  "code_file": "cross_attention_lmf_cloud_runner.py",
+  "language": "python",
+  "kernel_type": "script",
+  "is_private": true,
+  "enable_gpu": true,
+  "enable_internet": true,
+  "dataset_sources": [],
+  "competition_sources": [],
+  "kernel_sources": [
+    "swayamjeetbhagat4/aquire-med-compact-ecg-transformer-representation/1",
+    "swayamjeetbhagat4/aquire-med-preprocessing-pipeline/1",
+    "swayamjeetbhagat4/aquire-med-full-feature-repair/1"
+  ]
+}
