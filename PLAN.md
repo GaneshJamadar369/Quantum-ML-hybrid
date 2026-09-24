@@ -222,6 +222,9 @@ Protocol:
   complete OOF export and paired patient-bootstrap decisions.
 - [x] Pass the real 17,348-record/14,958-patient preflight with all eight
   Transformer archives; folds 9 and 10 remain sealed.
+- [x] Submit the pinned single-seed screen to Kaggle GPU as
+  `swayamjeetbhagat4/aquire-med-divergence-kd-q4` Version 1; source revision
+  `9d128ad185fbf8779ed730612e3ac551b8afb894`.
 - [ ] Complete the prespecified single-seed Kaggle GPU divergence screen.
 - [ ] Promote only a divergence that improves hard-label VQC by at least
   0.005 AUPRC with a positive paired patient-bootstrap interval and acceptable
