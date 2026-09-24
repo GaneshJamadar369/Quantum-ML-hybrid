@@ -155,3 +155,22 @@ Its completed result and stop decision are recorded in
 - [x] Complete the eight-fold Kaggle GPU screen for h128-residual, clinical-residual and combined-residual q4 VQCs. **Completed:** 17,348 ECGs/14,958 patients; all eight folds; finite gradients; folds 9/10 sealed.
 - [x] Apply the promotion gate. **STOP:** classical expert AUPRC 0.837996; primary h128/clinical/combined VQC fusions 0.837933/0.837174/0.837544. All paired AUPRC intervals versus classical and matched MLP include or lie below zero.
 - [x] Apply the conditional follow-up rule. **Not launched:** five seeds, learned fusion and hardware/noise expansion require a positive fixed-weight result, which was absent. Result recorded in `docs/feature_routing_quantum_fusion_result_2026-09-23.md`.
+
+## G6Q-I — independent dual-route fusion (planned 2026-09-24)
+
+Research protocol: `docs/independent_dual_route_fusion_plan_2026-09-24.md`.
+This is a new direct-label experiment and contains no residual target,
+classical-error weighting or uncertainty gate.
+
+- [ ] Freeze Route A: approved clinical measurements to the classical expert;
+  Transformer h128 → direct-label PLS-q4 to the quantum expert.
+- [ ] Freeze Route B: QRS/rhythm features to the classical expert and disjoint
+  ST/T spatial features to the quantum expert.
+- [ ] Implement fold-local route transforms and prove folds 9/10 remain sealed.
+- [ ] Train both branches independently on MI/non-MI and save raw OOF logits.
+- [ ] Train a one-neuron logistic fusion using meta-fold cross-fitting only.
+- [ ] Run same-input logistic/MLP/RBF/Laplacian, all-classical fusion,
+  route-swap, quantum-removal and quantum-shuffle controls.
+- [ ] Promote only if paired patient-bootstrap fusion gain is at least 0.005
+  AUPRC with its 95% interval above zero and quantum removal causes a stable
+  loss of performance.

@@ -9,7 +9,7 @@
   "quantum_epochs": 20,
   "quantum_batch_size": 128,
   "quantum_per_class": 500,
-  "source_manifest_hash": "approved_feature_manifest_v0_4",
+  "source_manifest_hash": "429b134d19f4cf28bb8b188203a263262d98ca90847d2843ff2166f10dae8fd0",
 
   "route_a": {
     "description": "Representation-disjoint: all 106 clinical → classical; Transformer h128 → PLS-q4 → VQC",
