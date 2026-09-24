@@ -15,24 +15,21 @@ def run(command, cwd=None):
 
 def unique(root: Path, name: str) -> Path:
     matches = list(root.rglob(name))
-    if len(matches) != 1:
-        raise RuntimeError(f"Expected one {name} under {root}, found {matches}")
-    return matches[0]
+    if not matches:
+        raise RuntimeError(f"Expected {name} under {root}; top-level={list(root.glob('*'))}")
+    # The preprocessing output contains a second provenance copy under its
+    # bundled repository. Prefer the shallow, actual pipeline artifact.
+    return min(matches, key=lambda path: (len(path.parts), str(path)))
 
 
 def main():
-    notebooks = Path("/kaggle/input/notebooks/swayamjeetbhagat4")
-    preprocessing = notebooks / "aquire-med-preprocessing-pipeline"
-    feature_source = notebooks / "aquire-med-full-feature-repair"
-    transformer_source = notebooks / "aquire-med-compact-ecg-transformer-representation"
-    hdf5 = preprocessing / "aquire-artifacts/primary_development_100hz.h5"
-    metadata = preprocessing / "aquire-artifacts/processing_metadata_development.csv"
-    normalizers = preprocessing / "artifacts/g5/normalizers"
-    features = feature_source / "full-feature-repair/feature-evidence-v0-4/deployable_features_with_clinical_composites.csv"
-    transformer_dir = transformer_source / "transformer-representation-v1"
-    for required in (hdf5, metadata, features, transformer_dir, normalizers):
-        if not required.exists():
-            raise FileNotFoundError(required)
+    input_root = Path("/kaggle/input")
+    print("Kaggle input roots:", list(input_root.glob("*")), flush=True)
+    hdf5 = unique(input_root, "primary_development_100hz.h5")
+    metadata = unique(input_root, "processing_metadata_development.csv")
+    features = unique(input_root, "deployable_features_with_clinical_composites.csv")
+    transformer_dir = unique(input_root, "outer_fold_1_encoder.pt").parent
+    normalizers = unique(input_root, "normalizer_holdout_fold_1.json").parent
     for fold in range(1, 9):
         for required in (
             transformer_dir / f"outer_fold_{fold}_encoder.pt",
