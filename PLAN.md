@@ -206,3 +206,24 @@ Protocol and result:
 - [x] Apply the stop rule: no more input-fusion, width, depth or topology
   searches on pooled development OOF. Proceed only to five-seed confirmation,
   then frozen fold-9 calibration and one-time fold-10 evaluation.
+
+## G6Q-KD2 — calibrated bidirectional-divergence distillation (2026-09-25)
+
+Protocol:
+[`docs/divergence_distillation_protocol_2026-09-25.md`](docs/divergence_distillation_protocol_2026-09-25.md).
+
+- [x] Freeze the retained Transformer→PLS-q4→four-qubit two-layer ring VQC,
+  2,000-per-class sample and 30-epoch budget.
+- [x] Implement tested hard-label, temperature-scaled forward KL, 25% reverse
+  mixture, symmetric KL, Jensen-Shannon and pure reverse-KL objectives.
+- [x] Replace in-sample teacher targets with inner-fold OOF clinical-teacher
+  probabilities and outer-training sigmoid calibration.
+- [x] Implement identical-q4 logistic/MLP controls, cross-fitted meta-fusion,
+  complete OOF export and paired patient-bootstrap decisions.
+- [x] Pass the real 17,348-record/14,958-patient preflight with all eight
+  Transformer archives; folds 9 and 10 remain sealed.
+- [ ] Complete the prespecified single-seed Kaggle GPU divergence screen.
+- [ ] Promote only a divergence that improves hard-label VQC by at least
+  0.005 AUPRC with a positive paired patient-bootstrap interval and acceptable
+  calibration.
+- [ ] Run five fixed seeds only if the single-seed promotion gate passes.
