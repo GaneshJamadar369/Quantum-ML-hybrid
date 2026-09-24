@@ -225,8 +225,13 @@ Protocol:
 - [x] Submit the pinned single-seed screen to Kaggle GPU as
   `swayamjeetbhagat4/aquire-med-divergence-kd-q4` Version 1; source revision
   `9d128ad185fbf8779ed730612e3ac551b8afb894`.
-- [ ] Complete the prespecified single-seed Kaggle GPU divergence screen.
-- [ ] Promote only a divergence that improves hard-label VQC by at least
-  0.005 AUPRC with a positive paired patient-bootstrap interval and acceptable
-  calibration.
-- [ ] Run five fixed seeds only if the single-seed promotion gate passes.
+- [x] Complete the prespecified single-seed Kaggle GPU divergence screen.
+  **Result:** JS VQC 0.82747, hard VQC 0.82567, q4 logistic 0.82686; JS-minus-hard
+  +0.00180 `[-0.00014, 0.00358]`. Pure reverse KL 0.82538 improved Brier but
+  did not improve AUPRC.
+- [x] Apply the promotion gate. **STOP:** no objective reached +0.005 AUPRC
+  with a positive paired interval. Matched all-classical fusion remained best
+  at 0.83798 versus JS quantum fusion 0.83563.
+- [x] Apply the conditional five-seed rule. **Not launched:** the single-seed
+  promotion gate failed. Retain the hard-label VQC and defer probability
+  calibration to frozen fold 9.
