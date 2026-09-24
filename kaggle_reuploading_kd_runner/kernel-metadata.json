@@ -1,0 +1,17 @@
+{
+  "id": "swayamjeetbhagat4/aquire-med-reuploading-kd-vqc",
+  "title": "AQUIRE-Med Reuploading KD VQC",
+  "code_file": "reuploading_kd_runner.py",
+  "language": "python",
+  "kernel_type": "script",
+  "is_private": true,
+  "enable_gpu": true,
+  "enable_internet": true,
+  "dataset_sources": [],
+  "competition_sources": [],
+  "kernel_sources": [
+    "swayamjeetbhagat4/aquire-med-compact-ecg-transformer-representation",
+    "swayamjeetbhagat4/aquire-med-preprocessing-pipeline",
+    "swayamjeetbhagat4/aquire-med-full-feature-repair"
+  ]
+}
