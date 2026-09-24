@@ -5,7 +5,7 @@ import subprocess
 import sys
 
 
-SOURCE_COMMIT = "543d1ce6d29b6378196520126a8a522fe4f12a18"
+SOURCE_COMMIT = "eb65cc23ae8b3d3270827e904e17b99d7a00c547"
 
 
 def run(command, cwd=None):
