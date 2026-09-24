@@ -4,6 +4,7 @@ import torch
 
 from aquire_preprocessing.models_advanced_fusion import (
     ClinicalQueryCrossAttentionQuantumInput,
+    ResidualAngleAdapter,
     build_quantum_input_fusion,
     clinical_feature_groups,
 )
@@ -63,3 +64,24 @@ def test_invalid_inputs_are_rejected():
     bad[0, 0] = float("nan")
     with pytest.raises(ValueError):
         model(torch.randn(2, 10, 96), bad)
+
+
+def test_residual_angle_adapter_starts_as_identity_and_can_learn():
+    torch.manual_seed(11)
+    model = ResidualAngleAdapter(waveform_dim=8, clinical_dim=5, hidden=8, dropout=0.0)
+    base = torch.randn(6, 4).clamp(-1.3, 1.3).requires_grad_()
+    waveform = torch.randn(6, 8, requires_grad=True)
+    clinical = torch.randn(6, 5, requires_grad=True)
+    angles, residual = model(base, waveform, clinical, torch.ones_like(clinical))
+    assert torch.allclose(angles, base, atol=2e-6)
+    assert torch.allclose(residual, torch.zeros_like(residual), atol=2e-6)
+    loss = angles.square().mean()
+    loss.backward()
+    assert model.delta.weight.grad is not None
+    assert torch.isfinite(model.delta.weight.grad).all()
+
+
+def test_residual_angle_adapter_requires_configured_clinical_input():
+    model = ResidualAngleAdapter(waveform_dim=8, clinical_dim=5)
+    with pytest.raises(ValueError):
+        model(torch.zeros(2, 4), torch.zeros(2, 8))

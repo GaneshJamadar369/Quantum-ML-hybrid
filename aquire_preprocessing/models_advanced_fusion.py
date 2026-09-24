@@ -305,3 +305,74 @@ def build_quantum_input_fusion(
             groups, width=width, heads=4, rank=4, dropout=dropout
         )
     raise ValueError(f"Unknown advanced fusion: {name}")
+
+
+class ResidualAngleAdapter(nn.Module):
+    """Learn a small correction while preserving a proven q4 representation.
+
+    The final projection and gate start at zero, so the initial output is the
+    supplied base angle vector.  This makes degradation an explicit learned
+    choice rather than an unavoidable consequence of replacing h128.
+    """
+
+    def __init__(
+        self,
+        waveform_dim: int = 128,
+        clinical_dim: int | None = None,
+        hidden: int = 16,
+        max_residual: float = 0.25,
+        dropout: float = 0.10,
+    ) -> None:
+        super().__init__()
+        if hidden < 4 or not 0 < max_residual <= 1:
+            raise ValueError("Invalid residual adapter capacity")
+        self.clinical_dim = clinical_dim
+        self.max_residual = float(max_residual)
+        self.waveform = nn.Sequential(
+            nn.LayerNorm(waveform_dim),
+            nn.Linear(waveform_dim, hidden),
+            nn.GELU(),
+            nn.Dropout(dropout),
+        )
+        if clinical_dim is not None:
+            self.clinical = nn.Sequential(
+                nn.LayerNorm(2 * clinical_dim),
+                nn.Linear(2 * clinical_dim, hidden),
+                nn.GELU(),
+                nn.Dropout(dropout),
+            )
+            joined = 2 * hidden
+        else:
+            self.clinical = None
+            joined = hidden
+        self.delta = nn.Linear(joined, 4)
+        self.gate_logit = nn.Parameter(torch.tensor(-2.0))
+        nn.init.zeros_(self.delta.weight)
+        nn.init.zeros_(self.delta.bias)
+
+    def forward(
+        self,
+        base_angles: torch.Tensor,
+        waveform: torch.Tensor,
+        clinical: torch.Tensor | None = None,
+        observed_mask: torch.Tensor | None = None,
+    ) -> tuple[torch.Tensor, torch.Tensor]:
+        if base_angles.ndim != 2 or base_angles.shape[1] != 4:
+            raise ValueError("base_angles must have shape (batch, 4)")
+        encoded = [self.waveform(waveform)]
+        if self.clinical is not None:
+            if clinical is None or clinical.shape[1] != self.clinical_dim:
+                raise ValueError("Clinical input is required and has the wrong width")
+            if observed_mask is None:
+                observed_mask = torch.ones_like(clinical)
+            if observed_mask.shape != clinical.shape:
+                raise ValueError("Clinical mask shape mismatch")
+            encoded.append(self.clinical(torch.cat([clinical, observed_mask], dim=-1)))
+        raw_delta = torch.tanh(self.delta(torch.cat(encoded, dim=-1)))
+        gate = torch.sigmoid(self.gate_logit)
+        # Work in the unconstrained latent of the tanh angle map so a small
+        # correction behaves consistently near and away from the boundaries.
+        scale = torch.pi / 2.0
+        base_latent = torch.atanh(torch.clamp(base_angles / scale, -0.999, 0.999))
+        corrected = scale * torch.tanh(base_latent + gate * self.max_residual * raw_delta)
+        return corrected, corrected - base_angles
