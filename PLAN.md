@@ -235,3 +235,21 @@ Protocol:
 - [x] Apply the conditional five-seed rule. **Not launched:** the single-seed
   promotion gate failed. Retain the hard-label VQC and defer probability
   calibration to frozen fold 9.
+
+## G6Q-KD3 — clinical concept and teacher-assistant distillation (2026-09-25)
+
+Protocol:
+[`docs/concept_rationale_distillation_plan_2026-09-25.md`](docs/concept_rationale_distillation_plan_2026-09-25.md).
+
+- [x] Freeze ten deployable, non-diagnostic ECG concept targets and their
+  outer-fold-only missingness, imputation and robust-scaling contract.
+- [x] Implement an inner-official-fold OOF q4 MLP teacher assistant with
+  outer-training sigmoid calibration and calibration-aware reliability.
+- [x] Implement equal-budget hard, answer-only, two-stage concept and combined
+  concept/assistant VQC arms. The production MI readout remains unchanged and
+  the auxiliary concept head is training-only.
+- [x] Add identical-q4 logistic/MLP controls, concept fidelity metrics, complete
+  OOF exports and paired patient-cluster bootstrap gates.
+- [ ] Pass the 17,348-record real-data preflight with folds 9/10 sealed.
+- [ ] Complete the pinned Kaggle GPU screen and apply the +0.005 AUPRC and
+  positive-interval gate before any five-seed follow-up.
