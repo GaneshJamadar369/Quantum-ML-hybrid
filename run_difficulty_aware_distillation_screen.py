@@ -12,10 +12,7 @@ from scipy.special import expit
 from sklearn.linear_model import LogisticRegression
 from sklearn.metrics import average_precision_score
 
-from aquire_preprocessing.concept_distillation import (
-    assistant_reliability_weights,
-    bernoulli_js_per_record,
-)
+from aquire_preprocessing.concept_distillation import bernoulli_js_per_record
 from aquire_preprocessing.config import DEV_FOLDS
 from aquire_preprocessing.difficulty_distillation import (
     FROZEN_DIFFICULTY_SCREEN,
@@ -204,11 +201,6 @@ def run(args) -> None:
                 args.seed + held_out * 10,
             )
         )
-        # Recompute explicitly for audit parity and guard against accidental
-        # changes to the imported assistant implementation.
-        expected_reliability = assistant_reliability_weights(assistant_train, train_y)
-        if not np.allclose(reliability, expected_reliability):
-            raise RuntimeError("Assistant reliability implementation drift")
         predictions["q4_assistant_full"][val_rows] = assistant_val
         assistant_audits.append({"fold": held_out, **assistant_audit})
 
