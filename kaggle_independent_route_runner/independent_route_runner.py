@@ -5,7 +5,7 @@ import subprocess
 import sys
 
 
-EXPECTED_SOURCE_COMMIT = "76774c3fb160c8f6849baef454f66f9554f7bd54"
+EXPECTED_SOURCE_COMMIT = "656a3e83c3445113d2bfad6ea8b624821cb02fcf"
 
 
 def run(command, cwd=None):
