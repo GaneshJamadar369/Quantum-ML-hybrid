@@ -5,6 +5,9 @@ import subprocess
 import sys
 
 
+EXPECTED_SOURCE_COMMIT = "76774c3fb160c8f6849baef454f66f9554f7bd54"
+
+
 def run(command, cwd=None):
     print(">>>", " ".join(command), flush=True)
     subprocess.run(command, cwd=cwd, check=True)
@@ -48,14 +51,21 @@ def main():
         run(["git", "clone", "--depth", "1",
              "https://github.com/GaneshJamadar369/Quantum-ML-hybrid.git",
              str(repo)])
-    run([sys.executable, "-m", "pip", "install", "-q", "-e", str(repo)])
-
-    # Install quantum dependencies
-    run([sys.executable, "-m", "pip", "install", "-q",
-         "pennylane", "pennylane-lightning",
-         "scikit-learn>=1.4", "scipy>=1.12", "h5py"])
-    run([sys.executable, "-m", "pip", "install", "-q",
-         "neurokit2==0.2.10", "imbalanced-learn", "matplotlib"])
+    run(["git", "fetch", "--depth", "1", "origin", EXPECTED_SOURCE_COMMIT], cwd=repo)
+    run(["git", "checkout", "--detach", EXPECTED_SOURCE_COMMIT], cwd=repo)
+    # The independent screen uses the repository's exact PyTorch statevector
+    # simulator and Kaggle's existing NumPy/SciPy/sklearn/PyTorch stack.  Do
+    # not mutate the environment with unrelated preprocessing dependencies.
+    actual_commit = subprocess.check_output(
+        ["git", "rev-parse", "HEAD"], cwd=repo, text=True
+    ).strip()
+    if actual_commit != EXPECTED_SOURCE_COMMIT:
+        raise RuntimeError(f"Source commit mismatch: {actual_commit}")
+    print("Pinned source commit:", actual_commit, flush=True)
+    run([sys.executable, "-c",
+         "import numpy,scipy,sklearn,torch; "
+         "print(numpy.__version__,scipy.__version__,sklearn.__version__,torch.__version__)"],
+        cwd=repo)
 
     # Verify route config
     route_config = repo / "configs" / "independent_route_v1.json"
@@ -63,8 +73,7 @@ def main():
     if not route_config.exists():
         raise FileNotFoundError(route_config)
 
-    # Run the experiment
-    run([
+    command = [
         sys.executable, "run_independent_dual_route_screen.py",
         "--representations", str(representations),
         "--metadata", str(metadata),
@@ -77,7 +86,11 @@ def main():
         "--batch-size", "128",
         "--seed", "42",
         "--device", "cuda",
-    ], cwd=repo)
+    ]
+    # Fail in under a minute if an upstream archive changes schema, record
+    # ordering, labels, patients, or fold coverage.
+    run(command + ["--preflight-only"], cwd=repo)
+    run(command, cwd=repo)
     print("Independent dual-route fusion screen complete; folds 9 and 10 sealed", flush=True)
 
 
