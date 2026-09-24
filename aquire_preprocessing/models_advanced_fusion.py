@@ -376,3 +376,31 @@ class ResidualAngleAdapter(nn.Module):
         base_latent = torch.atanh(torch.clamp(base_angles / scale, -0.999, 0.999))
         corrected = scale * torch.tanh(base_latent + gate * self.max_residual * raw_delta)
         return corrected, corrected - base_angles
+
+
+class OrthogonalQ4Mixer(nn.Module):
+    """Six-parameter, information-preserving rotation of q4 latent angles."""
+
+    def __init__(self) -> None:
+        super().__init__()
+        self.skew_parameters = nn.Parameter(torch.zeros(6))
+        self.register_buffer(
+            "pairs",
+            torch.tensor([(0, 1), (0, 2), (0, 3), (1, 2), (1, 3), (2, 3)]),
+        )
+
+    def orthogonal_matrix(self) -> torch.Tensor:
+        skew = torch.zeros(4, 4, device=self.skew_parameters.device, dtype=self.skew_parameters.dtype)
+        for value, pair in zip(self.skew_parameters, self.pairs):
+            left, right = int(pair[0]), int(pair[1])
+            skew[left, right] = value
+            skew[right, left] = -value
+        return torch.matrix_exp(skew)
+
+    def forward(self, base_angles: torch.Tensor) -> torch.Tensor:
+        if base_angles.ndim != 2 or base_angles.shape[1] != 4:
+            raise ValueError("OrthogonalQ4Mixer expects (batch, 4)")
+        scale = torch.pi / 2.0
+        latent = torch.atanh(torch.clamp(base_angles / scale, -0.999, 0.999))
+        rotated = latent @ self.orthogonal_matrix()
+        return scale * torch.tanh(rotated)

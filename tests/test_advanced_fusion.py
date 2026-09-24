@@ -4,6 +4,7 @@ import torch
 
 from aquire_preprocessing.models_advanced_fusion import (
     ClinicalQueryCrossAttentionQuantumInput,
+    OrthogonalQ4Mixer,
     ResidualAngleAdapter,
     build_quantum_input_fusion,
     clinical_feature_groups,
@@ -85,3 +86,18 @@ def test_residual_angle_adapter_requires_configured_clinical_input():
     model = ResidualAngleAdapter(waveform_dim=8, clinical_dim=5)
     with pytest.raises(ValueError):
         model(torch.zeros(2, 4), torch.zeros(2, 8))
+
+
+def test_orthogonal_q4_mixer_is_identity_then_preserves_latent_norm():
+    mixer = OrthogonalQ4Mixer()
+    base = torch.tensor([[0.2, -0.5, 0.8, -1.0]], requires_grad=True)
+    mixed = mixer(base)
+    assert torch.allclose(mixed, base, atol=2e-6)
+    with torch.no_grad():
+        mixer.skew_parameters.copy_(torch.tensor([0.2, -0.1, 0.3, 0.05, -0.2, 0.1]))
+    scale = torch.pi / 2
+    before = torch.atanh(base.detach() / scale).norm(dim=1)
+    after = torch.atanh(mixer(base).detach() / scale).norm(dim=1)
+    assert torch.allclose(before, after, atol=2e-5)
+    mixer(base).sum().backward()
+    assert mixer.skew_parameters.grad is not None
