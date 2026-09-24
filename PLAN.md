@@ -250,6 +250,13 @@ Protocol:
   the auxiliary concept head is training-only.
 - [x] Add identical-q4 logistic/MLP controls, concept fidelity metrics, complete
   OOF exports and paired patient-cluster bootstrap gates.
-- [ ] Pass the 17,348-record real-data preflight with folds 9/10 sealed.
-- [ ] Complete the pinned Kaggle GPU screen and apply the +0.005 AUPRC and
-  positive-interval gate before any five-seed follow-up.
+- [x] Pass the 17,348-record real-data preflight with folds 9/10 sealed.
+  **PASS:** 17,348 ECGs, 14,958 patients, eight complete folds and no access to
+  folds 9/10.
+- [x] Complete the pinned Kaggle GPU screen and apply the +0.005 AUPRC and
+  positive-interval gate before any five-seed follow-up. **STOP:** answer-only
+  JS was the best VQC at 0.82718 versus hard VQC 0.82567 (paired delta
+  +0.00149 `[+0.00033, +0.00254]`), below the +0.005 gate and below the
+  identical-q4 MLP at 0.82884. Concept supervision learned weak physiological
+  associations but did not produce a validated AUPRC gain. Result:
+  `docs/concept_rationale_distillation_result_2026-09-25.md`.
