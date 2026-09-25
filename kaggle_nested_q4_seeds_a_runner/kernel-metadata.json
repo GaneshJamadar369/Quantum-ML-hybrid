@@ -1,0 +1,17 @@
+{
+  "id": "swayamjeetbhagat4/aquire-med-nested-q4-seeds-a",
+  "title": "AQUIRE-Med Nested q4 Seeds A",
+  "code_file": "nested_q4_seed_runner.py",
+  "language": "python",
+  "kernel_type": "script",
+  "is_private": true,
+  "enable_gpu": true,
+  "enable_internet": true,
+  "dataset_sources": [],
+  "competition_sources": [],
+  "kernel_sources": [
+    "swayamjeetbhagat4/aquire-med-compact-ecg-transformer-representation/1",
+    "swayamjeetbhagat4/aquire-med-preprocessing-pipeline/1",
+    "swayamjeetbhagat4/aquire-med-full-feature-repair/1"
+  ]
+}
