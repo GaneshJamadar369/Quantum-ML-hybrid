@@ -30,8 +30,9 @@ For each outer fold:
    outer-training patients only.
 2. Train the fixed four-qubit, two-layer `narrow_js` circuit. Do not search a
    new circuit family on outer outcomes.
-3. Extend the training budget with a prespecified cosine schedule and retain
-   inner-fold early stopping. Save the full learning curve.
+3. Extend the training budget to a fixed 60 epochs with a prespecified cosine
+   schedule. Save the full learning curve; do not select an epoch on outer
+   outcomes.
 4. Evaluate the fitted circuit on the full outer-training representation to
    form a train-reference score distribution.
 5. Produce three held-out scores:
@@ -87,4 +88,3 @@ outer-fold `train_embeddings`/`val_embeddings` and align records by `ecg_id`.
 The existing prototype compression notebook must not run because it combines
 embeddings from different fitted encoders, assumes positional label alignment,
 uses an unpinned repository head and lacks nested validation.
-
