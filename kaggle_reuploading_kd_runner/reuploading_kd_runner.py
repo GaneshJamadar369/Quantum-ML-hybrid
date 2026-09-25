@@ -49,6 +49,7 @@ def main():
              "https://github.com/GaneshJamadar369/Quantum-ML-hybrid.git",
              str(repo)])
     
+    run([sys.executable, "-m", "pip", "install", "pennylane", "pennylane-lightning"])
     run([sys.executable, "-c",
          "import numpy,scipy,sklearn,torch; "
          "print(numpy.__version__,scipy.__version__,sklearn.__version__,torch.__version__)"],
