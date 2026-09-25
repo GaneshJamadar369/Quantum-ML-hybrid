@@ -323,8 +323,14 @@ Protocol:
 ## G6Q-CAL — train-reference quantum score alignment (planned 2026-09-25)
 
 - [x] Finish and aggregate all five G6Q-OPT1 seeds before interpreting the gate.
-- [ ] Freeze train-reference z/CDF score alignment; never normalize from held-out batches.
-- [ ] Save learned circuit parameters and compare one versus three fixed restarts.
-- [ ] Require matched-q4, patient-bootstrap, seed-stability and entanglement gates.
-- [ ] If development gates pass, freeze the pipeline before one-time fold-9 validation.
+- [x] Freeze train-reference z/CDF score alignment; never normalize from held-out batches.
+- [x] Save learned circuit parameters and compare one versus three fixed restarts.
+- [x] Require matched-q4, patient-bootstrap, seed-stability and entanglement gates.
+  **MIXED/STOP:** train-CDF VQC 0.82980 beat the identical-q4 MLP at 0.82676;
+  paired delta `+0.00307` `[+0.00107, +0.00506]`. Alignment itself, entanglement
+  and system gates failed; quantum fusion 0.83600 remained below matched
+  classical fusion 0.83653 and the 0.83802 ceiling.
+- [x] Apply the fold-9 rule. **NOT OPENED:** development system gates failed, so
+  the pipeline was not promoted to one-time fold-9 validation. Result:
+  `docs/q4_score_alignment_result_2026-09-25.md`.
 - Protocol: [`docs/q4_score_alignment_followup_2026-09-25.md`](docs/q4_score_alignment_followup_2026-09-25.md)
