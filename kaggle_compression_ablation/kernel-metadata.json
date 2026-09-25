@@ -1,0 +1,17 @@
+{
+  "id": "swayamjeetbhagat4/aquire-med-compression-ablation",
+  "title": "AQUIRE-Med Compression Ablation",
+  "code_file": "compression_ablation_runner.py",
+  "language": "python",
+  "kernel_type": "script",
+  "is_private": true,
+  "enable_gpu": true,
+  "enable_tpu": false,
+  "enable_internet": true,
+  "dataset_sources": [],
+  "competition_sources": [],
+  "kernel_sources": [
+    "swayamjeetbhagat4/aquire-med-compact-ecg-transformer-representation",
+    "swayamjeetbhagat4/aquire-med-preprocessing-pipeline"
+  ]
+}
