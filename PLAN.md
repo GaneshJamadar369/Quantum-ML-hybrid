@@ -297,3 +297,20 @@ Protocol:
   failed; no post-hoc threshold relaxation or Kaggle submission was allowed.
 - [x] Record the final verdict in
   `docs/structured_clinical_reuploading_result_2026-09-25.md`.
+
+## G6Q-OPT1 — nested q4 optimization and five-seed confirmation (2026-09-25)
+
+Protocol:
+[`docs/nested_q4_optimization_plan_2026-09-25.md`](docs/nested_q4_optimization_plan_2026-09-25.md).
+
+- [x] Trace stagewise discrimination and representation geometry on all
+  17,348 OOF ECGs. q4 retains most MI discrimination but only 16.1% mean
+  15-neighbour overlap with h128; the current quantum fusion remains 0.00104
+  AUPRC below the all-classical fusion.
+- [ ] Implement nested inner-fold selection for learning rate, input bandwidth,
+  JS regularization, pairwise ranking weight and epoch count.
+- [ ] Export quantum observables and run identical-input tuned logistic, MLP,
+  RBF and no-entanglement controls.
+- [ ] Run five seeds across two pinned private Kaggle GPU kernels in parallel.
+- [ ] Aggregate patient-cluster uncertainty, sensitivity, hard-negative FPR and
+  circuit-removal evidence without accessing folds 9/10.
