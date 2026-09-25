@@ -272,5 +272,11 @@ Protocol:
   prespecified hard-negative soft-loss weighting with bounded influence.
 - [x] Retain equal-budget hard/uniform-JS controls, identical-q4 classical
   controls, clinical fusion, full OOF exports and patient-bootstrap gates.
-- [ ] Pass the real-data preflight with 17,348 ECGs and folds 9/10 sealed.
-- [ ] Complete the pinned Kaggle GPU screen and apply the final KD stop rule.
+- [x] Pass the real-data preflight with 17,348 ECGs and folds 9/10 sealed.
+  **PASS:** 17,348 ECGs, 14,958 patients, folds 1–8 only, zero hard-label
+  records removed.
+- [x] Complete the pinned Kaggle GPU screen and apply the final KD stop rule.
+  **STOP:** curriculum VQC 0.82724 versus hard VQC 0.82567 (paired delta
+  +0.00155 `[+0.00032, +0.00269]`) and q4 MLP 0.82884. Curriculum fusion
+  0.83697 remained below all-classical fusion 0.83802. Full result:
+  `docs/difficulty_aware_distillation_result_2026-09-25.md`.
