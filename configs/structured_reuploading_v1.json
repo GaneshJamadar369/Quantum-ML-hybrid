@@ -1,0 +1,67 @@
+{
+  "schema_version": "structured-reuploading-v1",
+  "description": "Four disjoint, clinically prespecified feature families compressed without MI labels to one coordinate each.",
+  "gate": {
+    "primary_model": "hist_gradient_boosting",
+    "minimum_delta_auprc": 0.005,
+    "require_patient_bootstrap_ci_above_zero": true,
+    "bootstrap_iterations": 2000
+  },
+  "concept_groups": [
+    {
+      "name": "t_wave_inversion_burden",
+      "anchor_feature": "clinical__global_t_inversion_count",
+      "features": [
+        "i__t_polarity", "ii__t_polarity", "iii__t_polarity",
+        "avl__t_polarity", "avf__t_polarity",
+        "v1__t_polarity", "v2__t_polarity", "v3__t_polarity",
+        "v4__t_polarity", "v5__t_polarity", "v6__t_polarity",
+        "clinical__inferior__t_inversion_fraction",
+        "clinical__high_lateral__t_inversion_fraction",
+        "clinical__lateral__t_inversion_fraction",
+        "clinical__anterior__t_inversion_fraction",
+        "clinical__global_t_inversion_count"
+      ]
+    },
+    {
+      "name": "anterior_global_st_burden",
+      "anchor_feature": "clinical__global_st_rms_mv",
+      "features": [
+        "v1__st60_mv", "v2__st60_mv", "v3__st60_mv", "v4__st60_mv",
+        "clinical__anterior__st_mean_mv",
+        "clinical__anterior__st_absmax_mv",
+        "clinical__anterior__st_abnormal_count",
+        "clinical__global_st_rms_mv",
+        "clinical__global_st_positive_count",
+        "clinical__global_st_negative_count"
+      ]
+    },
+    {
+      "name": "avr_reciprocity",
+      "anchor_feature": "clinical__inferior_high_lateral_st_reciprocity",
+      "features": [
+        "avr__range_mv", "avr__r_amp_mv", "avr__s_amp_mv",
+        "avr__rs_ratio", "avr__st60_mv", "avr__t_polarity",
+        "clinical__inferior_high_lateral_st_reciprocity",
+        "clinical__anterior_inferior_st_contrast"
+      ]
+    },
+    {
+      "name": "r_wave_progression",
+      "anchor_feature": "clinical__precordial_transition_lead",
+      "features": [
+        "v1__range_mv", "v1__r_amp_mv", "v1__s_amp_mv", "v1__rs_ratio",
+        "v2__range_mv", "v2__s_amp_mv", "v2__rs_ratio",
+        "v3__range_mv", "v3__s_amp_mv", "v3__rs_ratio",
+        "v4__range_mv", "v4__r_amp_mv", "v4__s_amp_mv", "v4__rs_ratio",
+        "v5__range_mv", "v5__r_amp_mv", "v5__s_amp_mv", "v5__rs_ratio",
+        "v6__range_mv", "v6__r_amp_mv", "v6__s_amp_mv", "v6__rs_ratio",
+        "clinical__inferior__r_mean_mv", "clinical__inferior__rs_median",
+        "clinical__high_lateral__r_mean_mv", "clinical__high_lateral__rs_median",
+        "clinical__lateral__r_mean_mv", "clinical__lateral__rs_median",
+        "clinical__anterior__r_mean_mv", "clinical__anterior__rs_median",
+        "clinical__precordial_transition_lead"
+      ]
+    }
+  ]
+}

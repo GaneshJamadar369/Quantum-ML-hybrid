@@ -280,3 +280,20 @@ Protocol:
   +0.00155 `[+0.00032, +0.00269]`) and q4 MLP 0.82884. Curriculum fusion
   0.83697 remained below all-classical fusion 0.83802. Full result:
   `docs/difficulty_aware_distillation_result_2026-09-25.md`.
+
+## G6Q-R2 — clinically structured four-qubit re-uploading (2026-09-25)
+
+Protocol:
+[`docs/structured_clinical_reuploading_plan_2026-09-25.md`](docs/structured_clinical_reuploading_plan_2026-09-25.md).
+
+- [x] Freeze four disjoint clinical concept families and a label-free,
+  outer-fold-only PCA/quantile representation contract.
+- [x] Complete the conditional-information gate on folds 1–8. **STOP:** adding
+  all four label-free concept coordinates improved HGB by `+0.00321` AUPRC
+  (patient-bootstrap 95% CI `[+0.00172, +0.00474]`), below the frozen `+0.005`
+  effect-size threshold. Folds 9/10 remained sealed.
+- [x] Apply the quantum-compute gate. **NOT RUN:** the matched structured VQC,
+  no-entanglement and concept-only arms were correctly withheld after Stage A
+  failed; no post-hoc threshold relaxation or Kaggle submission was allowed.
+- [x] Record the final verdict in
+  `docs/structured_clinical_reuploading_result_2026-09-25.md`.
