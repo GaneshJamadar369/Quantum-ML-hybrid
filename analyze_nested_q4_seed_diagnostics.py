@@ -9,6 +9,8 @@ from pathlib import Path
 
 import numpy as np
 import pandas as pd
+from scipy.special import logit
+from scipy.stats import rankdata
 from scipy.stats import spearmanr
 from sklearn.linear_model import LogisticRegression
 from sklearn.metrics import average_precision_score
@@ -32,6 +34,21 @@ def _cross_fitted_observable_logistic(frame: pd.DataFrame) -> np.ndarray:
     return prediction
 
 
+def _fold_scale_diagnostic(frame: pd.DataFrame, column: str) -> tuple[np.ndarray, np.ndarray]:
+    """Held-out-distribution normalization; diagnostic, never deployable."""
+    probability = frame[column].to_numpy(float)
+    logits = logit(np.clip(probability, 1e-6, 1.0 - 1e-6))
+    standardized = np.zeros(len(frame), dtype=float)
+    percentiles = np.zeros(len(frame), dtype=float)
+    for fold in sorted(frame.strat_fold.unique()):
+        selected = frame.strat_fold.eq(fold).to_numpy()
+        standardized[selected] = (
+            logits[selected] - logits[selected].mean()
+        ) / (logits[selected].std() + 1e-9)
+        percentiles[selected] = (rankdata(probability[selected]) - 0.5) / selected.sum()
+    return standardized, percentiles
+
+
 def run(inputs: list[Path], output: Path):
     rows, selection_rows = [], []
     for root in inputs:
@@ -42,6 +59,17 @@ def run(inputs: list[Path], output: Path):
             q4 = frame[[f"q4_{index}" for index in range(4)]].to_numpy(float)
             observables = frame[[f"quantum_observable_{index}" for index in range(8)]].to_numpy(float)
             observable_probability = _cross_fitted_observable_logistic(frame)
+            vqc_fold_z, vqc_fold_rank = _fold_scale_diagnostic(frame, "vqc")
+            logistic_fold_z, logistic_fold_rank = _fold_scale_diagnostic(frame, "q4_logistic")
+            fold_delta = []
+            for fold in sorted(frame.strat_fold.unique()):
+                selected = frame.strat_fold.eq(fold)
+                fold_delta.append(
+                    average_precision_score(frame.loc[selected, "y_true"], frame.loc[selected, "vqc"])
+                    - average_precision_score(
+                        frame.loc[selected, "y_true"], frame.loc[selected, "q4_logistic"]
+                    )
+                )
             selections = json.loads((path.parent / "selections.json").read_text())
             counts = Counter(item["selected_candidate"]["candidate"]["name"] for item in selections)
             epochs = [item["selected_candidate"]["best_epoch"] for item in selections]
@@ -60,6 +88,19 @@ def run(inputs: list[Path], output: Path):
                     ),
                     "q4_logistic_auprc": average_precision_score(labels, frame.q4_logistic),
                     "q4_mlp_auprc": average_precision_score(labels, frame.q4_mlp),
+                    "vqc_fold_z_auprc_transductive_diagnostic": average_precision_score(
+                        labels, vqc_fold_z
+                    ),
+                    "q4_logistic_fold_z_auprc_transductive_diagnostic": average_precision_score(
+                        labels, logistic_fold_z
+                    ),
+                    "vqc_fold_rank_auprc_transductive_diagnostic": average_precision_score(
+                        labels, vqc_fold_rank
+                    ),
+                    "q4_logistic_fold_rank_auprc_transductive_diagnostic": average_precision_score(
+                        labels, logistic_fold_rank
+                    ),
+                    "macro_fold_delta_vqc_minus_q4_logistic": float(np.mean(fold_delta)),
                     "score_spearman_vqc_q4_logistic": spearmanr(frame.vqc, frame.q4_logistic).statistic,
                     "score_spearman_vqc_q4_mlp": spearmanr(frame.vqc, frame.q4_mlp).statistic,
                     "selected_epoch_mean": float(np.mean(epochs)),
