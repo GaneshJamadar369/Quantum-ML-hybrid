@@ -76,11 +76,29 @@ little complementary evidence to the clinical expert.
 
 ## Research decision
 
-The next justified experiment is a nested optimization of the shallow q4 VQC:
-trainable input bandwidth, clinical-teacher JS, an AUPRC-aligned pairwise
-ranking term, inner-selected learning rate and epoch, repeated over five
-seeds. The experiment must export the eight quantum observables so loss can be
-localized between q4, quantum measurement and classical readout.
+The nested five-seed optimization has now completed. On the same 0–100 scale:
+
+| Confirmatory stage | AUPRC | Relative discrimination |
+|---|---:|---:|
+| five-seed q4 MLP ensemble | 0.827095 | 98.14 |
+| five-seed VQC ensemble | 0.827501 | 98.21 |
+| clinical + VQC ensemble | 0.836071 | 99.67 |
+| matched clinical + q4 MLP ensemble | 0.837659 | 99.94 |
+| frozen all-classical ceiling | 0.838015 | 100.00 |
+
+The VQC ensemble's `+0.00042` AUPRC over the q4 MLP is statistically
+unresolved (`[-0.00123,+0.00203]`) and appears in only one of five individual
+seeds. Its fusion is significantly below the matched classical fusion. Thus
+the raw-score nested circuit failed its quantum, entanglement and system gates.
+
+The exported observables and fold-level scores localize a secondary failure:
+independently fitted outer-fold circuits emit different score scales. A
+held-out-distribution normalization diagnostic recovers part of the pooled
+loss, but is prohibited because it is transductive. The final targeted screen
+therefore estimates z/CDF score mappings exclusively from each model's
+outer-training score distribution, extends scheduled training and averages
+three fixed circuit restarts. It must still beat identical-q4 controls and the
+0.838015 system ceiling before fold 9 is opened once.
 
 Another encoder, larger generic latent vector, deeper circuit or additional
 fusion architecture has lower prior probability because those branches have
@@ -89,3 +107,6 @@ already failed controlled gates.
 Raw audit artifacts are stored in
 `artifacts/information-loss-trace-v1/` and can be reproduced with
 `run_information_loss_trace.py`.
+
+The five-seed verdict is documented in
+`docs/nested_q4_optimization_result_2026-09-25.md`.
