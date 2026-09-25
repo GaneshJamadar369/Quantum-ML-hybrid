@@ -76,6 +76,7 @@ def main() -> None:
         "--output", str(output),
         "--epochs", "20",
         "--batch-size", "64",
+        "--seed", "42",
     ], cwd=repo)
 
     # Artifact manifest
