@@ -307,17 +307,22 @@ Protocol:
   17,348 OOF ECGs. q4 retains most MI discrimination but only 16.1% mean
   15-neighbour overlap with h128; the current quantum fusion remains 0.00104
   AUPRC below the all-classical fusion.
-- [ ] Implement nested inner-fold selection for learning rate, input bandwidth,
+- [x] Implement nested inner-fold selection for learning rate, input bandwidth,
   JS regularization, pairwise ranking weight and epoch count.
-- [ ] Export quantum observables and run identical-input tuned logistic, MLP,
+- [x] Export quantum observables and run identical-input tuned logistic, MLP,
   RBF and no-entanglement controls.
-- [ ] Run five seeds across two pinned private Kaggle GPU kernels in parallel.
-- [ ] Aggregate patient-cluster uncertainty, sensitivity, hard-negative FPR and
-  circuit-removal evidence without accessing folds 9/10.
+- [x] Run five seeds across two pinned private Kaggle GPU kernels in parallel.
+- [x] Aggregate patient-cluster uncertainty, sensitivity, hard-negative FPR and
+  circuit-removal evidence without accessing folds 9/10. **STOP:** VQC ensemble
+  0.82750 versus q4 MLP 0.82710, paired delta `+0.00042`
+  `[-0.00123, +0.00203]`; only 1/5 seed wins. Quantum fusion 0.83607 was below
+  classical fusion 0.83766 with paired delta `-0.00158`
+  `[-0.00277, -0.00042]`; entanglement gate also failed. Result:
+  `docs/nested_q4_optimization_result_2026-09-25.md`.
 
 ## G6Q-CAL — train-reference quantum score alignment (planned 2026-09-25)
 
-- [ ] Finish and aggregate all five G6Q-OPT1 seeds before interpreting the gate.
+- [x] Finish and aggregate all five G6Q-OPT1 seeds before interpreting the gate.
 - [ ] Freeze train-reference z/CDF score alignment; never normalize from held-out batches.
 - [ ] Save learned circuit parameters and compare one versus three fixed restarts.
 - [ ] Require matched-q4, patient-bootstrap, seed-stability and entanglement gates.
