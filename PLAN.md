@@ -314,3 +314,12 @@ Protocol:
 - [ ] Run five seeds across two pinned private Kaggle GPU kernels in parallel.
 - [ ] Aggregate patient-cluster uncertainty, sensitivity, hard-negative FPR and
   circuit-removal evidence without accessing folds 9/10.
+
+## G6Q-CAL — train-reference quantum score alignment (planned 2026-09-25)
+
+- [ ] Finish and aggregate all five G6Q-OPT1 seeds before interpreting the gate.
+- [ ] Freeze train-reference z/CDF score alignment; never normalize from held-out batches.
+- [ ] Save learned circuit parameters and compare one versus three fixed restarts.
+- [ ] Require matched-q4, patient-bootstrap, seed-stability and entanglement gates.
+- [ ] If development gates pass, freeze the pipeline before one-time fold-9 validation.
+- Protocol: [`docs/q4_score_alignment_followup_2026-09-25.md`](docs/q4_score_alignment_followup_2026-09-25.md)
