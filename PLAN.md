@@ -335,6 +335,27 @@ Protocol:
   `docs/q4_score_alignment_result_2026-09-25.md`.
 - Protocol: [`docs/q4_score_alignment_followup_2026-09-25.md`](docs/q4_score_alignment_followup_2026-09-25.md)
 
+## G6Q-NR — controlled NeurIPS idea-transfer scouts (2026-09-27)
+
+Protocol:
+[`docs/neurips_quantum_transfer_plan_2026-09-27.md`](docs/neurips_quantum_transfer_plan_2026-09-27.md).
+
+- [x] Audit the retained q4 implementation and establish that trainable scaling
+  and repeated upload already exist.
+- [x] Implement a layer-specific bounded frequency/phase q4 circuit with
+  finite-gradient and artifact-contract tests.
+- [x] Implement a finite three-step tied recurrent q4 circuit inspired by
+  QDEQ, with parameter-sharing and convergence-residual tests.
+- [x] Preserve the seed-42 PLS-q4 reference and require numerical q4 identity
+  before paired comparison.
+- [ ] Complete the parallel eight-fold frequency and equilibrium scouts.
+- [ ] Promote only an arm achieving at least +0.005 AUPRC with a positive
+  patient-bootstrap interval and fusion above the 0.838015 classical ceiling.
+- [ ] Keep anatomical entanglement blocked until a territory-identified
+  representation passes its classical information gate.
+- [ ] Keep Hadamard/Lie gradient estimation blocked until a predictive circuit
+  is frozen; evaluate it on shot cost and wall time rather than AUPRC.
+
 ## G6Q-DM — nonlinear manifold q4 representation screen (2026-09-27)
 
 Protocol:
