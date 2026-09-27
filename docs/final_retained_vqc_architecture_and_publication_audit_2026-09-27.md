@@ -1,5 +1,12 @@
 # Final retained VQC architecture and publication-readiness audit
 
+> **Architecture update (2026-09-27):** the user-selected system architecture
+> is now the fixed parallel VQC-plus-clinical fusion described in
+> [`final_parallel_dual_route_plan_2026-09-27.md`](final_parallel_dual_route_plan_2026-09-27.md).
+> The VQC and publication findings below remain valid, but the clinical fusion
+> is no longer optional in the final system. Both branches run for every
+> eligible input; there is no predictor-selection mechanism.
+
 **Decision:** retain the four-qubit VQC as the project's quantum champion.
 **Publication verdict:** MODIFY, then submit as a rigorous benchmark/negative-
 result paper. Do not present it as a quantum-advantage or early-clinical-

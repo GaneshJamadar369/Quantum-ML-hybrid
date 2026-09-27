@@ -1,0 +1,66 @@
+{
+  "protocol_name": "fixed_parallel_dual_route_v1",
+  "task": "PTB-XL MI-pattern versus non-MI-pattern classification",
+  "prediction_routing": "fixed_parallel_all_eligible_inputs",
+  "input": {
+    "shape": [12, 1000],
+    "sampling_rate_hz": 100,
+    "duration_seconds": 10
+  },
+  "quantum_route": {
+    "representation": "waveform",
+    "pipeline": [
+      "compact_ecg_transformer_h128",
+      "outer_train_only_robust_scaling",
+      "outer_train_only_supervised_pls_q4",
+      "outer_train_only_quantile_angle_map",
+      "retained_4_qubit_vqc",
+      "training_reference_cdf_alignment"
+    ],
+    "output": "s_q"
+  },
+  "classical_route": {
+    "representation": "106_deployable_ecg_morphology_features",
+    "pipeline": [
+      "local_waveform_measurement_extraction",
+      "outer_train_only_imputation",
+      "hist_gradient_boosting"
+    ],
+    "output": "s_c"
+  },
+  "fusion": {
+    "model": "one_neuron_nonnegative_logistic_regression",
+    "formula": "s_f = beta_0 + beta_c * s_c + beta_q * s_q",
+    "training": "meta_fold_cross_fitting_on_outer_fold_oof_scores",
+    "output": "sigmoid(s_f)"
+  },
+  "required_reported_outputs": [
+    "quantum_only",
+    "classical_only",
+    "quantum_plus_classical_fusion"
+  ],
+  "prohibited": [
+    "per_patient_predictor_selection",
+    "uncertainty_based_branch_switching",
+    "residual_target_learning",
+    "classical_score_as_quantum_inference_input",
+    "dynamic_feature_routing"
+  ],
+  "development_evidence": {
+    "records": 17348,
+    "patients": 14958,
+    "folds": [1, 2, 3, 4, 5, 6, 7, 8],
+    "fold_9_accessed": false,
+    "fold_10_accessed": false,
+    "stabilized_two_seed_auprc": {
+      "quantum_only": 0.8298004791150623,
+      "classical_only": 0.7145410103892724,
+      "quantum_plus_classical_fusion": 0.8359958579441155
+    },
+    "five_seed_confirmation_auprc": {
+      "quantum_only": 0.8275012717164486,
+      "classical_only": 0.7178596848691929,
+      "quantum_plus_classical_fusion": 0.8360706889974712
+    }
+  }
+}

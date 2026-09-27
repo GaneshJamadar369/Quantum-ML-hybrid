@@ -414,6 +414,25 @@ Result:
 Architecture and proof audit:
 [`docs/final_retained_vqc_architecture_and_publication_audit_2026-09-27.md`](docs/final_retained_vqc_architecture_and_publication_audit_2026-09-27.md).
 
+## Final fixed parallel dual-route system (2026-09-27)
+
+- [x] Freeze the user-selected runtime architecture: every eligible ECG runs
+  through the waveform-to-q4 VQC branch and the separate 106-feature clinical
+  HGB branch; only their held-out scores meet at the fusion neuron.
+- [x] Prohibit per-patient predictor selection, branch switching, residual
+  targets and dynamic feature routing.
+- [x] Verify the required development ablation already exists: quantum only,
+  classical only, and quantum-plus-classical fusion.
+- [x] Record stabilized OOF AUPRC `0.82980`, `0.71454`, and `0.83600`,
+  respectively; five-seed raw confirmation produced `0.82750`, `0.71786`, and
+  `0.83607`.
+- [ ] Register the final confirmation protocol before opening fold 9.
+- [ ] Fit calibration on fold 9 and evaluate all three fixed outputs once on
+  fold 10.
+
+Final system plan and evidence map:
+[`docs/final_parallel_dual_route_plan_2026-09-27.md`](docs/final_parallel_dual_route_plan_2026-09-27.md).
+
 ## G6Q-DM — nonlinear manifold q4 representation screen (2026-09-27)
 
 Protocol:
