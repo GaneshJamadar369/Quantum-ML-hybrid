@@ -1,0 +1,18 @@
+{
+  "id": "swayamjeetbhagat4/aquire-med-diffusion-map-q4",
+  "title": "AQUIRE-Med Diffusion Map q4 Screen",
+  "code_file": "diffusion_map_q4_runner.py",
+  "language": "python",
+  "kernel_type": "script",
+  "is_private": true,
+  "enable_gpu": true,
+  "enable_internet": true,
+  "dataset_sources": [],
+  "competition_sources": [],
+  "kernel_sources": [
+    "swayamjeetbhagat4/aquire-med-compact-ecg-transformer-representation/1",
+    "swayamjeetbhagat4/aquire-med-preprocessing-pipeline/1",
+    "swayamjeetbhagat4/aquire-med-full-feature-repair/1",
+    "swayamjeetbhagat4/aquire-med-q4-score-alignment-screen/1"
+  ]
+}
