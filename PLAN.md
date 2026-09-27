@@ -380,14 +380,23 @@ Protocol:
   each job, using identical samples and optimization budgets.
 - [x] Define paired patient-bootstrap, q4 identity, fold-access and system-level
   promotion gates before execution.
-- [ ] Complete local tests and real-data preflight.
-- [ ] Run k=2 and k=3 as separate pinned Kaggle GPU jobs.
-- [ ] Apply the frozen promotion gate before any multi-seed confirmation.
+- [x] Complete local tests and real-data preflight. **PASS:** 17,348 records,
+  14,958 patients, exact eight-fold coverage, q4 error `5.96e-08`, folds 9/10
+  sealed.
+- [x] Run k=2 and k=3 as separate pinned Kaggle GPU jobs.
+- [x] Apply the frozen promotion gate before any multi-seed confirmation.
+  **STOP:** k=2/k=3 ANO AUPRC `0.82890/0.82843`, below retained VQC `0.82938`
+  and their parameter-matched MLP controls `0.82981/0.82991`. ANO fusions
+  `0.83525/0.83509` remained below retained fusion `0.83546` and classical
+  ceiling `0.83802`; every promotion gate failed.
 
 Execution record: local suite passed with 172 tests and five environment/data
 skips. Independent Kaggle version-1 jobs were submitted from source `6f0aed0`:
 `aquire-med-ano-k2-q4` and `aquire-med-ano-k3-q4`. Both were queued at the
 submission check; the real-data preflight is the first command inside each job.
+
+Result:
+[`docs/adaptive_nonlocal_observable_result_2026-09-27.md`](docs/adaptive_nonlocal_observable_result_2026-09-27.md).
 
 ## G6Q-DM — nonlinear manifold q4 representation screen (2026-09-27)
 
