@@ -398,6 +398,22 @@ submission check; the real-data preflight is the first command inside each job.
 Result:
 [`docs/adaptive_nonlocal_observable_result_2026-09-27.md`](docs/adaptive_nonlocal_observable_result_2026-09-27.md).
 
+## Final retained architecture and publication boundary (2026-09-27)
+
+- [x] Freeze the four-qubit train-CDF VQC as the retained quantum champion.
+- [x] Separate the solid quantum-core inference path from the optional
+  clinical-fusion benchmark and define the output as MI-pattern probability.
+- [x] Audit novelty against current ECG-QML, rigorous QML benchmarking and
+  clinical prediction reporting literature.
+- [x] Set publication verdict to **MODIFY**: suitable for a rigorous benchmark/
+  negative-result paper after fold-9 calibration, one-time fold-10 evaluation,
+  locked ensemble definition and hardware/noise analysis.
+- [ ] Register the confirmatory protocol before opening fold 9.
+- [ ] Complete one-time fold-9 calibration and fold-10 evaluation.
+
+Architecture and proof audit:
+[`docs/final_retained_vqc_architecture_and_publication_audit_2026-09-27.md`](docs/final_retained_vqc_architecture_and_publication_audit_2026-09-27.md).
+
 ## G6Q-DM — nonlinear manifold q4 representation screen (2026-09-27)
 
 Protocol:
