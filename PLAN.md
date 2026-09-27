@@ -349,9 +349,13 @@ Protocol:
   alignment tests.
 - [x] Pass the real-data preflight with all 17,348 development ECGs, eight
   fold-coherent Transformer archives and folds 9/10 sealed.
-- [ ] Complete the pinned seed-42 Kaggle GPU screen and apply the representation,
+- [x] Complete the pinned seed-42 Kaggle GPU screen and apply the representation,
   identical-input quantum and system gates before any confirmation seeds.
-- [ ] Launch two additional fixed seeds only if every primary gate passes.
+  **STOP:** Diffusion-Map VQC 0.81350 versus paired PLS-q4 VQC 0.82938;
+  delta `-0.01589` `[-0.02184, -0.01064]`. Fusion 0.82608 remained below
+  retained VQC fusion 0.83546 and the 0.83802 classical ceiling.
+- [x] Apply the confirmation rule. **NOT LAUNCHED:** all three promotion gates
+  failed. Result: `docs/diffusion_experiments_result_2026-09-27.md`.
 
 ## G6Q-DPE — diffusion-pretrained ECG encoder (2026-09-27)
 
@@ -363,8 +367,11 @@ Protocol:
 - [x] Preserve the downstream PLS-q4, four-qubit VQC, score alignment,
   calibration, matched controls and clinical fusion.
 - [x] Add shape, gradient, schedule, EMA, invalid-input and label-free API tests.
-- [ ] Export eight outer-fold diffusion-pretrained h128 representations on
+- [x] Export eight outer-fold diffusion-pretrained h128 representations on
   Kaggle GPU with exact OOF coverage and folds 9/10 sealed.
-- [ ] Run the retained quantum-head protocol and compare it with identical-q4
+- [x] Run the retained quantum-head protocol and compare it with identical-q4
   controls, the retained Transformer VQC and the all-classical system ceiling.
-- [ ] Promote only if representation, matched-quantum and system gates all pass.
+- [x] Apply the promotion gates. **STOP:** diffusion h128 linear probe 0.53241
+  versus supervised Transformer h128 0.83253; q4 VQC 0.50265 versus q4 MLP
+  0.50418; quantum fusion 0.71467 versus retained fusion 0.83546. No gate
+  passed. Result: `docs/diffusion_experiments_result_2026-09-27.md`.
