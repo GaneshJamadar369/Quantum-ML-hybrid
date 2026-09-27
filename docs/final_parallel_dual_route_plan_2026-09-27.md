@@ -20,7 +20,7 @@ flowchart TD
     Q1 --> Q2[h128]
     Q2 --> Q3[Training-only robust scaling and supervised PLS]
     Q3 --> Q4[q4 angle vector]
-    Q4 --> Q5[Retained 4-qubit VQC]
+    Q4 --> Q5[Retained 4-qubit VQC<br/>q4 encoded in two shallow blocks]
     Q5 --> SQ[Quantum score sQ]
 
     C0 --> C1[106 ECG morphology features]
@@ -31,10 +31,11 @@ flowchart TD
     SC --> F
     F --> P[Final MI-pattern probability]
 
-    SQ --> OQ[Reported quantum-only output]
-    SC --> OC[Reported classical-only output]
-    P --> OF[Reported fused output]
 ```
+
+Only the fused probability is the production output. Stored `sQ`, stored `sC`
+and the fused probability are evaluated separately offline to produce the
+required quantum-only, classical-only and fusion ablations.
 
 The routes use different representations of the same ECG:
 
