@@ -384,6 +384,11 @@ Protocol:
 - [ ] Run k=2 and k=3 as separate pinned Kaggle GPU jobs.
 - [ ] Apply the frozen promotion gate before any multi-seed confirmation.
 
+Execution record: local suite passed with 172 tests and five environment/data
+skips. Independent Kaggle version-1 jobs were submitted from source `6f0aed0`:
+`aquire-med-ano-k2-q4` and `aquire-med-ano-k3-q4`. Both were queued at the
+submission check; the real-data preflight is the first command inside each job.
+
 ## G6Q-DM — nonlinear manifold q4 representation screen (2026-09-27)
 
 Protocol:
