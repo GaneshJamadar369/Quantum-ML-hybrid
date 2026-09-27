@@ -334,3 +334,21 @@ Protocol:
   the pipeline was not promoted to one-time fold-9 validation. Result:
   `docs/q4_score_alignment_result_2026-09-25.md`.
 - Protocol: [`docs/q4_score_alignment_followup_2026-09-25.md`](docs/q4_score_alignment_followup_2026-09-25.md)
+
+## G6Q-DM — nonlinear manifold q4 representation screen (2026-09-27)
+
+Protocol:
+[`docs/diffusion_map_q4_plan_2026-09-27.md`](docs/diffusion_map_q4_plan_2026-09-27.md).
+
+- [x] Freeze an additive landmark Diffusion-Map branch that leaves the retained
+  Transformer, four-qubit VQC, JS objective, train-CDF alignment, calibration,
+  controls and fusion unchanged.
+- [x] Implement outer-train-only robust scaling, patient-unique landmarks,
+  bandwidth/graph fitting, Nystrom extension and angle quantiles.
+- [x] Add deterministic, non-finite, inductive-transform and strict-reference
+  alignment tests.
+- [x] Pass the real-data preflight with all 17,348 development ECGs, eight
+  fold-coherent Transformer archives and folds 9/10 sealed.
+- [ ] Complete the pinned seed-42 Kaggle GPU screen and apply the representation,
+  identical-input quantum and system gates before any confirmation seeds.
+- [ ] Launch two additional fixed seeds only if every primary gate passes.
