@@ -350,13 +350,22 @@ Protocol:
   before paired comparison.
 - [x] Submit the frequency and tied-equilibrium scouts as two independent
   Kaggle GPU jobs pinned to source `5a0675e`.
-- [ ] Complete the parallel eight-fold frequency and equilibrium scouts.
-- [ ] Promote only an arm achieving at least +0.005 AUPRC with a positive
-  patient-bootstrap interval and fusion above the 0.838015 classical ceiling.
+- [x] Complete the parallel eight-fold frequency and equilibrium scouts.
+  **STOP:** frequency VQC `0.82750` and equilibrium VQC `0.82871` both remained
+  below retained VQC `0.82938`; their fusions `0.83473/0.83522` remained below
+  retained quantum fusion `0.83546` and the `0.838015` classical ceiling.
+- [x] Apply the promotion gate. **NO PROMOTION:** frequency delta versus
+  retained VQC `-0.00188 [-0.00281,-0.00100]`; equilibrium delta `-0.00070
+  [-0.00161,+0.00021]`. No confirmation seeds or merged circuit are allowed.
+- [x] Apply the equilibrium feasibility gate. **FAIL:** final residual medians
+  `0.174–0.210`, with zero held-out samples below `0.05`; do not claim QDEQ.
 - [ ] Keep anatomical entanglement blocked until a territory-identified
   representation passes its classical information gate.
 - [ ] Keep Hadamard/Lie gradient estimation blocked until a predictive circuit
   is frozen; evaluate it on shot cost and wall time rather than AUPRC.
+
+Result:
+[`docs/neurips_quantum_transfer_result_2026-09-27.md`](docs/neurips_quantum_transfer_result_2026-09-27.md).
 
 ## G6Q-DM — nonlinear manifold q4 representation screen (2026-09-27)
 
