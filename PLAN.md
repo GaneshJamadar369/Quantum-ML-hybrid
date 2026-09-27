@@ -352,3 +352,19 @@ Protocol:
 - [ ] Complete the pinned seed-42 Kaggle GPU screen and apply the representation,
   identical-input quantum and system gates before any confirmation seeds.
 - [ ] Launch two additional fixed seeds only if every primary gate passes.
+
+## G6Q-DPE — diffusion-pretrained ECG encoder (2026-09-27)
+
+Protocol:
+[`docs/diffusion_pretrained_ecg_encoder_plan_2026-09-27.md`](docs/diffusion_pretrained_ecg_encoder_plan_2026-09-27.md).
+
+- [x] Freeze a label-free, forced-bottleneck temporal diffusion encoder with a
+  cosine noise schedule, min-SNR loss and EMA export.
+- [x] Preserve the downstream PLS-q4, four-qubit VQC, score alignment,
+  calibration, matched controls and clinical fusion.
+- [x] Add shape, gradient, schedule, EMA, invalid-input and label-free API tests.
+- [ ] Export eight outer-fold diffusion-pretrained h128 representations on
+  Kaggle GPU with exact OOF coverage and folds 9/10 sealed.
+- [ ] Run the retained quantum-head protocol and compare it with identical-q4
+  controls, the retained Transformer VQC and the all-classical system ceiling.
+- [ ] Promote only if representation, matched-quantum and system gates all pass.
