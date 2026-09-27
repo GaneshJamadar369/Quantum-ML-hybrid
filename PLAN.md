@@ -433,6 +433,28 @@ Architecture and proof audit:
 Final system plan and evidence map:
 [`docs/final_parallel_dual_route_plan_2026-09-27.md`](docs/final_parallel_dual_route_plan_2026-09-27.md).
 
+### SIH deliverable completion audit
+
+- [x] Audit the final dual-route system against every objective and expected
+  deliverable in `SIH26139.pdf`.
+- [x] Freeze the final end-to-end architecture, including separate quantum and
+  morphology representations, mandatory score fusion, calibration,
+  explanations and presentation outputs.
+- [ ] Demonstrate improvement over the strongest matched classical system;
+  current five-seed quantum fusion `0.83607` remains below classical fusion
+  `0.83766`.
+- [ ] Replace the blocked legacy holdout evaluator with the exact frozen
+  dual-route evaluator, then use folds 9 and 10 once.
+- [ ] Complete quantum-route patient explanations and finite-shot/noise/QPU
+  feasibility evidence.
+- [ ] Build the required upload/API, training-evaluation dashboard and result
+  visualization platform.
+- [ ] Establish a defensible early-detection target or present the current
+  output precisely as contemporaneous MI-pattern classification.
+
+Requirement matrix and final architecture:
+[`docs/final_dual_route_requirement_audit_and_architecture_2026-09-27.md`](docs/final_dual_route_requirement_audit_and_architecture_2026-09-27.md).
+
 ## G6Q-DM — nonlinear manifold q4 representation screen (2026-09-27)
 
 Protocol:
