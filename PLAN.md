@@ -367,6 +367,23 @@ Protocol:
 Result:
 [`docs/neurips_quantum_transfer_result_2026-09-27.md`](docs/neurips_quantum_transfer_result_2026-09-27.md).
 
+## G6Q-ANO — adaptive non-local observable q4 scouts (2026-09-27)
+
+Protocol:
+[`docs/adaptive_nonlocal_observable_plan_2026-09-27.md`](docs/adaptive_nonlocal_observable_plan_2026-09-27.md).
+
+- [x] Freeze the retained seed-42 Transformer h128 to PLS-q4 representation,
+  two-layer ring circuit, narrow-JS training and train-CDF alignment.
+- [x] Implement normalized arbitrary Pauli-basis measurements for independent
+  two-local and three-local ANO scouts.
+- [x] Add a fixed-Pauli measurement ablation and parameter-matched q4 MLP to
+  each job, using identical samples and optimization budgets.
+- [x] Define paired patient-bootstrap, q4 identity, fold-access and system-level
+  promotion gates before execution.
+- [ ] Complete local tests and real-data preflight.
+- [ ] Run k=2 and k=3 as separate pinned Kaggle GPU jobs.
+- [ ] Apply the frozen promotion gate before any multi-seed confirmation.
+
 ## G6Q-DM — nonlinear manifold q4 representation screen (2026-09-27)
 
 Protocol:
