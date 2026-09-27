@@ -86,6 +86,19 @@ the five-seed experiment, and the frozen all-classical ceiling is 0.83802.
 Those models remain scientific controls and are not alternative runtime routes
 inside this architecture.
 
+### Paired comparison on the stabilized outputs
+
+| Comparison | Delta AUPRC | Patient-cluster bootstrap 95% interval |
+|---|---:|---:|
+| Fusion minus quantum only | +0.00624 | [+0.00259, +0.01003] |
+| Fusion minus classical only | +0.12138 | [+0.11154, +0.13144] |
+| Quantum only minus classical only | +0.11514 | [+0.10266, +0.12756] |
+
+The intervals use 2,000 paired resamples of the 14,958 patients. At an
+approximately 90% specificity operating point, sensitivity was 0.76763 for
+quantum only, 0.61424 for classical only and 0.77793 for fusion. These are
+development-fold findings and require confirmation on the sealed folds.
+
 ## 4. Completed work and remaining execution
 
 - [x] Produce patient-isolated OOF quantum-only predictions.
@@ -114,4 +127,3 @@ the preregistered fold-9/fold-10 confirmation.
 - Five-seed OOF artifacts:
   `kaggle_outputs/nested_q4_seeds_a_20260925/` and
   `kaggle_outputs/nested_q4_seeds_b_20260925/`
-
