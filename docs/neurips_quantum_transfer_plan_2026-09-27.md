@@ -1,7 +1,7 @@
 # G6Q-NR — controlled transfer of NeurIPS quantum ideas
 
 **Protocol date:** 2026-09-27  
-**Status:** implementation complete; two one-seed scouts ready for parallel submission  
+**Status:** implementation complete; two one-seed scouts submitted in parallel  
 **Development data:** PTB-XL folds 1–8 only; folds 9 and 10 remain sealed
 
 ## Question
@@ -91,6 +91,12 @@ Advance an arm only if all conditions hold:
    agreement with long unrolling.
 
 If neither scout passes, stop both circuit ideas and do not merge them.
+
+## Submitted jobs
+
+- Layerwise-frequency scout: `swayamjeetbhagat4/aquire-med-neurips-layerwise-frequency-q4`, Version 1.
+- Tied-equilibrium scout: `swayamjeetbhagat4/aquire-med-neurips-tied-equilibrium-q4`, Version 1.
+- Pinned research source: `5a0675e7e5e08e917016d1c168e4979867879929`.
 
 ## Deferred work
 

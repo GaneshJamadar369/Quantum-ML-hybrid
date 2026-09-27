@@ -348,6 +348,8 @@ Protocol:
   QDEQ, with parameter-sharing and convergence-residual tests.
 - [x] Preserve the seed-42 PLS-q4 reference and require numerical q4 identity
   before paired comparison.
+- [x] Submit the frequency and tied-equilibrium scouts as two independent
+  Kaggle GPU jobs pinned to source `5a0675e`.
 - [ ] Complete the parallel eight-fold frequency and equilibrium scouts.
 - [ ] Promote only an arm achieving at least +0.005 AUPRC with a positive
   patient-bootstrap interval and fusion above the 0.838015 classical ceiling.
