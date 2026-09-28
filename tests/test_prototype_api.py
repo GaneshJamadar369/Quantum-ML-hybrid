@@ -75,6 +75,9 @@ def test_ready_api_abstains_on_failed_signal_quality(tmp_path, monkeypatch):
         def __init__(self, bundle):
             self.bundle = bundle
 
+        def golden_self_test(self):
+            return {"cases": 1, "max_abs_error": 0.0, "tolerance": 0.0002}
+
         def quantum_score(self, signal):
             raise AssertionError("Quantum route must not run after QC failure")
 

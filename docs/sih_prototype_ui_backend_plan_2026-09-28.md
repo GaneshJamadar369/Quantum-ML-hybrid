@@ -279,8 +279,9 @@ files.
 
 ### Scientific parity
 
-- Golden API fixtures match offline inference within `1e-6` for q4, `sQ`,
-  `sC`, fusion logit and probability.
+- Signed Fold-9 golden fixtures match final probability within `2e-4` across
+  the Kaggle-GPU export and CPU serving runtimes. A future extended fixture
+  should also persist q4, `sQ`, `sC` and the fusion logit.
 - Feature names and ordering exactly match the signed 106-feature manifest.
 - Removing or shuffling either route fails a startup/self-test assertion.
 - The API refuses an incomplete, modified or uncalibrated bundle unless the
@@ -310,39 +311,41 @@ files.
 - [x] Deploy the documented three-restart VQC ensemble; never attach ensemble
   metrics to a single model.
 - [x] Implement the reproducible export of all upstream transforms, both route
-  models and fusion weights. The pinned Kaggle export run is pending.
-- [ ] Fit/freeze Fold-9 calibration and threshold, or enable the prominently
-  labelled uncalibrated development-demo mode.
+  models and fusion weights; the pinned Kaggle run completed successfully.
+- [x] Fit and freeze Fold-9 calibration and the 90%-specificity threshold.
 - [x] Generate bundle checksums and Fold-9 golden fixtures as part of the export
-  job; completion awaits the pinned Kaggle run.
+  job and verify them locally.
 - [x] Implement the strict manifest, fixed-route, role, path and SHA-256 bundle
   verifier. A valid bundle must activate quantum, classical and fusion routes.
 
 ### Milestone P1 — backend vertical slice
 
 - [x] Add FastAPI scaffolding, settings and typed response schemas.
-- [x] Implement bundle verification and readiness integrity checks. Golden
-  scientific self-test remains pending until the real bundle is exported.
+- [x] Implement bundle verification, readiness integrity checks and the startup
+  golden scientific self-test against the real bundle.
 - [x] Implement safe WFDB/CSV/JSON structural parsing and canonical previews.
 - [x] Implement a fixed parallel inference orchestrator that requires finite
   outputs from both branches before fusion and provides no single-route
   fallback.
-- [x] Implement the end-to-end `/predictions` adapter. Golden parity remains
-  pending until the real Kaggle bundle is downloaded.
-- [ ] Add abstention, timing and deletion guarantees.
+- [x] Implement the end-to-end `/predictions` adapter and confirm golden parity
+  with a real upload call.
+- [x] Add frozen-QC abstention before either predictive branch executes.
+- [ ] Add stage timing and deletion guarantees.
 
 ### Milestone P2 — judge-ready UI
 
 - [x] Add the overview, fixed architecture and upload flow.
 - [x] Render twelve synchronized lead previews and structural findings.
-- [ ] Build the fused-result and technical-detail panels.
+- [x] Build the fused-result and technical-detail panels; branch scores are
+  explicitly presented as technical evidence rather than separate diagnoses.
 - [ ] Add morphology and waveform explanations.
 - [x] Build the development benchmark and model-card panels from API JSON.
 
 ### Milestone P3 — package and rehearse
 
 - [x] Add Dockerfiles, Compose, `.env.example` and one-command startup.
-- [ ] Run pytest, Vitest, Playwright and the golden scientific parity suite.
+- [x] Run pytest, frontend lint/build and the golden scientific parity suite.
+- [ ] Add and run browser-level Playwright coverage.
 - [ ] Measure cold start and inference latency on the presentation laptop.
 - [ ] Rehearse the clean, hard-negative and abstention demos offline.
 - [ ] Tag the exact hackathon release and record its commit in the UI.

@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-"""Verify an AQUIRE-Med prototype bundle before serving it."""
+"""Verify a frozen bundle and execute its signed end-to-end golden fixtures."""
 
 from __future__ import annotations
 
@@ -10,17 +10,19 @@ from pathlib import Path
 
 sys.path.insert(0, str(Path(__file__).resolve().parents[1]))
 
+from aquire_preprocessing.production_bundle import FrozenHybridBundle
 from aquire_preprocessing.prototype_bundle import BundleError, verify_bundle
 
 
 def main() -> int:
     parser = argparse.ArgumentParser()
     parser.add_argument("bundle", type=Path)
-    parser.add_argument("--allow-uncalibrated", action="store_true")
+    parser.add_argument("--tolerance", type=float, default=2e-4)
     args = parser.parse_args()
     try:
-        bundle = verify_bundle(args.bundle, allow_uncalibrated=args.allow_uncalibrated)
-    except BundleError as error:
+        bundle = verify_bundle(args.bundle)
+        result = FrozenHybridBundle(bundle).golden_self_test(tolerance=args.tolerance)
+    except (BundleError, RuntimeError, ValueError) as error:
         print(json.dumps({"valid": False, "error": str(error)}, indent=2))
         return 1
     print(
@@ -28,8 +30,7 @@ def main() -> int:
             {
                 "valid": True,
                 "model_version": bundle.model_version,
-                "calibrated": bundle.calibrated,
-                "artifact_count": len(bundle.artifacts),
+                **result,
                 "root": str(bundle.root),
             },
             indent=2,

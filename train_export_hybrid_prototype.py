@@ -11,6 +11,7 @@ import hashlib
 import json
 import shutil
 import subprocess
+import sys
 from datetime import datetime, timezone
 from pathlib import Path
 
@@ -203,6 +204,7 @@ def _threshold_at_specificity(y, probability, target=0.90):
 
 def run(args) -> None:
     import joblib
+    import sklearn
     import torch
 
     args.bundle.mkdir(parents=True, exist_ok=True)
@@ -347,6 +349,13 @@ def run(args) -> None:
             "fusion": {"active": True, "model": "nonnegative_logistic"},
         },
         "calibration_state": "fold9_frozen",
+        "artifact_runtime": {
+            "python": ".".join(map(str, sys.version_info[:3])),
+            "numpy": np.__version__,
+            "scikit_learn": sklearn.__version__,
+            "torch": torch.__version__,
+            "joblib": joblib.__version__,
+        },
         "training_patient_sha256": scaler.params.training_patient_checksum,
         "feature_manifest_sha256": feature_hash,
         "artifacts": artifact_records(args.bundle, entries),

@@ -431,7 +431,7 @@ Architecture and proof audit:
 - [x] Record stabilized OOF AUPRC `0.82980`, `0.83653`, and `0.83600`,
   respectively; five-seed confirmation produced `0.82750`, `0.83766`, and
   `0.83607`.
-- [ ] Register the final confirmation protocol before opening fold 9.
+- [x] Register the final confirmation protocol before opening fold 9.
 - [ ] Fit calibration on fold 9 and evaluate all three fixed outputs once on
   fold 10.
 
@@ -448,20 +448,22 @@ Final system plan and evidence map:
 - [ ] Demonstrate improvement over the strongest matched classical system;
   current five-seed quantum fusion `0.83607` remains below classical fusion
   `0.83766`.
-- [ ] Replace the blocked legacy holdout evaluator with the exact frozen
-  dual-route evaluator, then use folds 9 and 10 once.
+- [x] Replace the blocked legacy holdout evaluator with an exact frozen
+  dual-route exporter and use fold 9 once for calibration.
+- [ ] Use fold 10 once only after the UI and all release choices are frozen.
 - [ ] Complete quantum-route patient explanations and finite-shot/noise/QPU
   feasibility evidence.
-- [ ] Build the required upload/API, training-evaluation dashboard and result
-  visualization platform.
+- [x] Build the required upload/API, training-evaluation dashboard and fused
+  result visualization platform.
 - [ ] Establish a defensible early-detection target or present the current
   output precisely as contemporaneous MI-pattern classification.
 - [x] Build the fixed dual-route React/FastAPI prototype foundation and strict
   signed bundle loader; both VQC and HGB are mandatory for every prediction.
 - [x] Implement a pinned final export workflow: train predictive components on
   folds 1--8, fit Platt calibration/threshold on fold 9, and reject fold 10.
-- [ ] Complete the Kaggle GPU export, download the verified bundle, and run
-  golden offline/API parity before the demo release.
+- [x] Complete the Kaggle GPU export, download the verified bundle, and run
+  golden offline/API parity. Result:
+  `docs/fold9_prototype_export_result_2026-09-28.md`.
 
 Requirement matrix and final architecture:
 [`docs/final_dual_route_requirement_audit_and_architecture_2026-09-27.md`](docs/final_dual_route_requirement_audit_and_architecture_2026-09-27.md).

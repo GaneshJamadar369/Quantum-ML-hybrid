@@ -62,22 +62,33 @@ clinical-HGB routes, their logistic fusion, quality abstention and research
 benchmarking intact. A frozen, checksummed inference bundle is the first build
 gate; research notebooks are not loaded by the web service.
 
-The first platform vertical slice is implemented under `apps/`. It supports
-CSV, JSON and paired-WFDB ZIP inspection, twelve-lead visualization, model and
-benchmark endpoints, fixed-route integrity checks and Docker packaging. It
-deliberately refuses prediction until a complete, verified dual-route bundle
-is mounted; it never falls back to a quantum-only or classical-only result.
+The platform vertical slice is implemented under `apps/`. It supports CSV,
+JSON and paired-WFDB ZIP inspection, twelve-lead visualization, frozen quality
+abstention, fixed-route prediction, model and benchmark endpoints, integrity
+checks and Docker packaging. The executable bundle was exported and calibrated
+on Kaggle, then reproduced locally through eight signed Fold-9 fixtures. Read
+the [export and calibration result](docs/fold9_prototype_export_result_2026-09-28.md)
+for the exact metrics and limits.
+
+The service becomes ready only after the complete, checksummed bundle loads and
+passes its startup golden test. Every accepted ECG executes both the q4-VQC and
+clinical-HGB routes followed by the frozen fusion and calibrator. There is no
+quantum-only or classical-only serving fallback.
 
 Install and run it locally:
 
 ```bash
-pip install -e '.[prototype]'
-uvicorn apps.api.aquire_api.main:app --reload --port 8000
+pip install -e '.[research,prototype]'
+export AQUIRE_BUNDLE_ROOT="$PWD/prototype_bundle/current"
+python scripts/check_prototype_golden.py "$AQUIRE_BUNDLE_ROOT"
+uvicorn apps.api.aquire_api.main:app --port 8000
 
 cd apps/web
 npm install
 npm run dev
 ```
 
-Or use `docker compose up --build` after setting `AQUIRE_BUNDLE_ROOT` in a
-local `.env` file. The UI is served at `http://localhost:8080` in Compose mode.
+`prototype_bundle/current` is intentionally ignored by Git because it contains
+model weights. Copy or download the verified bundle there before startup. Or
+use `docker compose up --build` after setting `AQUIRE_BUNDLE_ROOT` in a local
+`.env` file. The UI is served at `http://localhost:8080` in Compose mode.

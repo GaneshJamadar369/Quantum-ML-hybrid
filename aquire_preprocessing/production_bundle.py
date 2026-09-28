@@ -41,9 +41,15 @@ class FrozenHybridBundle:
 
     def __init__(self, bundle: VerifiedBundle, *, device: str = "cpu") -> None:
         import joblib
+        import sklearn
         import torch
 
         self.bundle = bundle
+        expected_sklearn = bundle.manifest.get("artifact_runtime", {}).get("scikit_learn")
+        if expected_sklearn and sklearn.__version__ != expected_sklearn:
+            raise RuntimeError(
+                f"Bundle requires scikit-learn {expected_sklearn}; runtime has {sklearn.__version__}"
+            )
         self.device = torch.device(device)
         self.transformer = ECGPatchTransformer().to(self.device)
         self.transformer.load_state_dict(_torch_load(_single(bundle, "transformer"))["state_dict"])
@@ -105,7 +111,11 @@ class FrozenHybridBundle:
         missing = sorted(set(approved) - set(complete.columns))
         if missing:
             raise RuntimeError(f"Deployable extractor omitted approved features: {missing}")
-        conditioned = self.morphology_conditioner["imputer"].transform(complete[approved])
+        # The frozen imputer was fitted on a NumPy matrix in the exporter. Keep
+        # the identical column order while avoiding a feature-name contract it
+        # never learned.
+        feature_matrix = complete.loc[:, approved].to_numpy(dtype=float)
+        conditioned = self.morphology_conditioner["imputer"].transform(feature_matrix)
         raw_probability = self.morphology_hgb.predict_proba(conditioned)[:, 1]
         raw_logit = logit(np.clip(raw_probability, 1e-6, 1.0 - 1e-6)).reshape(-1, 1)
         return float(self.morphology_conditioner["calibrator"].predict_proba(raw_logit)[0, 1])
@@ -119,3 +129,22 @@ class FrozenHybridBundle:
     def calibrate(self, fused_probability: float) -> float:
         value = logit(np.clip(fused_probability, 1e-6, 1.0 - 1e-6))
         return float(self.calibrator.predict_proba([[value]])[0, 1])
+
+    def golden_self_test(self, *, tolerance: float = 2e-4) -> dict[str, float | int]:
+        """Run the signed Fold-9 fixtures through the complete two-route path."""
+
+        fixture = np.load(_single(self.bundle, "golden_fixture"), allow_pickle=False)
+        expected = np.asarray(fixture["probability"], dtype=float)
+        actual = []
+        for signal in fixture["signal_mv"]:
+            s_q = self.quantum_score(signal)
+            s_c = self.classical_score(signal)
+            _, fused = self.fusion_score(s_q, s_c)
+            actual.append(self.calibrate(fused))
+        error = np.abs(np.asarray(actual) - expected)
+        maximum = float(error.max(initial=0.0))
+        if maximum > tolerance:
+            raise RuntimeError(
+                f"Golden hybrid parity failed: max_abs_error={maximum:.8g} > {tolerance:.8g}"
+            )
+        return {"cases": int(len(expected)), "max_abs_error": maximum, "tolerance": tolerance}

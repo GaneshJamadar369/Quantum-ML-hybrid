@@ -75,6 +75,7 @@ def create_app(settings: Settings | None = None) -> FastAPI:
                 allow_uncalibrated=settings.allow_uncalibrated,
             )
             runtime = FrozenHybridBundle(app.state.bundle)
+            app.state.golden_self_test = runtime.golden_self_test()
             app.state.predictor = FixedParallelHybrid(
                 quantum_route=runtime.quantum_score,
                 classical_route=runtime.classical_score,
