@@ -36,9 +36,10 @@
   },
   "required_reported_outputs": [
     "quantum_only",
-    "classical_only",
+    "overall_classical_matched_fusion",
     "quantum_plus_classical_fusion"
   ],
+  "additional_branch_ablation": "morphology_hgb_only",
   "prohibited": [
     "per_patient_predictor_selection",
     "uncertainty_based_branch_switching",
@@ -54,12 +55,16 @@
     "fold_10_accessed": false,
     "stabilized_two_seed_auprc": {
       "quantum_only": 0.8298004791150623,
-      "classical_only": 0.7145410103892724,
+      "matched_q4_mlp_only": 0.8267551365083563,
+      "morphology_hgb_only": 0.7145410103892724,
+      "overall_classical_matched_fusion": 0.8365327465774802,
       "quantum_plus_classical_fusion": 0.8359958579441155
     },
     "five_seed_confirmation_auprc": {
       "quantum_only": 0.8275012717164486,
-      "classical_only": 0.7178596848691929,
+      "matched_q4_mlp_only": 0.8270953451842437,
+      "morphology_hgb_only": 0.7178596848691929,
+      "overall_classical_matched_fusion": 0.8376586666465865,
       "quantum_plus_classical_fusion": 0.8360706889974712
     }
   }

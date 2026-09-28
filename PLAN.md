@@ -421,10 +421,13 @@ Architecture and proof audit:
   HGB branch; only their held-out scores meet at the fusion neuron.
 - [x] Prohibit per-patient predictor selection, branch switching, residual
   targets and dynamic feature routing.
-- [x] Verify the required development ablation already exists: quantum only,
-  classical only, and quantum-plus-classical fusion.
-- [x] Record stabilized OOF AUPRC `0.82980`, `0.71454`, and `0.83600`,
-  respectively; five-seed raw confirmation produced `0.82750`, `0.71786`, and
+- [x] Verify the required development comparison already exists: quantum only,
+  matched overall classical, and quantum-plus-classical fusion.
+- [x] Correct the overall-classical definition so the quantum route's q4
+  coordinates go to a matched classical MLP while the 106-feature HGB branch
+  and score fusion are preserved.
+- [x] Record stabilized OOF AUPRC `0.82980`, `0.83653`, and `0.83600`,
+  respectively; five-seed confirmation produced `0.82750`, `0.83766`, and
   `0.83607`.
 - [ ] Register the final confirmation protocol before opening fold 9.
 - [ ] Fit calibration on fold 9 and evaluate all three fixed outputs once on

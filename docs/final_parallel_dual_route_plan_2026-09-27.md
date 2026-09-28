@@ -33,9 +33,19 @@ flowchart TD
 
 ```
 
-Only the fused probability is the production output. Stored `sQ`, stored `sC`
-and the fused probability are evaluated separately offline to produce the
-required quantum-only, classical-only and fusion ablations.
+Only the fused probability is the production output. The fair overall
+classical comparator preserves both representations and replaces only the VQC
+with a classical MLP on the identical q4 coordinates:
+
+\[
+\text{overall classical}
+=\operatorname{Fusion}(\operatorname{HGB}(X_{106}),
+\operatorname{MLP}(q_4)).
+\]
+
+Stored scores are evaluated offline to produce the required quantum-only,
+overall-classical and quantum-plus-classical comparisons. HGB alone remains a
+branch-removal diagnostic, not the definition of the overall classical model.
 
 The routes use different representations of the same ECG:
 
@@ -74,36 +84,42 @@ patients in official PTB-XL folds 1–8. Folds 9 and 10 were not accessed.
 | Required output | Predictor | Development OOF AUPRC | AUROC | Brier |
 |---|---|---:|---:|---:|
 | Quantum only | Transformer/PLS q4 to train-CDF VQC | **0.82980** | 0.92202 | 0.09247 |
-| Classical only | 106-feature clinical HGB | 0.71454 | 0.87097 | 0.11884 |
-| Quantum + classical | Cross-fitted `sQ + sC` fusion | **0.83600** | **0.92659** | **0.08961** |
+| **Overall classical** | Clinical HGB + identical-q4 MLP fusion | **0.83653** | **0.92736** | **0.08940** |
+| Quantum + classical | Clinical HGB + VQC fusion | 0.83600 | 0.92659 | 0.08961 |
+
+Additional branch ablation: the 106-feature morphology HGB alone reached
+0.71454 AUPRC. It is not the overall classical system.
 
 These are two-seed, three-restart ensemble results from the frozen stabilized
-screen. The corresponding raw five-seed confirmation produced AUPRC 0.82750,
-0.71786 and 0.83607, respectively.
+screen. The corresponding raw five-seed confirmation produced AUPRC 0.82750
+for quantum only, 0.83766 for overall classical and 0.83607 for the hybrid
+fusion.
 
-The fusion improves over either required standalone branch. It does not prove
-quantum advantage: a matched clinical-plus-q4-MLP fusion reached 0.83766 in
-the five-seed experiment, and the frozen all-classical ceiling is 0.83802.
-Those models remain scientific controls and are not alternative runtime routes
-inside this architecture.
+The hybrid fusion improves over each of its individual constituent branches,
+but it does not beat the fair overall-classical replacement. The matched
+clinical-plus-q4-MLP fusion reached 0.83766 in the five-seed experiment, and
+the frozen all-classical ceiling is 0.83802. These are scientific controls,
+not alternative runtime routes inside the deployed hybrid architecture.
 
 ### Paired comparison on the stabilized outputs
 
 | Comparison | Delta AUPRC | Patient-cluster bootstrap 95% interval |
 |---|---:|---:|
-| Fusion minus quantum only | +0.00624 | [+0.00259, +0.01003] |
-| Fusion minus classical only | +0.12138 | [+0.11154, +0.13144] |
-| Quantum only minus classical only | +0.11514 | [+0.10266, +0.12756] |
+| Hybrid fusion minus quantum only | +0.00624 | [+0.00259, +0.01003] |
+| Hybrid fusion minus overall classical | -0.00052 | [-0.00185, +0.00077] |
+| Hybrid fusion minus morphology HGB only | +0.12138 | [+0.11154, +0.13144] |
 
 The intervals use 2,000 paired resamples of the 14,958 patients. At an
 approximately 90% specificity operating point, sensitivity was 0.76763 for
-quantum only, 0.61424 for classical only and 0.77793 for fusion. These are
-development-fold findings and require confirmation on the sealed folds.
+quantum only, 0.77656 for overall classical and 0.77793 for hybrid fusion.
+Morphology HGB alone reached 0.61424. These are development-fold findings and
+require confirmation on the sealed folds.
 
 ## 4. Completed work and remaining execution
 
 - [x] Produce patient-isolated OOF quantum-only predictions.
-- [x] Produce patient-isolated OOF classical-only predictions.
+- [x] Produce patient-isolated matched overall-classical predictions by
+  replacing VQC with an identical-q4 MLP and preserving clinical fusion.
 - [x] Train the leakage-safe score-level fusion.
 - [x] Export all three outputs and compute AUPRC, AUROC, Brier and log loss.
 - [x] Repeat the experiment across five prespecified seeds.
@@ -111,7 +127,8 @@ development-fold findings and require confirmation on the sealed folds.
 - [ ] Register the frozen ensemble definition, preprocessing hashes and fusion
   formula before confirmatory evaluation.
 - [ ] Fit calibration and the operating threshold once on fold 9.
-- [ ] Evaluate quantum-only, classical-only and fused outputs once on fold 10.
+- [ ] Evaluate quantum-only, overall-classical and hybrid-fused outputs once on
+  fold 10.
 - [ ] Report paired patient-cluster confidence intervals and subgroup results
   for all three outputs.
 

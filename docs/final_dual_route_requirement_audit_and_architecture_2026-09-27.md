@@ -69,16 +69,20 @@ flowchart TD
     O --> UI
 ```
 
-The production path has one result: the calibrated fused probability. The
-quantum-only and classical-only scores are retained as offline evaluation
-taps for ablation and auditing; they are not alternative patient-facing
-predictions and do not select a route.
+The production path has one result: the calibrated fused probability.
+Quantum-only and overall-classical results are retained as offline evaluation
+comparators; they are not alternative patient-facing predictions and do not
+select a route. The overall-classical model keeps both representations and
+replaces the VQC with a classical MLP receiving the identical q4 vector.
 
 ```mermaid
 flowchart LR
     SQ[Stored held-out quantum score sQ] -. offline evaluation .-> QO[Quantum-only metrics]
-    SC[Stored held-out classical score sC] -. offline evaluation .-> CO[Classical-only metrics]
-    SF[Stored held-out fused probability] -. offline evaluation .-> FO[Fusion metrics]
+    Q4[Same q4 coordinates] --> MLP[Classical q4 MLP]
+    SC[Clinical HGB score sC] --> CF[Matched all-classical fusion]
+    MLP --> CF
+    CF -. offline evaluation .-> CO[Overall-classical metrics]
+    SF[Stored hybrid fused probability] -. offline evaluation .-> FO[Hybrid-fusion metrics]
 ```
 
 ## 3. How one ECG moves through the system
@@ -132,12 +136,18 @@ On 17,348 development ECGs from 14,958 patients in PTB-XL folds 1-8:
 | Output | AUPRC | AUROC | Brier | Sensitivity at about 90% specificity |
 |---|---:|---:|---:|---:|
 | Quantum route only | 0.82980 | 0.92202 | 0.09247 | 0.76763 |
-| Classical morphology route only | 0.71454 | 0.87097 | 0.11884 | 0.61424 |
-| Fixed dual-route fusion | **0.83600** | **0.92659** | **0.08961** | **0.77793** |
+| **Overall classical: clinical HGB + identical-q4 MLP** | **0.83653** | **0.92736** | **0.08940** | 0.77656 |
+| Quantum + classical hybrid fusion | 0.83600 | 0.92659 | 0.08961 | **0.77793** |
+
+The morphology HGB branch alone reached 0.71454 AUPRC and 0.61424 sensitivity
+at about 90% specificity. That branch-removal ablation must not be presented as
+the overall classical result.
 
 Fusion minus quantum-only AUPRC was `+0.00624`, with paired patient-cluster
 95% interval `[+0.00259, +0.01003]`. This supports using the two fixed routes
-together on development data.
+together on development data. Against the fair overall-classical replacement,
+the hybrid delta was `-0.00052`, interval `[-0.00185, +0.00077]` in the
+stabilized screen.
 
 It does not establish quantum advantage. The five-seed quantum fusion AUPRC
 was `0.83607`, while its matched all-classical fusion reached `0.83766`. The
@@ -153,8 +163,8 @@ a uniquely quantum performance benefit remains unproven.
    this exact dual-route architecture.
 3. Use fold 9 once to fit Platt calibration and the sensitivity/specificity
    operating threshold.
-4. Use fold 10 once to compare quantum-only, classical-only, fused and matched
-   all-classical control outputs.
+4. Use fold 10 once to compare quantum-only, matched overall-classical and
+   quantum-plus-classical hybrid outputs.
 5. Add finite-shot, device-noise, transpilation-depth, two-qubit-gate and
    latency/cost evaluation; run a prespecified subset on a real QPU if access
    permits.
@@ -170,5 +180,6 @@ a uniquely quantum performance benefit remains unproven.
 > AQUIRE-Med is a fixed parallel hybrid system in which every ECG is represented
 > through both a four-qubit VQC route and a separate clinical-morphology route.
 > Their independently generated scores are fused into an MI-pattern probability.
-> Development results favor fusion over either specified standalone branch;
-> sealed-test, hardware and platform validation remain in progress.
+> Development results favor fusion over either constituent branch, while the
+> matched overall-classical replacement remains slightly stronger. Sealed-test,
+> hardware and platform validation remain in progress.
