@@ -16,7 +16,7 @@ services:
     build:
       context: apps/web
       args:
-        VITE_API_BASE: /api
+        VITE_API_BASE: ""
     depends_on:
       - api
     ports:

@@ -16,3 +16,4 @@ artifacts/
 kaggle_outputs/
 prototype_bundle/*/
 .env
+.DS_Store

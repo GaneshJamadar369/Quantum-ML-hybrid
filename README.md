@@ -90,5 +90,10 @@ npm run dev
 
 `prototype_bundle/current` is intentionally ignored by Git because it contains
 model weights. Copy or download the verified bundle there before startup. Or
-use `docker compose up --build` after setting `AQUIRE_BUNDLE_ROOT` in a local
-`.env` file. The UI is served at `http://localhost:8080` in Compose mode.
+start the complete containerized stack with `docker compose up -d --build`
+after setting `AQUIRE_BUNDLE_ROOT` in a local `.env` file. The UI is served at
+`http://localhost:8080` in Compose mode. Stop it with `docker compose down`.
+
+Two de-identified, upload-ready Fold-9 examples are available in
+[`demo_samples`](demo_samples): one MI-pattern reference and one non-MI
+reference.

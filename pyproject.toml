@@ -24,6 +24,10 @@ research = [
   "pyarrow==19.0.1",
   "matplotlib==3.10.1",
 ]
+serving = [
+  "torch==2.6.0",
+  "neurokit2==0.2.13",
+]
 test = ["pytest==8.3.5", "pytest-cov==6.0.0"]
 prototype = [
   "fastapi==0.141.1",
