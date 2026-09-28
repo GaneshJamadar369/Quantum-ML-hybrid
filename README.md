@@ -97,3 +97,7 @@ after setting `AQUIRE_BUNDLE_ROOT` in a local `.env` file. The UI is served at
 Two de-identified, upload-ready Fold-9 examples are available in
 [`demo_samples`](demo_samples): one MI-pattern reference and one non-MI
 reference.
+
+For another computer, follow the
+[Windows Docker quickstart](docs/windows_docker_quickstart.md). It requires
+only Git, Docker Desktop and the separately shared signed model-bundle ZIP.
