@@ -47,3 +47,17 @@ export interface Inspection {
   errors: string[]
   warnings: string[]
 }
+
+export interface Prediction {
+  prediction: 'MI_PATTERN' | 'NON_MI_PATTERN'
+  mi_pattern_probability: number
+  decision_threshold: number
+  routes: {
+    quantum: { active: true; score: number }
+    classical: { active: true; score: number }
+  }
+  fusion: { active: true; raw_logit: number; uncalibrated_probability: number }
+  model_version: string
+  signal_sha256: string
+  interpretation: string
+}

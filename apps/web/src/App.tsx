@@ -1,8 +1,9 @@
 import { useEffect, useMemo, useState } from 'react'
+import type { CSSProperties } from 'react'
 import createPlotlyComponent from 'react-plotly.js/factory'
 import Plotly from 'plotly.js-basic-dist-min'
 import { getArchitecture, getBenchmarks, getModelCard, getReadiness, inspectEcg, predictEcg } from './api'
-import type { Architecture, Benchmarks, Inspection, ModelCard, Readiness } from './types'
+import type { Architecture, Benchmarks, Inspection, ModelCard, Prediction, Readiness } from './types'
 import './App.css'
 
 const LEAD_ORDER = ['I', 'II', 'III', 'aVR', 'aVL', 'aVF', 'V1', 'V2', 'V3', 'V4', 'V5', 'V6']
@@ -69,6 +70,7 @@ function ArchitecturePanel({ architecture }: { architecture: Architecture | null
 function UploadPanel({ readiness }: { readiness: Readiness | null }) {
   const [file, setFile] = useState<File | null>(null)
   const [inspection, setInspection] = useState<Inspection | null>(null)
+  const [prediction, setPrediction] = useState<Prediction | null>(null)
   const [busy, setBusy] = useState(false)
   const [message, setMessage] = useState('')
 
@@ -90,8 +92,7 @@ function UploadPanel({ readiness }: { readiness: Readiness | null }) {
     setBusy(true)
     setMessage('')
     try {
-      const result = await predictEcg(file)
-      setMessage(`Prediction completed: ${JSON.stringify(result)}`)
+      setPrediction(await predictEcg(file))
     } catch (error) {
       setMessage(error instanceof Error ? error.message : 'Prediction failed')
     } finally {
@@ -128,6 +129,7 @@ function UploadPanel({ readiness }: { readiness: Readiness | null }) {
               onChange={(event) => {
                 setFile(event.target.files?.[0] ?? null)
                 setInspection(null)
+                setPrediction(null)
                 setMessage('')
               }}
             />
@@ -187,6 +189,36 @@ function UploadPanel({ readiness }: { readiness: Readiness | null }) {
           )}
         </div>
       </div>
+      {prediction && (
+        <article className="result-card" aria-live="polite">
+          <div className="result-primary">
+            <span className="eyebrow">Fused screening output</span>
+            <div
+              className="probability-ring"
+              style={{ '--score': `${prediction.mi_pattern_probability * 360}deg` } as CSSProperties}
+            >
+              <div>
+                <strong>{(prediction.mi_pattern_probability * 100).toFixed(1)}%</strong>
+                <span>MI pattern</span>
+              </div>
+            </div>
+            <h3>{prediction.prediction === 'MI_PATTERN' ? 'MI pattern detected' : 'No MI pattern detected'}</h3>
+            <p>Threshold {(prediction.decision_threshold * 100).toFixed(1)}% · clinician review required</p>
+          </div>
+          <div className="result-explanation">
+            <small>ONE HYBRID RESULT</small>
+            <h3>Both routes contributed before calibration.</h3>
+            <p>{prediction.interpretation}</p>
+            <div className="route-score-grid">
+              <div><span>Quantum route · VQC ensemble</span><strong>{prediction.routes.quantum.score.toFixed(4)}</strong></div>
+              <div><span>Classical route · morphology HGB</span><strong>{prediction.routes.classical.score.toFixed(4)}</strong></div>
+              <div><span>Fusion logit</span><strong>{prediction.fusion.raw_logit.toFixed(4)}</strong></div>
+              <div><span>Model</span><strong>{prediction.model_version}</strong></div>
+            </div>
+            <p className="technical-note">Route scores are technical evidence, not separate diagnoses. There is no gate or fallback route.</p>
+          </div>
+        </article>
+      )}
     </section>
   )
 }

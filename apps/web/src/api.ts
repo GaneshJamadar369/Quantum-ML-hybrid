@@ -1,4 +1,4 @@
-import type { Architecture, Benchmarks, Inspection, ModelCard, Readiness } from './types'
+import type { Architecture, Benchmarks, Inspection, ModelCard, Prediction, Readiness } from './types'
 
 const API_BASE = import.meta.env.VITE_API_BASE ?? 'http://localhost:8000'
 
@@ -35,4 +35,4 @@ async function postFile<T>(path: string, file: File): Promise<T> {
 }
 
 export const inspectEcg = (file: File) => postFile<Inspection>('/api/v1/ecg/inspect', file)
-export const predictEcg = (file: File) => postFile<Record<string, unknown>>('/api/v1/predictions', file)
+export const predictEcg = (file: File) => postFile<Prediction>('/api/v1/predictions', file)
