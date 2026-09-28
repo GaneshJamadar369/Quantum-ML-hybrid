@@ -5,6 +5,8 @@ This file is the operational source of truth. A checked **implementation** item 
 The final research protocol, model ladder, quantum stop rule and definition of
 completion are frozen in
 [`docs/research_completion_roadmap.md`](docs/research_completion_roadmap.md).
+The judge-ready upload UI, inference API and packaging work is specified in
+[`docs/sih_prototype_ui_backend_plan_2026-09-28.md`](docs/sih_prototype_ui_backend_plan_2026-09-28.md).
 The nested representation/circuit search for any further quantum-kernel work is
 specified in
 [`docs/quantum_kernel_optimization_plan.md`](docs/quantum_kernel_optimization_plan.md).

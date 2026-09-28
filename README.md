@@ -49,3 +49,15 @@ and its restricted interpretation are recorded in the
 The gated path from the present checkpoint to a one-time holdout and external
 validation is in the
 [research completion roadmap](docs/research_completion_roadmap.md).
+
+## Hackathon prototype
+
+The implementation-ready UI/backend architecture, API contract, model-bundle
+boundary and exact build order are defined in the
+[SIH prototype plan](docs/sih_prototype_ui_backend_plan_2026-09-28.md).
+
+The selected fast stack is React/Vite/TypeScript for the interface and FastAPI
+for the Python inference service. The plan keeps the fixed parallel q4-VQC and
+clinical-HGB routes, their logistic fusion, quality abstention and research
+benchmarking intact. A frozen, checksummed inference bundle is the first build
+gate; research notebooks are not loaded by the web service.
