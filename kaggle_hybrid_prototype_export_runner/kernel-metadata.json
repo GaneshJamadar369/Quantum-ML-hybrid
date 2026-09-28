@@ -1,0 +1,19 @@
+{
+  "id": "swayamjeetbhagat4/aquire-med-hybrid-prototype-export",
+  "title": "AQUIRE-Med Frozen Hybrid Prototype Export",
+  "code_file": "hybrid_prototype_export_runner.py",
+  "language": "python",
+  "kernel_type": "script",
+  "is_private": true,
+  "enable_gpu": true,
+  "enable_internet": true,
+  "dataset_sources": [
+    "garethwmch/ptb-xl-1-0-3"
+  ],
+  "competition_sources": [],
+  "kernel_sources": [
+    "swayamjeetbhagat4/aquire-med-preprocessing-pipeline/1",
+    "swayamjeetbhagat4/aquire-med-full-feature-repair/1",
+    "swayamjeetbhagat4/aquire-med-q4-score-alignment-screen/1"
+  ]
+}

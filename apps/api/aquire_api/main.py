@@ -10,9 +10,11 @@ from fastapi import FastAPI, File, HTTPException, Request, UploadFile
 from fastapi.middleware.cors import CORSMiddleware
 
 from aquire_preprocessing.prototype_bundle import BundleError, VerifiedBundle, verify_bundle
+from aquire_preprocessing.production_bundle import FrozenHybridBundle
 
 from .catalog import ARCHITECTURE, BENCHMARKS, MODEL_CARD
 from .ecg_parser import CANONICAL_LEADS, ECGParseError, infer_format, parse_upload
+from .inference import FixedParallelHybrid, HybridInferenceError
 from .schemas import HealthResponse, InputSummary, InspectionResponse
 from .settings import Settings
 
@@ -64,14 +66,25 @@ def create_app(settings: Settings | None = None) -> FastAPI:
     @asynccontextmanager
     async def lifespan(app: FastAPI) -> AsyncIterator[None]:
         app.state.bundle = None
+        app.state.predictor = None
         app.state.bundle_error = None
         try:
             app.state.bundle = verify_bundle(
                 settings.bundle_root,
                 allow_uncalibrated=settings.allow_uncalibrated,
             )
+            runtime = FrozenHybridBundle(app.state.bundle)
+            app.state.predictor = FixedParallelHybrid(
+                quantum_route=runtime.quantum_score,
+                classical_route=runtime.classical_score,
+                fusion_route=runtime.fusion_score,
+                calibrator=runtime.calibrate,
+                threshold=runtime.threshold,
+            )
         except BundleError as error:
             app.state.bundle_error = str(error)
+        except Exception as error:
+            app.state.bundle_error = f"Bundle runtime initialization failed: {error}"
         yield
 
     app = FastAPI(
@@ -132,7 +145,7 @@ def create_app(settings: Settings | None = None) -> FastAPI:
                 status_code=422,
                 detail={"code": "INVALID_ECG", "message": "; ".join(inspection.errors)},
             )
-        if request.app.state.bundle is None:
+        if request.app.state.bundle is None or request.app.state.predictor is None:
             raise HTTPException(
                 status_code=503,
                 detail={
@@ -141,13 +154,32 @@ def create_app(settings: Settings | None = None) -> FastAPI:
                     "context": {"both_routes_required": True},
                 },
             )
-        raise HTTPException(
-            status_code=501,
-            detail={
-                "code": "INFERENCE_ADAPTER_PENDING",
-                "message": "Bundle integrity passed, but the typed hybrid inference adapter is not implemented yet",
+        source_format = infer_format(file.filename, file.content_type)
+        parsed = parse_upload(payload, source_format)
+        try:
+            result = request.app.state.predictor.predict(parsed.signal_mv)
+        except HybridInferenceError as error:
+            raise HTTPException(
+                status_code=422,
+                detail={"code": "HYBRID_INFERENCE_FAILED", "message": str(error)},
+            ) from error
+        return {
+            "prediction": result.label,
+            "mi_pattern_probability": result.calibrated_probability,
+            "decision_threshold": result.threshold,
+            "routes": {
+                "quantum": {"active": True, "score": result.quantum_score},
+                "classical": {"active": True, "score": result.classical_score},
             },
-        )
+            "fusion": {
+                "active": True,
+                "raw_logit": result.fusion_logit,
+                "uncalibrated_probability": result.fused_probability,
+            },
+            "model_version": request.app.state.bundle.model_version,
+            "signal_sha256": parsed.checksum,
+            "interpretation": "Research MI-pattern screening output; not a diagnosis or future-event risk estimate",
+        }
 
     return app
 

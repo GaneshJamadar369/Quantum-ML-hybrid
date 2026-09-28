@@ -56,19 +56,18 @@ prototype_bundle/v1/
   h128_scaler.joblib
   pls_q4.joblib
   angle_quantiles.joblib
-  vqc/
-    model_01.pt
-    model_02.pt
-    ...
+  vqc_restart_0.pt
+  vqc_restart_1.pt
+  vqc_restart_2.pt
   vqc_score_alignment.joblib
   morphology_feature_manifest.json
   morphology_conditioner.joblib
   morphology_hgb.joblib
-  fusion.joblib
+  fusion.json
   platt_calibrator.joblib
   decision_threshold.json
-  explanation_background.npz
-  golden_cases.json
+  golden_fold9_cases.npz
+  training_report.json
 ```
 
 `manifest.json` records the Git commit, dataset releases, feature-manifest
@@ -76,11 +75,10 @@ hash, training-patient hash, architecture, ensemble members, score-alignment
 method, calibration source, decision threshold and SHA-256 checksum of every
 file. API startup fails closed if a checksum, feature order or version differs.
 
-The current repository contains research results but does not yet contain this
-complete frozen bundle. Fold-9 calibration and threshold fitting are still a
-scientific prerequisite for a final probability claim. Until then, the API
-must run with `PROTOTYPE_UNCALIBRATED=true` and display `development score`
-instead of `calibrated probability`.
+The repository now contains the reproducible export job, but the generated
+bundle is intentionally excluded from Git. Fold-9 calibration and threshold
+fitting occur inside that pinned Kaggle job after every upstream component is
+frozen. The API fails closed until its signed output bundle is mounted.
 
 ## 4. Repository layout to build
 
@@ -309,12 +307,14 @@ files.
 
 ### Milestone P0 — freeze the executable model
 
-- [ ] Decide whether the prototype deploys one circuit or the documented VQC
-  ensemble; never attach ensemble metrics to a single model.
-- [ ] Export all upstream transforms, both route models and fusion weights.
+- [x] Deploy the documented three-restart VQC ensemble; never attach ensemble
+  metrics to a single model.
+- [x] Implement the reproducible export of all upstream transforms, both route
+  models and fusion weights. The pinned Kaggle export run is pending.
 - [ ] Fit/freeze Fold-9 calibration and threshold, or enable the prominently
   labelled uncalibrated development-demo mode.
-- [ ] Generate and verify bundle checksums and golden cases.
+- [x] Generate bundle checksums and Fold-9 golden fixtures as part of the export
+  job; completion awaits the pinned Kaggle run.
 - [x] Implement the strict manifest, fixed-route, role, path and SHA-256 bundle
   verifier. A valid bundle must activate quantum, classical and fusion routes.
 
@@ -327,7 +327,8 @@ files.
 - [x] Implement a fixed parallel inference orchestrator that requires finite
   outputs from both branches before fusion and provides no single-route
   fallback.
-- [ ] Implement one end-to-end `/predictions` call and golden parity test.
+- [x] Implement the end-to-end `/predictions` adapter. Golden parity remains
+  pending until the real Kaggle bundle is downloaded.
 - [ ] Add abstention, timing and deletion guarantees.
 
 ### Milestone P2 — judge-ready UI
@@ -340,7 +341,7 @@ files.
 
 ### Milestone P3 — package and rehearse
 
-- [ ] Add Dockerfiles, Compose, `.env.example` and one-command startup.
+- [x] Add Dockerfiles, Compose, `.env.example` and one-command startup.
 - [ ] Run pytest, Vitest, Playwright and the golden scientific parity suite.
 - [ ] Measure cold start and inference latency on the presentation laptop.
 - [ ] Rehearse the clean, hard-negative and abstention demos offline.

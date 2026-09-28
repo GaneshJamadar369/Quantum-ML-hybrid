@@ -456,6 +456,12 @@ Final system plan and evidence map:
   visualization platform.
 - [ ] Establish a defensible early-detection target or present the current
   output precisely as contemporaneous MI-pattern classification.
+- [x] Build the fixed dual-route React/FastAPI prototype foundation and strict
+  signed bundle loader; both VQC and HGB are mandatory for every prediction.
+- [x] Implement a pinned final export workflow: train predictive components on
+  folds 1--8, fit Platt calibration/threshold on fold 9, and reject fold 10.
+- [ ] Complete the Kaggle GPU export, download the verified bundle, and run
+  golden offline/API parity before the demo release.
 
 Requirement matrix and final architecture:
 [`docs/final_dual_route_requirement_audit_and_architecture_2026-09-27.md`](docs/final_dual_route_requirement_audit_and_architecture_2026-09-27.md).
