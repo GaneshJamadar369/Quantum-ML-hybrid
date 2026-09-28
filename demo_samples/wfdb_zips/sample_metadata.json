@@ -1,0 +1,34 @@
+[
+  {
+    "file": "demo_01_mi_pattern.zip",
+    "source_ecg_id": 8,
+    "reference_label": "MI_PATTERN",
+    "expected_probability": 0.7001631335233167,
+    "expected_screen": "MI_PATTERN",
+    "threshold": 0.43531340285804376
+  },
+  {
+    "file": "demo_02_non_mi_pattern.zip",
+    "source_ecg_id": 10,
+    "reference_label": "NON_MI_PATTERN",
+    "expected_probability": 0.008736926944525327,
+    "expected_screen": "NON_MI_PATTERN",
+    "threshold": 0.43531340285804376
+  },
+  {
+    "file": "demo_03_borderline_non_mi.zip",
+    "source_ecg_id": 18,
+    "reference_label": "NON_MI_PATTERN",
+    "expected_probability": 0.3968899254378191,
+    "expected_screen": "NON_MI_PATTERN",
+    "threshold": 0.43531340285804376
+  },
+  {
+    "file": "demo_04_false_positive_challenge.zip",
+    "source_ecg_id": 28,
+    "reference_label": "NON_MI_PATTERN",
+    "expected_probability": 0.7048569718189395,
+    "expected_screen": "MI_PATTERN",
+    "threshold": 0.43531340285804376
+  }
+]

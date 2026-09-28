@@ -3,6 +3,9 @@
 These files are de-identified 10-second, 12-lead, 100 Hz ECG records extracted
 from the signed Fold-9 golden fixture for local prototype verification.
 
+Ready-to-upload WFDB ZIP versions, including borderline and false-positive
+demonstration cases, are available in [`wfdb_zips/`](wfdb_zips/).
+
 | File | Reference label | Expected prototype probability |
 |---|---|---:|
 | `sample_1_mi_pattern.csv` | MI pattern | about 70.02% |
