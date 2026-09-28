@@ -37,6 +37,42 @@ def test_catalog_exposes_fixed_parallel_routes(tmp_path):
         assert payload["routes"]["fusion"]["active"] is True
 
 
+def test_benchmark_catalog_explains_threshold_and_confusion_rates(tmp_path):
+    with _client(tmp_path) as client:
+        payload = client.get("/api/v1/benchmarks").json()
+    assert payload["threshold_selection"]["frozen_threshold"] == 0.43531340285804376
+    assert payload["threshold_selection"]["target_specificity"] == 0.9
+    matrix = payload["confusion_matrix"]
+    assert matrix["true_positives"]["count"] == 3398
+    assert matrix["false_negatives"]["count"] == 970
+    assert matrix["false_positives"]["rate"] == 0.1
+    assert matrix["true_negatives"]["rate"] == 0.9
+
+
+def test_signal_characteristics_are_conservative_and_finite():
+    from apps.api.aquire_api.main import _signal_characteristics
+
+    signal = np.linspace(-1.0, 1.0, 12_000, dtype=float).reshape(12, 1000)
+    values = {
+        "heart_rate_bpm": 75.0,
+        "rr_median_ms": 800.0,
+        "rr_iqr_ms": 30.0,
+        "rr_cv": 0.04,
+        "clinical__global_st_positive_count": 2.0,
+        "clinical__global_st_negative_count": 1.0,
+        "clinical__global_t_inversion_count": 3.0,
+        "clinical__precordial_transition_lead": 3.0,
+        "clinical__frontal_axis_proxy_deg": 42.0,
+    }
+    summary = _signal_characteristics(
+        signal, values, [], list(values), quality_state="PASS", failed_leads=0, quality_issues=[]
+    )
+    assert summary["rhythm"]["heart_rate_context"] == "Within typical resting adult range"
+    assert summary["st_t"]["st_positive_leads"] == 2.0
+    assert summary["spatial"]["precordial_transition"] == "V3"
+    assert summary["availability"]["intervals_omitted"] == ["PR", "QRS", "QT", "QTc"]
+
+
 def test_csv_inspection_returns_canonical_preview(tmp_path):
     with _client(tmp_path) as client:
         response = client.post(

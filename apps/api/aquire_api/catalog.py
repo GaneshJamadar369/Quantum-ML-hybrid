@@ -64,5 +64,27 @@ BENCHMARKS = {
         "overall_classical": {"true_positives": 3392, "false_negatives": 976, "false_positives": 1298, "true_negatives": 11682},
         "hybrid_fusion": {"true_positives": 3398, "false_negatives": 970, "false_positives": 1298, "true_negatives": 11682},
     },
+    "threshold_selection": {
+        "frozen_threshold": 0.43531340285804376,
+        "calibration_fold": 9,
+        "target_specificity": 0.90,
+        "observed_specificity": 0.9004276114844227,
+        "observed_sensitivity": 0.7392923649906891,
+        "reasoning": (
+            "The decision threshold was selected once on patient-separated fold 9 to target "
+            "approximately 90% specificity, limiting false-positive alerts while preserving "
+            "sensitivity. It is frozen for all submitted ECGs and is not adjusted per patient."
+        ),
+    },
+    "confusion_matrix": {
+        "scope": "PTB-XL development OOF folds 1-8 at the matched approximately 90% specificity operating point",
+        "true_positives": {"count": 3398, "rate": 0.7779304029304029, "denominator": "all MI-pattern ECGs"},
+        "false_negatives": {"count": 970, "rate": 0.22206959706959706, "denominator": "all MI-pattern ECGs"},
+        "false_positives": {"count": 1298, "rate": 0.10, "denominator": "all non-MI-pattern ECGs"},
+        "true_negatives": {"count": 11682, "rate": 0.90, "denominator": "all non-MI-pattern ECGs"},
+        "positive_predictive_value": 0.7235945485519591,
+        "negative_predictive_value": 0.9233322794815049,
+        "accuracy": 0.8692644685266313,
+    },
     "interpretation": "Hybrid fusion recovered six additional MI-pattern records at the matched development operating point, while the overall classical replacement remained slightly stronger in global AUPRC.",
 }

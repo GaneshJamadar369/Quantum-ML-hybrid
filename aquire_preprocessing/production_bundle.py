@@ -102,11 +102,26 @@ class FrozenHybridBundle:
         mean_cdf = float(np.mean(cdf_scores))
         return float(self.quantum_alignment["calibrator"].predict_proba([[mean_cdf]])[0, 1])
 
-    def classical_score(self, signal: np.ndarray) -> float:
+    def clinical_feature_values(self, signal: np.ndarray) -> tuple[dict[str, float], list[str]]:
+        """Return the deployable morphology values used by the clinical route.
+
+        The public prototype uses this same extraction path to present a small,
+        clinician-readable signal summary beside the screening result.  No
+        label-derived or PTB-XL+ commercial measurement is introduced here.
+        """
         bundle = extract_deployable_features(signal, 100, ecg_id=-1)
         base = pd.DataFrame([bundle.values])
         derived, _ = derive_clinical_composites(base)
         complete = pd.concat([base, derived], axis=1)
+        values = {
+            str(name): float(value) if pd.notna(value) else float("nan")
+            for name, value in complete.iloc[0].items()
+        }
+        return values, list(bundle.failures)
+
+    def classical_score(self, signal: np.ndarray) -> float:
+        values, _ = self.clinical_feature_values(signal)
+        complete = pd.DataFrame([values])
         approved = self.feature_manifest["approved_features"]
         missing = sorted(set(approved) - set(complete.columns))
         if missing:

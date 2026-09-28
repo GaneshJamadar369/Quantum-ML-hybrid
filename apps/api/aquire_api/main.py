@@ -25,6 +25,99 @@ def _preview(signal: np.ndarray, points: int = 200) -> dict[str, list[float]]:
     return {lead: signal[row, indices].astype(float).tolist() for row, lead in enumerate(CANONICAL_LEADS)}
 
 
+def _finite_value(values: dict[str, float], key: str) -> float | None:
+    value = float(values.get(key, float("nan")))
+    return value if np.isfinite(value) else None
+
+
+def _signal_characteristics(
+    signal: np.ndarray,
+    values: dict[str, float],
+    failures: list[str],
+    approved_features: list[str],
+    *,
+    quality_state: str,
+    failed_leads: int,
+    quality_issues: list[str],
+) -> dict:
+    """Convert deployable waveform measurements into a conservative UI summary."""
+
+    heart_rate = _finite_value(values, "heart_rate_bpm")
+    if heart_rate is None:
+        heart_rate_context = "Unavailable"
+    elif heart_rate < 60:
+        heart_rate_context = "Below typical resting adult range"
+    elif heart_rate > 100:
+        heart_rate_context = "Above typical resting adult range"
+    else:
+        heart_rate_context = "Within typical resting adult range"
+
+    transition = _finite_value(values, "clinical__precordial_transition_lead")
+    transition_label = None
+    if transition is not None and 1 <= int(round(transition)) <= 6:
+        transition_label = f"V{int(round(transition))}"
+
+    territories = []
+    for key, label, leads in (
+        ("inferior", "Inferior", "II, III, aVF"),
+        ("high_lateral", "High lateral", "I, aVL"),
+        ("lateral", "Lateral", "V5, V6"),
+        ("anterior", "Anterior", "V1–V4"),
+    ):
+        territories.append(
+            {
+                "name": label,
+                "leads": leads,
+                "st_mean_mv": _finite_value(values, f"clinical__{key}__st_mean_mv"),
+                "st_absmax_mv": _finite_value(values, f"clinical__{key}__st_absmax_mv"),
+                "st_abnormal_leads": _finite_value(values, f"clinical__{key}__st_abnormal_count"),
+                "t_inversion_fraction": _finite_value(values, f"clinical__{key}__t_inversion_fraction"),
+            }
+        )
+
+    approved_available = sum(
+        np.isfinite(float(values.get(name, float("nan"))))
+        for name in approved_features
+    )
+    return {
+        "quality": {
+            "state": quality_state,
+            "failed_leads": int(failed_leads),
+            "issues": list(quality_issues),
+            "finite_fraction": float(np.isfinite(signal).mean()),
+        },
+        "rhythm": {
+            "heart_rate_bpm": heart_rate,
+            "heart_rate_context": heart_rate_context,
+            "rr_median_ms": _finite_value(values, "rr_median_ms"),
+            "rr_iqr_ms": _finite_value(values, "rr_iqr_ms"),
+            "rr_cv": _finite_value(values, "rr_cv"),
+        },
+        "st_t": {
+            "global_st_rms_mv": _finite_value(values, "clinical__global_st_rms_mv"),
+            "st_positive_leads": _finite_value(values, "clinical__global_st_positive_count"),
+            "st_negative_leads": _finite_value(values, "clinical__global_st_negative_count"),
+            "t_inversion_leads": _finite_value(values, "clinical__global_t_inversion_count"),
+            "territories": territories,
+        },
+        "spatial": {
+            "frontal_axis_proxy_deg": _finite_value(values, "clinical__frontal_axis_proxy_deg"),
+            "precordial_transition": transition_label,
+        },
+        "amplitude": {
+            "minimum_mv": float(np.min(signal)),
+            "maximum_mv": float(np.max(signal)),
+            "peak_to_peak_mv": float(np.ptp(signal)),
+        },
+        "availability": {
+            "measurements_available": int(approved_available),
+            "extractor_notes": list(failures),
+            "intervals_omitted": ["PR", "QRS", "QT", "QTc"],
+            "interval_reason": "100 Hz interval measurements did not pass the frozen reference-agreement gate",
+        },
+    }
+
+
 async def _read_upload(upload: UploadFile, limit: int) -> bytes:
     payload = await upload.read(limit + 1)
     if len(payload) > limit:
@@ -67,6 +160,7 @@ def create_app(settings: Settings | None = None) -> FastAPI:
     @asynccontextmanager
     async def lifespan(app: FastAPI) -> AsyncIterator[None]:
         app.state.bundle = None
+        app.state.runtime = None
         app.state.predictor = None
         app.state.bundle_error = None
         try:
@@ -75,6 +169,7 @@ def create_app(settings: Settings | None = None) -> FastAPI:
                 allow_uncalibrated=settings.allow_uncalibrated,
             )
             runtime = FrozenHybridBundle(app.state.bundle)
+            app.state.runtime = runtime
             app.state.golden_self_test = runtime.golden_self_test()
             app.state.predictor = FixedParallelHybrid(
                 quantum_route=runtime.quantum_score,
@@ -180,6 +275,17 @@ def create_app(settings: Settings | None = None) -> FastAPI:
                 status_code=422,
                 detail={"code": "HYBRID_INFERENCE_FAILED", "message": str(error)},
             ) from error
+        runtime: FrozenHybridBundle = request.app.state.runtime
+        feature_values, extractor_failures = runtime.clinical_feature_values(parsed.signal_mv)
+        characteristics = _signal_characteristics(
+            parsed.signal_mv,
+            feature_values,
+            extractor_failures,
+            list(runtime.feature_manifest["approved_features"]),
+            quality_state=quality.qc_status,
+            failed_leads=quality.n_failed_leads,
+            quality_issues=quality.summary_issues,
+        )
         return {
             "prediction": result.label,
             "mi_pattern_probability": result.calibrated_probability,
@@ -195,6 +301,7 @@ def create_app(settings: Settings | None = None) -> FastAPI:
             },
             "model_version": request.app.state.bundle.model_version,
             "signal_sha256": parsed.checksum,
+            "signal_characteristics": characteristics,
             "interpretation": "Research MI-pattern screening output; not a diagnosis or future-event risk estimate",
         }
 
