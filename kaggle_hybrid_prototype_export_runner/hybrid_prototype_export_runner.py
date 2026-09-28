@@ -10,7 +10,7 @@ from pathlib import Path
 
 
 REPO = "https://github.com/GaneshJamadar369/Quantum-ML-hybrid.git"
-SOURCE_COMMIT = "REPLACE_AFTER_COMMIT"
+SOURCE_COMMIT = "78cc754ba8af063863a79a52ba5e2d7889b56731"
 
 
 def command(argv, *, cwd=None, env=None):
