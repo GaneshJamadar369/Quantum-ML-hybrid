@@ -61,3 +61,40 @@ def test_prediction_never_falls_back_to_one_route(tmp_path):
         detail = response.json()["detail"]
         assert detail["code"] == "MODEL_BUNDLE_UNAVAILABLE"
         assert detail["context"]["both_routes_required"] is True
+
+
+def test_ready_api_abstains_on_failed_signal_quality(tmp_path, monkeypatch):
+    from apps.api.aquire_api import main as api_main
+
+    class FakeBundle:
+        model_version = "test"
+
+    class FakeRuntime:
+        threshold = 0.5
+
+        def __init__(self, bundle):
+            self.bundle = bundle
+
+        def quantum_score(self, signal):
+            raise AssertionError("Quantum route must not run after QC failure")
+
+        classical_score = quantum_score
+
+        def fusion_score(self, quantum, classical):
+            raise AssertionError("Fusion must not run after QC failure")
+
+        def calibrate(self, probability):
+            raise AssertionError("Calibration must not run after QC failure")
+
+    monkeypatch.setattr(api_main, "verify_bundle", lambda *args, **kwargs: FakeBundle())
+    monkeypatch.setattr(api_main, "FrozenHybridBundle", FakeRuntime)
+    app = api_main.create_app(Settings(bundle_root=tmp_path))
+    with TestClient(app) as client:
+        response = client.post(
+            "/api/v1/predictions",
+            files={"file": ("flat.csv", _csv_payload(), "text/csv")},
+        )
+    assert response.status_code == 422
+    detail = response.json()["detail"]
+    assert detail["code"] == "QC_ABSTENTION"
+    assert detail["context"]["both_routes_executed"] is False

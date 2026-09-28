@@ -11,6 +11,7 @@ from fastapi.middleware.cors import CORSMiddleware
 
 from aquire_preprocessing.prototype_bundle import BundleError, VerifiedBundle, verify_bundle
 from aquire_preprocessing.production_bundle import FrozenHybridBundle
+from aquire_preprocessing.quality import assess_quality
 
 from .catalog import ARCHITECTURE, BENCHMARKS, MODEL_CARD
 from .ecg_parser import CANONICAL_LEADS, ECGParseError, infer_format, parse_upload
@@ -156,6 +157,21 @@ def create_app(settings: Settings | None = None) -> FastAPI:
             )
         source_format = infer_format(file.filename, file.content_type)
         parsed = parse_upload(payload, source_format)
+        quality = assess_quality(parsed.signal_mv, ecg_id=-1, fs=100)
+        if quality.qc_status == "FAIL":
+            raise HTTPException(
+                status_code=422,
+                detail={
+                    "code": "QC_ABSTENTION",
+                    "message": "The ECG failed the frozen quality policy; no prediction was produced",
+                    "context": {
+                        "quality_state": quality.qc_status,
+                        "failed_leads": quality.n_failed_leads,
+                        "issues": quality.summary_issues,
+                        "both_routes_executed": False,
+                    },
+                },
+            )
         try:
             result = request.app.state.predictor.predict(parsed.signal_mv)
         except HybridInferenceError as error:
