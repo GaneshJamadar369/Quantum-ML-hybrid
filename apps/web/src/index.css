@@ -1,0 +1,25 @@
+@import "tailwindcss";
+
+:root {
+  font-family: Inter, ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+  color: #10213a;
+  background: #f5f7fb;
+  font-synthesis: none;
+  text-rendering: optimizeLegibility;
+  --navy: #10213a;
+  --navy-2: #183252;
+  --violet: #6c48c7;
+  --violet-soft: #eee8ff;
+  --red: #db3948;
+  --red-soft: #fff0f2;
+  --mint: #1d9d78;
+  --line: #dce4ed;
+  --muted: #66768c;
+}
+
+* { box-sizing: border-box; }
+html { scroll-behavior: smooth; }
+body { margin: 0; min-width: 320px; min-height: 100vh; background: #f5f7fb; }
+button, input { font: inherit; }
+a { color: inherit; }
+#root { min-height: 100vh; }

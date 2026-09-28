@@ -1,0 +1,23 @@
+services:
+  api:
+    build:
+      context: .
+      dockerfile: apps/api/Dockerfile
+    environment:
+      AQUIRE_BUNDLE_ROOT: /models/current
+      AQUIRE_ALLOW_UNCALIBRATED: ${AQUIRE_ALLOW_UNCALIBRATED:-false}
+      AQUIRE_CORS_ORIGINS: http://localhost:8080
+    volumes:
+      - ${AQUIRE_BUNDLE_ROOT:-./prototype_bundle/current}:/models/current:ro
+    ports:
+      - "8000:8000"
+
+  web:
+    build:
+      context: apps/web
+      args:
+        VITE_API_BASE: /api
+    depends_on:
+      - api
+    ports:
+      - "8080:80"

@@ -50,15 +50,17 @@ notebook. Export one immutable bundle before connecting the prediction API:
 prototype_bundle/v1/
   manifest.json
   preprocessing.json
+  waveform_normalizer.json
   transformer.pt
   h128_imputer.joblib
   h128_scaler.joblib
   pls_q4.joblib
-  angle_quantiles.npz
+  angle_quantiles.joblib
   vqc/
     model_01.pt
     model_02.pt
     ...
+  vqc_score_alignment.joblib
   morphology_feature_manifest.json
   morphology_conditioner.joblib
   morphology_hgb.joblib
@@ -313,22 +315,28 @@ files.
 - [ ] Fit/freeze Fold-9 calibration and threshold, or enable the prominently
   labelled uncalibrated development-demo mode.
 - [ ] Generate and verify bundle checksums and golden cases.
+- [x] Implement the strict manifest, fixed-route, role, path and SHA-256 bundle
+  verifier. A valid bundle must activate quantum, classical and fusion routes.
 
 ### Milestone P1 — backend vertical slice
 
-- [ ] Add FastAPI scaffolding, settings and typed response schemas.
-- [ ] Implement bundle verification and readiness self-test.
-- [ ] Implement WFDB/CSV/JSON parsing through existing preprocessing contracts.
+- [x] Add FastAPI scaffolding, settings and typed response schemas.
+- [x] Implement bundle verification and readiness integrity checks. Golden
+  scientific self-test remains pending until the real bundle is exported.
+- [x] Implement safe WFDB/CSV/JSON structural parsing and canonical previews.
+- [x] Implement a fixed parallel inference orchestrator that requires finite
+  outputs from both branches before fusion and provides no single-route
+  fallback.
 - [ ] Implement one end-to-end `/predictions` call and golden parity test.
 - [ ] Add abstention, timing and deletion guarantees.
 
 ### Milestone P2 — judge-ready UI
 
-- [ ] Add the overview, architecture and upload flow.
-- [ ] Render twelve synchronized leads and quality findings.
+- [x] Add the overview, fixed architecture and upload flow.
+- [x] Render twelve synchronized lead previews and structural findings.
 - [ ] Build the fused-result and technical-detail panels.
 - [ ] Add morphology and waveform explanations.
-- [ ] Build the benchmark and model-card pages from versioned JSON.
+- [x] Build the development benchmark and model-card panels from API JSON.
 
 ### Milestone P3 — package and rehearse
 

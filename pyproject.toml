@@ -25,6 +25,14 @@ research = [
   "matplotlib==3.10.1",
 ]
 test = ["pytest==8.3.5", "pytest-cov==6.0.0"]
+prototype = [
+  "fastapi==0.141.1",
+  "pydantic==2.13.5",
+  "uvicorn[standard]==0.54.0",
+  "python-multipart==0.0.32",
+  "httpx==0.28.1",
+  "joblib==1.6.0",
+]
 
 [tool.pytest.ini_options]
 testpaths = ["tests"]
