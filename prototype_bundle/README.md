@@ -1,5 +1,13 @@
 # Prototype model bundle
 
+The verified `aquire-hybrid-q4-v1` archive and checksum are published at:
+
+https://github.com/GaneshJamadar369/Quantum-ML-hybrid/releases/tag/aquire-hybrid-q4-v1
+
+The archive is kept outside Git history because it contains frozen binary
+weights, serialized transformation objects and de-identified PTB-XL golden
+fixtures. The release records their checksum, attribution and claim boundary.
+
 The API loads one immutable bundle from `AQUIRE_BUNDLE_ROOT`. Model weights and
 patient-derived transformation artifacts are not committed to Git.
 

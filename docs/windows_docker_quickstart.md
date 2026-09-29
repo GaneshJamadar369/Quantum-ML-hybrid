@@ -6,11 +6,12 @@ The recipient needs:
 
 1. The public GitHub repository:
    `https://github.com/GaneshJamadar369/Quantum-ML-hybrid.git`
-2. The separately supplied `aquire-hybrid-q4-v1.zip` model bundle and its
-   `.sha256` checksum file.
+2. The public model release:
+   `https://github.com/GaneshJamadar369/Quantum-ML-hybrid/releases/tag/aquire-hybrid-q4-v1`
 
-The model bundle is intentionally excluded from Git because it contains frozen
-weights and patient-derived transformation artifacts.
+The model bundle is intentionally excluded from Git history and published as a
+versioned release asset with a SHA-256 checksum, scientific provenance and
+PTB-XL attribution.
 
 ## Requirements
 
@@ -29,6 +30,12 @@ Open PowerShell and run:
 ```powershell
 git clone https://github.com/GaneshJamadar369/Quantum-ML-hybrid.git
 cd Quantum-ML-hybrid
+Invoke-WebRequest `
+  -Uri "https://github.com/GaneshJamadar369/Quantum-ML-hybrid/releases/download/aquire-hybrid-q4-v1/aquire-hybrid-q4-v1.zip" `
+  -OutFile "$HOME\Downloads\aquire-hybrid-q4-v1.zip"
+Invoke-WebRequest `
+  -Uri "https://github.com/GaneshJamadar369/Quantum-ML-hybrid/releases/download/aquire-hybrid-q4-v1/aquire-hybrid-q4-v1.zip.sha256" `
+  -OutFile "$HOME\Downloads\aquire-hybrid-q4-v1.zip.sha256"
 New-Item -ItemType Directory -Force .\prototype_bundle\current | Out-Null
 Expand-Archive -Path "$HOME\Downloads\aquire-hybrid-q4-v1.zip" `
   -DestinationPath .\prototype_bundle\current -Force
